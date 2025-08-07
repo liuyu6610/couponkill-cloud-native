@@ -2,11 +2,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	_ "io/ioutil"
 	"log"
 	"net/http"
 	"sync/atomic"

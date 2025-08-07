@@ -21,4 +21,8 @@ public interface UserService extends IService<User> {
      * 根据ID获取用户信息
      */
     User getUserById(Long userId);
+/**
+ * 定时任务，处理失效用户
+ */
+    void handleInactiveUsers ();
 }

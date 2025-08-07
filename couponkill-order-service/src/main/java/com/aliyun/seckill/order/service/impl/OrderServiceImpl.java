@@ -9,10 +9,13 @@ import com.aliyun.seckill.order.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.order.service.OrderService;
 import com.aliyun.seckill.pojo.Coupon;
 import com.aliyun.seckill.pojo.Order;
+import com.aliyun.seckill.pojo.OrderMessage;
 import com.aliyun.seckill.pojo.UserCouponCount;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.seata.spring.annotation.GlobalTransactional;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -33,6 +37,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
 
     private static final int MAX_TOTAL_COUPONS = 15;
     private static final int MAX_SECKILL_COUPONS = 5;
@@ -43,7 +49,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @GlobalTransactional(rollbackFor = Exception.class)
     public Order createOrder(Long userId, Long couponId) {
         // 1. 获取优惠券信息
-        Coupon coupon = couponFeignService.getCouponById(couponId);
+        Coupon coupon = couponFeignService.getCouponById(couponId).getData();
         if (coupon == null) {
             throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
         }
@@ -59,7 +65,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
 
         // 4. 扣减优惠券库存
-        boolean deductSuccess = couponFeignService.deductStock(couponId);
+        boolean deductSuccess = couponFeignService.deductStock(couponId).getData();
         if (!deductSuccess) {
             throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
         }
@@ -83,6 +89,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (coupon.getType() == 2) { // 秒杀优惠券
             redisTemplate.opsForValue().increment(USER_COUPON_COUNT_KEY + userId + ":seckill");
         }
+        // 发送订单创建成功消息
+        OrderMessage orderMessage = new OrderMessage();
+        orderMessage.setOrderId(order.getId());
+        orderMessage.setUserId(userId);
+        orderMessage.setCouponId(couponId);
+        orderMessage.setCreateTime(new Date());
+
+        rocketMQTemplate.convertAndSend("order-create-topic", orderMessage);
 
         return order;
     }
@@ -113,7 +127,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         couponFeignService.increaseStock(order.getCouponId());
 
         // 5. 获取优惠券类型
-        Coupon coupon = couponFeignService.getCouponById(order.getCouponId());
+        Coupon coupon = couponFeignService.getCouponById(order.getCouponId()).getData();
         if (coupon == null) {
             return false;
         }
@@ -195,6 +209,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
 
         return true;
+    }
+
+    @Override
+    public Page<Order> getOrderByUserId (Long userId, Integer pageNum, Integer pageSize) {
+        return null;
+    }
+
+    @Override
+    public Page<Order> getAllOrderByCondition (Integer pageNum, Integer pageSize, String startTime, String endTime) {
+        return null;
     }
 
     @Transactional

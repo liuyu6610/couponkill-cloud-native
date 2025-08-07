@@ -1,9 +1,13 @@
 // com.aliyun.seckill.order.controller.SeckillController.java
 package com.aliyun.seckill.order.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.aliyun.seckill.common.result.Result;
+import com.aliyun.seckill.common.result.ResultCode;
 import com.aliyun.seckill.order.service.OrderService;
 import com.aliyun.seckill.pojo.Order;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +23,18 @@ public class SeckillController {
 
     @PostMapping("/create")
     @Operation(summary = "创建秒杀订单")
+    @SentinelResource(value = "createSeckillOrder", blockHandler = "createSeckillOrderBlockHandler")
     public Result<Order> createSeckillOrder(
             @RequestParam Long userId,
             @RequestParam Long couponId) {
         Order order = orderService.createOrder(userId, couponId);
         return Result.success(order);
     }
-
+    // 降级处理方法
+    public Result<Order> createSeckillOrderBlockHandler(Long userId, Long couponId, BlockException e) {
+        Result<Order> fail = Result.fail( ResultCode.SYSTEM_BUSY );
+        return fail;
+    }
     @PostMapping("/cancel")
     @Operation(summary = "取消秒杀订单")
     public Result<Boolean> cancelSeckillOrder(
@@ -40,5 +49,24 @@ public class SeckillController {
             @PathVariable Long userId,
             @PathVariable Long couponId) {
         return Result.success(orderService.hasUserReceivedCoupon(userId, couponId));
+    }
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "查询用户订单")
+    public Result<Page<Order>> getUserOrders(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Order> orders = orderService.getOrderByUserId(userId, pageNum, pageSize);
+        return Result.success(orders);
+    }
+    @GetMapping("/admin")
+    @Operation(summary = "管理员查询所有订单")
+    public Result<Page<Order>> getAllOrders(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        Page<Order> orders = orderService.getAllOrderByCondition(pageNum, pageSize, startTime, endTime);
+        return Result.success(orders);
     }
 }

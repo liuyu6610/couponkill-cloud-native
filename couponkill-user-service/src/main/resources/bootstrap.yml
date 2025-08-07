@@ -1,14 +1,20 @@
-# src/main/resources/bootstrap.yml
+# couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
   application:
     name: couponkill-user-service
   profiles:
-    active: dev
+    active: ${ENV:dev}  # 环境变量获取，默认dev
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:public}
       config:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yaml
-        group: DEFAULT_GROUP
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        namespace: ${NACOS_NAMESPACE:public}
+        ext-config:
+          - data-id: common.yaml
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
+            refresh: true

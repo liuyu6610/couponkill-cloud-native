@@ -89,4 +89,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User getUserById(Long userId) {
         return userMapper.selectById(userId);
     }
+
+    @Override
+    public void handleInactiveUsers () {
+
+    }
 }

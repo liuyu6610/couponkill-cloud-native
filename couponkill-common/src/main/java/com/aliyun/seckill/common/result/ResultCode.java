@@ -20,7 +20,8 @@ public enum ResultCode {
     PASSWORD_ERROR(5003, "密码错误"),
     TOKEN_INVALID(6001, "令牌无效"),
     ACTIVITY_NOT_START(7001, "活动未开始"),
-    ACTIVITY_ENDED(7002, "活动已结束");
+    ACTIVITY_ENDED(7002, "活动已结束"),
+    SYSTEM_BUSY( 7003, "系统繁忙，请稍后再试"  );
 
     private final int code;
     private final String message;

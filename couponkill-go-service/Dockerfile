@@ -7,18 +7,16 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o couponkill-go-service .
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/main .
-
-# 挂载目录
-VOLUME /app/logs
-VOLUME /app/config
+COPY --from=builder /app/couponkill-go-service .
 
 EXPOSE 8090
 
-CMD ["./main"]
+VOLUME ["/app/logs"]
+
+ENTRYPOINT ["./couponkill-go-service"]

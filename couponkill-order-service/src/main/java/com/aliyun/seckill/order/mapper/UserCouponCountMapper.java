@@ -6,4 +6,11 @@ public class UserCouponCountMapper {
     public UserCouponCount selectById (Long userId) {
         return null;
     }
+
+    public void insert (UserCouponCount newCount) {
+    }
+
+    public void updateById (UserCouponCount count) {
+
+    }
 }

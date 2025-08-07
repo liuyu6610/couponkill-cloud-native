@@ -2,6 +2,7 @@
 package com.aliyun.seckill.order.service;
 
 import com.aliyun.seckill.pojo.Order;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 public interface OrderService extends IService<Order> {
@@ -24,4 +25,8 @@ public interface OrderService extends IService<Order> {
      * 检查用户优惠券数量是否超过限制
      */
     boolean checkCouponCountLimit(Long userId, int couponType);
+
+    Page<Order> getOrderByUserId (Long userId, Integer pageNum, Integer pageSize);
+
+    Page<Order> getAllOrderByCondition (Integer pageNum, Integer pageSize, String startTime, String endTime);
 }
