@@ -1,0 +1,13 @@
+package com.aliyun.seckill.couponkillgateway;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CouponkillGatewayApplication {
+
+    public static void main (String[] args) {
+        SpringApplication.run( CouponkillGatewayApplication.class, args );
+    }
+
+}

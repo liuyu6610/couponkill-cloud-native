@@ -13,16 +13,13 @@
 
     <!-- 子模块声明 -->
     <modules>
-        <!--<module>couponkill-pojo</module>
-        <module>couponkill-common</module>
-        <module>couponkill-user-service</module>
-        <module>couponkill-product-service</module>
-        <module>couponkill-order-service</module>
-        <module>couponkill-admin-service</module>
-        <module>couponkill-gateway</module>-->
+        <module>couponkill-gateway</module>
         <module>couponkill-pojo</module>
         <module>couponkill-common</module>
         <module>couponkill-coupon-service</module>
+        <module>couponkill-order-service</module>
+        <module>couponkill-user-service</module>
+        <module>couponkill-admin-service</module>
     </modules>
 
     <!-- 仓库配置 - 确保包含Knife4j可用仓库 -->

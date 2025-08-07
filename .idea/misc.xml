@@ -11,6 +11,8 @@
         <option value="$PROJECT_DIR$/couponkill-coupon-service/pom.xml" />
         <option value="$PROJECT_DIR$/couponkill-user-service/pom.xml" />
         <option value="$PROJECT_DIR$/couponkill-admin-service/pom.xml" />
+        <option value="$PROJECT_DIR$/couponkill-order-service/pom.xml" />
+        <option value="$PROJECT_DIR$/couponkill-gateway/pom.xml" />
       </list>
     </option>
   </component>
