@@ -130,4 +130,9 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
             redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId, newStock);
         }
     }
+
+    @Override
+    public void handleExpiredCoupons () {
+
+    }
 }

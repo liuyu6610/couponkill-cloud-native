@@ -1,7 +1,7 @@
 # couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
   application:
-    name: couponkill-gateway  # 服务名，与Nacos配置集前缀一致
+    name: couponkill-admin-service  # 服务名，与Nacos配置集前缀一致
   profiles:
     active: ${ENV:dev}  # 环境变量激活（默认dev，生产环境通过ENV=prod指定）
   cloud:
