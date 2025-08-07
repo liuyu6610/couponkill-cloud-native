@@ -8,11 +8,16 @@ import (
 	_ "io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"gopkg.in/yaml.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -24,7 +29,79 @@ var (
 	// 用于限制并发的计数器
 	concurrencyLimit int32 = 0
 	maxConcurrency   int32 = 1000
+	globalConfig     Config
 )
+
+// 定义配置结构体
+type Config struct {
+	Server struct {
+		Port int `yaml:"port"`
+	} `yaml:"server"`
+	Seckill struct {
+		MaxConcurrency int    `yaml:"max-concurrency"`
+		RedisPrefix    string `yaml:"redis-key-prefix"`
+	} `yaml:"seckill"`
+	Mysql struct {
+		DSN string `yaml:"dsn"` // 从common.yaml继承
+	} `yaml:"mysql"`
+}
+
+// 初始化Nacos并加载配置
+func initConfig() {
+	// 从环境变量获取Nacos地址和环境
+	nacosAddr := os.Getenv("NACOS_ADDR")
+	if nacosAddr == "" {
+		nacosAddr = "localhost:8848"
+	}
+	env := os.Getenv("SPRING_PROFILES_ACTIVE")
+	if env == "" {
+		env = "dev"
+	}
+	namespace := os.Getenv("NACOS_NAMESPACE")
+	if namespace == "" {
+		namespace = env
+	}
+
+	// 创建Nacos客户端
+	// 替换 initConfig() 中的 client 初始化部分如下：
+
+	client, err := clients.NewConfigClient(
+		vo.NacosClientParam{
+			ClientConfig: &constant.ClientConfig{
+				NamespaceId: namespace,
+			},
+			ServerConfigs: []constant.ServerConfig{
+				{
+					IpAddr: nacosAddr,
+					Port:   8848,
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		log.Fatalf("Nacos客户端初始化失败: %v", err)
+	}
+
+	// 读取common.yaml（共用配置）
+	commonConf, _ := client.GetConfig(
+		vo.ConfigParam{
+			DataId: "common.yaml",
+			Group:  "DEFAULT_GROUP",
+		},
+	)
+	// 读取go-service-dev.yaml（私有配置）
+	serviceConf, _ := client.GetConfig(
+		vo.ConfigParam{
+			DataId: fmt.Sprintf("go-service-%s.yaml", env),
+			Group:  "DEFAULT_GROUP",
+		},
+	)
+
+	// 合并配置（私有配置覆盖共用配置）
+	yaml.Unmarshal([]byte(commonConf), &globalConfig)
+	yaml.Unmarshal([]byte(serviceConf), &globalConfig)
+}
 
 // 优惠券结构体
 type Coupon struct {
@@ -43,7 +120,7 @@ type SeckillRequest struct {
 
 // 初始化数据库连接
 func initDB() {
-	dsn := "root:root@tcp(localhost:3306)/couponkill?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := globalConfig.Mysql.DSN // 从配置读取，替代硬编码
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -53,11 +130,13 @@ func initDB() {
 
 // 初始化Redis连接
 func initRedis() {
-	redisCli = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
-	})
+	redisCli = redis.NewClient(
+		&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",
+			DB:       0,
+		},
+	)
 
 	_, err := redisCli.Ping(ctx).Result()
 	if err != nil {
@@ -221,10 +300,14 @@ func seckillHandler(c *gin.Context) {
 		redisCli.Incr(ctx, fmt.Sprintf("user:coupon:count:%d:seckill", req.UserId))
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 200, "message": "秒杀成功", "data": map[string]interface{}{
-		"coupon_id": coupon.ID,
-		"name":      coupon.Name,
-	}})
+	c.JSON(
+		http.StatusOK, gin.H{
+			"code": 200, "message": "秒杀成功", "data": map[string]interface{}{
+				"coupon_id": coupon.ID,
+				"name":      coupon.Name,
+			},
+		},
+	)
 }
 
 func main() {
