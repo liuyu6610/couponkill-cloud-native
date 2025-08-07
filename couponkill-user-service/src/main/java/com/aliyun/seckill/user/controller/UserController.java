@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/user")
 @Tag(name = "用户管理", description = "用户注册、登录接口")
@@ -22,19 +24,18 @@ public class UserController {
     public Result<?> register(
             @RequestParam String username,
             @RequestParam String password,
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false) String email) {
-        userService.register(username, password, phone, email);
+            @RequestParam String phone) {
+        userService.register(username, password, phone);
         return Result.success();
     }
 
     @PostMapping("/login")
     @Operation(summary = "用户登录")
-    public Result<String> login(
+    public Result<Map<String, Object>> login(
             @RequestParam String username,
             @RequestParam String password) {
-        String token = userService.login(username, password);
-        return Result.success(token);
+        Map<String, Object> result = userService.login(username, password);
+        return Result.success(result);
     }
 
     @GetMapping("/{userId}")

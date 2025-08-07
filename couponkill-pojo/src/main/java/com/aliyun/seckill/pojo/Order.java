@@ -1,6 +1,7 @@
 // com.aliyun.seckill.pojo.Order.java
 package com.aliyun.seckill.pojo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @TableId
+    @TableId(type = IdType.INPUT)
     private String id;
 
     private Long userId;

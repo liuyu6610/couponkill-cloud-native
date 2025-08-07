@@ -3,12 +3,8 @@ package com.aliyun.seckill.common.result;
 
 import lombok.Data;
 
-import java.io.Serializable;
-
 @Data
-public class Result<T> implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class Result<T> {
     private int code;
     private String message;
     private T data;
@@ -30,14 +26,14 @@ public class Result<T> implements Serializable {
         return result;
     }
 
-    public static <T> Result<T> error(ResultCode resultCode) {
+    public static <T> Result<T> fail(ResultCode resultCode) {
         Result<T> result = new Result<>();
         result.code = resultCode.getCode();
         result.message = resultCode.getMessage();
         return result;
     }
 
-    public static <T> Result<T> error(int code, String message) {
+    public static <T> Result<T> fail(int code, String message) {
         Result<T> result = new Result<>();
         result.code = code;
         result.message = message;

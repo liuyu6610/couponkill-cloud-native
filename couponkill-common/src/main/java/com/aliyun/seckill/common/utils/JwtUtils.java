@@ -8,7 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +23,7 @@ public class JwtUtils {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    private SecretKey getSigningKey() {
+    private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
@@ -35,51 +35,45 @@ public class JwtUtils {
     }
 
     private String createToken(Map<String, Object> claims) {
-        Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + expiration);
-
         return Jwts.builder()
                 .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(expirationDate)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // 从令牌中获取用户名
-    public Long getUserIdFromToken(String token) {
-        return getClaimFromToken(token, claims -> claims.get("userId", Long.class));
-    }
-
-    // 验证令牌是否有效
-    public boolean validateToken(String token, Long userId) {
-        Long tokenUserId = getUserIdFromToken(token);
-        return (userId.equals(tokenUserId) && !isTokenExpired(token));
-    }
-
-    // 检查令牌是否过期
-    private boolean isTokenExpired(String token) {
-        Date expiration = getExpirationDateFromToken(token);
-        return expiration.before(new Date());
-    }
-
-    // 从令牌中获取过期时间
-    public Date getExpirationDateFromToken(String token) {
-        return getClaimFromToken(token, Claims::getExpiration);
+    // 从令牌中获取用户ID
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
     // 从令牌中获取声明
-    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = getAllClaimsFromToken(token);
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    // 从令牌中获取所有声明
-    private Claims getAllClaimsFromToken(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    // 验证令牌是否过期
+    public boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    // 验证令牌
+    public boolean validateToken(String token, Long userId) {
+        final Long extractedUserId = extractUserId(token);
+        return (extractedUserId.equals(userId) && !isTokenExpired(token));
     }
 }

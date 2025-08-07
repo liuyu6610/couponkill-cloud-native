@@ -7,14 +7,23 @@ import com.aliyun.seckill.common.utils.JwtUtils;
 import com.aliyun.seckill.pojo.User;
 import com.aliyun.seckill.user.mapper.UserMapper;
 import com.aliyun.seckill.user.service.UserService;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -22,12 +31,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    private static final String USER_LOGIN_KEY = "user:login:";
+
     @Override
-    public void register(String username, String password, String phone, String email) {
-        // 检查用户是否已存在
-        User existingUser = getOne(new QueryWrapper<User>().eq("username", username));
-        if (existingUser != null) {
-            throw new BusinessException(ResultCode.USER_EXIST.getCode(), "用户名已存在");
+    @Transactional
+    public void register(String username, String password, String phone) {
+        // 检查用户名是否已存在
+        User existUser = userMapper.selectByUsername(username);
+        if (existUser != null) {
+            throw new BusinessException(ResultCode.USER_EXIST);
         }
 
         // 创建新用户
@@ -35,31 +50,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setPhone(phone);
-        user.setEmail(email);
-        user.setStatus(1); // 正常状态
+        user.setStatus(1);
+        user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
 
-        save(user);
+        userMapper.insert(user);
     }
 
     @Override
-    public String login(String username, String password) {
+    public Map<String, Object> login(String username, String password) {
         // 查询用户
-        User user = getOne(new QueryWrapper<User>().eq("username", username));
+        User user = userMapper.selectByUsername(username);
         if (user == null) {
-            throw new BusinessException(ResultCode.USER_NOT_FOUND.getCode(), "用户不存在");
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
         // 验证密码
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BusinessException(ResultCode.PASSWORD_ERROR.getCode(), "密码错误");
+            throw new BusinessException(ResultCode.PASSWORD_ERROR);
         }
 
-        // 生成JWT令牌
-        return jwtUtils.generateToken(user.getId());
+        // 生成令牌
+        String token = jwtUtils.generateToken(user.getId());
+
+        // 存入Redis，用于令牌黑名单
+        redisTemplate.opsForValue().set(USER_LOGIN_KEY + user.getId(), token,
+                24, TimeUnit.HOURS);
+
+        // 返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("token", token);
+        result.put("userId", user.getId());
+        result.put("username", user.getUsername());
+        return result;
     }
 
     @Override
     public User getUserById(Long userId) {
-        return getById(userId);
+        return userMapper.selectById(userId);
     }
 }

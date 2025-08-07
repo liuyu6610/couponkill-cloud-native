@@ -3,7 +3,6 @@ package com.aliyun.seckill.order.service.impl;
 
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.result.ResultCode;
-import com.aliyun.seckill.common.utils.IdUtils;
 import com.aliyun.seckill.coupon.feign.CouponFeignService;
 import com.aliyun.seckill.order.mapper.OrderMapper;
 import com.aliyun.seckill.order.mapper.UserCouponCountMapper;

@@ -23,6 +23,9 @@ public class SeckillActivity implements Serializable {
 
     private LocalDateTime endTime;
 
+    /**
+     * 状态(0-未开始,1-进行中,2-已结束)
+     */
     private Integer status;
 
     private LocalDateTime createTime;
