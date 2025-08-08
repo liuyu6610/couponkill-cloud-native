@@ -1,19 +1,19 @@
 # couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
   application:
-    name: couponkill-common-service  # 服务名，与Nacos配置集前缀一致
+    name: common  # 服务名，与Nacos配置集前缀一致
   profiles:
-    active: ${ENV:dev}  # 环境变量激活（默认dev，生产环境通过ENV=prod指定）
+    active: dev  # 环境变量激活（默认dev，生产环境通过ENV=prod指定）
   cloud:
     nacos:
       discovery:  # 服务注册配置
-        server-addr: ${NACOS_ADDR:localhost:8848}  # Nacos地址（环境变量优先）
-        namespace: ${NACOS_NAMESPACE:dev}  # 命名空间（dev/prod，与环境对应）
+        server-addr: 8848 # Nacos地址（环境变量优先）
+        namespace: dev  # 命名空间（dev/prod，与环境对应）
       config:  # 配置中心配置
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: 8848
         file-extension: yaml  # 配置文件格式
         group: DEFAULT_GROUP  # 配置组
-        namespace: ${NACOS_NAMESPACE:dev}
+        namespace: dev
         # 引入共用配置common.yaml
         extension-configs[x]:
           - data-id: common.yaml

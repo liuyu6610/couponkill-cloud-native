@@ -1,0 +1,4 @@
+spring:
+  config:
+    import:
+      - optional:nacos:common.yaml?serverAddr=localhost:8848

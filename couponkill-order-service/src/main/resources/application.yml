@@ -1,0 +1,4 @@
+spring:
+  config:
+    import:
+      - optional:nacos:couponkill-order-service.yaml?serverAddr=localhost:8848

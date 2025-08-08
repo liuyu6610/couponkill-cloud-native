@@ -1,5 +1,5 @@
 // com.aliyun.seckill.coupon.feign.CouponFeignService.java
-package com.aliyun.seckill.coupon.feign;
+package com.aliyun.seckill.common.feign;
 
 import com.aliyun.seckill.common.result.Result;
 import com.aliyun.seckill.pojo.Coupon;

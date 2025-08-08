@@ -67,11 +67,25 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-        <!-- RocketMQ -->
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
-        </dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+<!-- 显式添加兼容的RocketMQ客户端版本 -->
+<dependency>
+    <groupId>org.apache.rocketmq</groupId>
+    <artifactId>rocketmq-client</artifactId>
+    <version>5.1.4</version>
+</dependency>
+
+
 
         <!-- Seata -->
         <dependency>

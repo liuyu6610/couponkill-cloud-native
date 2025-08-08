@@ -52,8 +52,8 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Spring Boot 版本更新为3.4.8 -->
-        <spring.boot.version>3.4.8</spring.boot.version>
+        <!-- Spring Boot 版本更新为3.3.4-->
+        <spring.boot.version>3.3.4</spring.boot.version>
         <!-- Spring Cloud Alibaba 2023版本 (与Spring Boot 3.4.x兼容) -->
         <spring.cloud.alibaba.version>2023.0.1.0</spring.cloud.alibaba.version>
         <!-- Spring Cloud 版本 (与Spring Boot 3.4.x兼容) -->
@@ -67,10 +67,10 @@
         <lombok.version>1.18.30</lombok.version>
         <hutool.version>5.8.26</hutool.version>
         <jjwt.version>0.11.5</jjwt.version>
-        <rocketmq.version>5.3.0</rocketmq.version>
+        <rocketmq.version>5.1.4</rocketmq.version>
+        <rocketmq.starter.version>2.2.3</rocketmq.starter.version> <!-- Starter专用版本 -->
         <!-- SpringDoc OpenAPI 版本 (替代Knife4j) -->
         <springdoc.version>2.5.0</springdoc.version>
-        <rocketmqstarter.version>2.2.3</rocketmqstarter.version>
         <sentinel.version>1.8.6</sentinel.version>
         <fastjson.version>1.2.83</fastjson.version>
     </properties>
@@ -179,7 +179,7 @@
             <dependency>
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-spring-boot-starter</artifactId>
-                <version>${rocketmqstarter.version}</version>
+                <version>${rocketmq.starter.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.rocketmq</groupId>
@@ -187,7 +187,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!--5.3.0版本的rocketmq-->
             <dependency>
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-client</artifactId>
