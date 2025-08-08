@@ -45,6 +45,8 @@ services:
     environment:
       - MODE=broker
       - NAMESRV_ADDR=nacos:9876
+      - AutoCreateTopicEnable=true
+      - DEFAULT_TOPIC_QUEUE_NUM=8
     depends_on:
       - rocketmq-namesrv
     volumes:

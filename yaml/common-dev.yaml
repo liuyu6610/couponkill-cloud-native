@@ -1,0 +1,42 @@
+# 数据库配置（开发环境）
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/console?charset=utf8mb4&parseTime=True&loc=Local
+    username: root
+    password: 1234  # 开发环境密码
+  # Redis配置（开发环境）
+  redis:
+    host: redis-dev
+    port: 6379
+    password: ""
+    timeout: 2000ms
+  # RocketMQ配置（开发环境）
+  rocketmq:
+    name-server: rocketmq-namesrv-dev:9876
+    producer:
+      group: couponkill-producer-group
+    consumer:
+      group: couponkill-consumer-group
+    server:
+      port: 9876
+
+
+# Sentinel配置（开发环境）
+sentinel:
+  transport:
+    dashboard: sentinel-dev:8080  # 开发环境Sentinel控制台地址
+  eager: true
+
+# Seata分布式事务（开发环境）
+seata:
+  application-id: ${spring.application.name}
+  tx-service-group: couponkill-seata-group
+  service:
+    vgroup-mapping:
+      couponkill-seata-group: default
+  registry:
+    type: nacos
+    nacos:
+      server-addr: nacos-dev:8848
+      namespace: dev  # 对应Nacos的dev命名空间
