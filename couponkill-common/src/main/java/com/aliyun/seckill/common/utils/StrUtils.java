@@ -1,3 +1,4 @@
+/*
 package com.aliyun.seckill.common.utils;
 
 import cn.hutool.core.util.ObjUtil;
@@ -93,13 +94,15 @@ public class StrUtils {
 
 
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: 将十六进制的字符串转换成字节数组
      * @Date: 2020-12-02 16:34
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static byte[] hexStrToByteArrs(String hexString) {
         if (StringUtils.isEmpty(hexString)) {
             return null;
@@ -120,13 +123,15 @@ public class StrUtils {
         return bytes;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: 数组转换成十六进制字符串
      * @Date: 2020-12-02 16:34
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static final String bytesToHexStr(byte[] bArray) {
         StringBuffer sb = new StringBuffer(bArray.length);
         String sTemp;
@@ -141,12 +146,14 @@ public class StrUtils {
         return sb.toString();
     }
 
-    /**
+    */
+/**
      * byte[]数组转换为16进制的字符串
      *
      * @param bytes 要转换的字节数组
      * @return 转换后的结果
-     */
+     *//*
+
     public static String bytesToHexString(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < bytes.length; i++) {
@@ -159,12 +166,14 @@ public class StrUtils {
         return sb.toString();
     }
 
-    /**
+    */
+/**
      * 16进制表示的字符串转换为字节数组
      *
      * @param hexString 16进制表示的字符串
      * @return byte[] 字节数组
-     */
+     *//*
+
     public static byte[] hexStringToByteArray(String hexString) {
         hexString = hexString.replaceAll(" ", "");
         int len = hexString.length();
@@ -289,6 +298,7 @@ public class StrUtils {
     }
 
 
+*/
 /*    public static void main(String[] args) throws Exception {
 
 
@@ -302,5 +312,7 @@ public class StrUtils {
         strList.remove(0);
         System.out.println(strList.toString());
 
-    }*/
+    }*//*
+
 }
+*/

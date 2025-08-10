@@ -1,12 +1,8 @@
-# Tomcat
-server:
-  port: 8080
-
 # Spring
 spring:
   application:
     # 应用名称
-    name: ruoyi-gateway
+    name: couponkill-coupon-service
   profiles:
     # 环境配置
     active: dev
@@ -14,18 +10,21 @@ spring:
     nacos:
       discovery:
         # 服务注册地址
-        server-addr: 127.0.0.1:8848
-        namespace: dev
+        server-addr: localhost:8848
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
         heart-beat-timeout: 30000
         heart-beat-interval: 30000
       config:
         # 配置中心地址
-        server-addr: 127.0.0.1:8848
+        server-addr: localhost:8848
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
         # 配置文件格式
-        file-extension: yml
-        # 共享配置
-        shared-configs:
-          - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+        file-extension: yaml
+        extension-configs:
+          - data-id: common.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+
     sentinel:
       # 取消控制台懒加载
       eager: true
@@ -36,8 +35,8 @@ spring:
       datasource:
         ds1:
           nacos:
-            server-addr: 127.0.0.1:8848
-            dataId: sentinel-ruoyi-gateway
-            groupId: DEFAULT_GROUP
+            server-addr: localhost:8848
+            namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+            data-id: sentinel-gateway-rules
+            group-id: DEFAULT_GROUP
             data-type: json
-            rule-type: gw-flow

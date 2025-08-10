@@ -129,6 +129,8 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!--spring cloud nacos配置和发现-->
+
 
             <!-- MySQL 驱动 -->
             <dependency>

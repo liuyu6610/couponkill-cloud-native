@@ -1,23 +1,20 @@
 ## couponkill-order-service/src/main/resources/bootstrap.yml
 spring:
   application:
-    name: couponkill-order-service  # 服务名，与Nacos配置集前缀一致
+    name: couponkill-order-service
   profiles:
-    active: dev # 环境变量激活（默认dev，生产环境通过ENV=prod指定）
+    active: dev
   cloud:
     nacos:
-      discovery:  # 服务注册配置
-        server-addr: localhost:8848 # Nacos地址（环境变量优先）
-        namespace: dev # 命名空间（dev/prod，与环境对应）
-      config:  # 配置中心配置
+      discovery:
         server-addr: localhost:8848
-        file-extension: yaml  # 配置文件格式
-        group: DEFAULT_GROUP  # 配置组
-        namespace: dev
-        # 引入共用配置common.yaml
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
         extension-configs:
           - data-id: common.yaml
             group: DEFAULT_GROUP
-            refresh: true  # 支持动态刷新（配置变更无需重启服务）
-server:
-  port: 8082
+            refresh: true

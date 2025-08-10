@@ -1,10 +1,5 @@
 # couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/console?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root  # 替换为你的数据库用户名
-    password: 1234  # 替换为你的数据库密码
   application:
     name: couponkill-admin-service  # 服务名，与Nacos配置集前缀一致
   profiles:
@@ -13,12 +8,12 @@ spring:
     nacos:
       discovery:  # 服务注册配置
         server-addr: localhost:8848  # Nacos地址（环境变量优先）
-        namespace: dev  # 命名空间（dev/prod，与环境对应）
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2  # 命名空间（dev/prod，与环境对应）
       config:  # 配置中心配置
         server-addr: localhost:8848
         file-extension: yaml  # 配置文件格式
         group: DEFAULT_GROUP  # 配置组
-        namespace: dev
+        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
         # 引入共用配置common.yaml
         extension-configs:
           - data-id: common.yaml

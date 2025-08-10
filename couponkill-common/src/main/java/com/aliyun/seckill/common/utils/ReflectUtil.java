@@ -1,3 +1,4 @@
+/*
 package com.aliyun.seckill.common.utils;
 
 import com.zy.seckill.common.bo.vo.BeanVo;
@@ -8,23 +9,27 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+*/
 /*
  * @Author: zhangyong
  * description: 反射工具
  * @Date: 2020/3/24 14:49
  * @Param:
  * @Return:
- */
+ *//*
+
 public class ReflectUtil {
 
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (1).根据字段名称(key)获取对象的属性值(value)
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static Object getFieldValueByName(String fieldName, Object target) throws Exception {
         String firstLetter = fieldName.substring(0, 1).toUpperCase();
         String getter = "get" + firstLetter + fieldName.substring(1);
@@ -33,13 +38,15 @@ public class ReflectUtil {
         return e;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (2).获取所有属性的值
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static Object[] getFiledValues(Object target) throws Exception {
         String[] fieldNames = getFiledName(target);
         Object[] value = new Object[fieldNames.length];
@@ -49,13 +56,15 @@ public class ReflectUtil {
         return value;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (3).获取对象所有字段名字集合
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static String[] getFiledName(Object target){
         Field[] fields = target.getClass().getDeclaredFields();
         String[] fieldNames = new String[fields.length];
@@ -66,13 +75,15 @@ public class ReflectUtil {
         return fieldNames;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (3).获取对象所有字段名字集合
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static String[] getFiledName(Class clazz){
         Field[] fields = clazz.getDeclaredFields();
         String[] fieldNames = new String[fields.length];
@@ -83,26 +94,30 @@ public class ReflectUtil {
         return fieldNames;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (4).把一个字符串的第一个字母大写
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     private static String getMethodName(String fildeName){
         byte[] items = fildeName.getBytes();
         items[0] = (byte) ((char) items[0] - 'a' + 'A');
         return new String(items);
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (5).获取对象的字段和类型并返回该对象所有的字段名称和类型列表
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static List<BeanVo> getFileNameAndTypeList(Object object) throws Exception {
         //我们项目的所有实体类都继承IdEntity （所有实体基类：该类只是串行化一下）
         //不需要的自己去掉即可
@@ -142,11 +157,13 @@ public class ReflectUtil {
                     beanVoList.add(beanVo);
 
                     // 拿到该属性的gettet方法
-                    /**
+                    */
+/**
                      * 这里需要说明一下：它是根据拼凑的字符来找你写的getter方法的
                      * 在Boolean值的时候是isXXX（默认使用idea生成getter的都是isXXX）
                      * 如果出现NoSuchMethod异常 就说明它找不到那个getter方法 需要做个规范
-                     */
+                     *//*
+
                     Method m = (Method) object.getClass().getMethod(
                             "get" + getMethodName(field.getName()));
 
@@ -391,13 +408,15 @@ public class ReflectUtil {
         return param;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (8).map转为javabean
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static Object mapToObject(Map<String, Object> map, Class<?> beanClass) throws Exception {
         if (map == null)
             return null;
@@ -414,13 +433,15 @@ public class ReflectUtil {
         return obj;
     }
 
-    /*
+    */
+/*
      * @Author: zhangyong
      * description: (9).javabean转为map
      * @Date: 2019/3/26 13:38
      * @Param:
      * @Return:
-     */
+     *//*
+
     public static Map<String, Object> objectToMap(Object obj) throws Exception {
         if(obj == null){
             return null;
@@ -434,12 +455,15 @@ public class ReflectUtil {
         return map;
     }
 
+*/
 /*    @SneakyThrows
    public static void main(String[] args) {
         Device device = new Device();
        List<BeanVo> fileNameAndTypeList = getFileNameAndTypeList(device);
        System.out.println("解析成功");
-    }*/
+    }*//*
+
 
 
 }
+*/

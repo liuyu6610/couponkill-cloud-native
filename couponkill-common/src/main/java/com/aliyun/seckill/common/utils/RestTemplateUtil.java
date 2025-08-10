@@ -1,3 +1,4 @@
+/*
 package com.aliyun.seckill.common.utils;
 
 import lombok.SneakyThrows;
@@ -71,3 +72,4 @@ public class RestTemplateUtil {
     }
 
 }
+*/

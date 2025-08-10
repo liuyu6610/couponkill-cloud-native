@@ -1,11 +1,13 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: couponkill-common
   cloud:
     nacos:
       config:
         server-addr: localhost:8848
-        file-extension: yml
+        file-extension: yaml
         group: DEFAULT_GROUP
         namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
       discovery:
