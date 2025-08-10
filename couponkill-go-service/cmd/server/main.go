@@ -30,7 +30,7 @@ func main() {
 	defer redisCli.Close()
 
 	// 3. 初始化依赖
-	redisRepo := repository.NewRedisRepository(redisCli, cfg.Seckill.RedisStockPrefix)
+	redisRepo := repository.NewRedisRepository(redisCli, cfg.Seckill.Redis.StockKeyPrefix)
 	mysqlRepo := repository.NewMysqlRepository(mysqlCli)
 	seckillService := service.NewSeckillService(mysqlRepo, redisRepo)
 	seckillHandler := handler.NewSeckillHandler(seckillService, cfg.Seckill.ValidDays)

@@ -11,6 +11,15 @@ type Config struct {
 	Server struct {
 		Port int `yaml:"port"`
 	} `yaml:"server"`
+	Seckill struct {
+		MaxConcurrency int    `yaml:"max-concurrency"`
+		RedisPrefix    string `yaml:"redis-key-prefix"`
+		ValidDays      int    `yaml:"valid-days"`
+		// 新增redis嵌套层级，匹配Nacos配置
+		Redis struct {
+			StockKeyPrefix string `yaml:"stock-key-prefix"` // 对应seckill.redis.stock-key-prefix
+		} `yaml:"redis"`
+	} `yaml:"seckill"`
 	Mysql struct {
 		DSN string `yaml:"dsn"`
 	} `yaml:"mysql"`
@@ -19,10 +28,6 @@ type Config struct {
 		Password string `yaml:"password"`
 		DB       int    `yaml:"db"`
 	} `yaml:"data.redis"`
-	Seckill struct {
-		RedisStockPrefix string `yaml:"redis.stock-key-prefix"`
-		ValidDays        int    `yaml:"valid-days"` // 优惠券有效期
-	} `yaml:"seckill"`
 }
 
 // Load 加载配置
