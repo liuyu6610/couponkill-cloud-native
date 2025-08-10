@@ -9,22 +9,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 //线程池配置
 @Configuration
-public class TpConfig
-{
-    // 核心线程池大小
-    private int corePoolSize = 8;
-
+public class TpConfig {
+    // 核心线程池大小（CPU核心数*2）
+    private int corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
     // 最大可创建的线程数
-    private int maxPoolSize = 16;
-
-    // 队列最大长度
-    private int queueCapacity = 1000;
-
+    private int maxPoolSize = corePoolSize * 2;
+    // 队列最大长度（根据内存调整）
+    private int queueCapacity = 5000;
     // 线程池维护线程所允许的空闲时间
-    private int keepAliveSeconds = 300;
-
-    //是否允许核心线程超时
-    private boolean allowCoreThreadTimeOut = false;
+    private int keepAliveSeconds = 60;
 
     @Bean("asyncExecutor")
     public Executor asyncExecutor() {
@@ -33,10 +26,9 @@ public class TpConfig
         executor.setMaxPoolSize(maxPoolSize);
         executor.setQueueCapacity(queueCapacity);
         executor.setKeepAliveSeconds(keepAliveSeconds);
-        executor.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
-        // 设置拒绝策略，直接在execute方法的调用线程中运行被拒绝的任务
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        // 执行初始化
+        executor.setAllowCoreThreadTimeOut(true); // 允许核心线程超时
+        // 拒绝策略改为丢弃最老请求
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
         executor.initialize();
         return executor;
     }
