@@ -1,7 +1,6 @@
 // couponkill-coupon-service/src/main/java/com/aliyun/seckill/coupon/task/CouponTask.java
 package com.aliyun.seckill.coupon.task;
-
-import com.aliyun.seckill.coupon.service.CouponService;
+import com.aliyun.seckill.common.service.coupon.CouponService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

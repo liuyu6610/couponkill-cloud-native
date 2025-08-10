@@ -1,9 +1,9 @@
 // com.aliyun.seckill.coupon.controller.CouponController.java
 package com.aliyun.seckill.coupon.controller;
 
-import com.aliyun.seckill.common.result.Result;
-import com.aliyun.seckill.coupon.service.CouponService;
 import com.aliyun.seckill.common.pojo.Coupon;
+import com.aliyun.seckill.common.result.Result;
+import com.aliyun.seckill.common.service.coupon.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

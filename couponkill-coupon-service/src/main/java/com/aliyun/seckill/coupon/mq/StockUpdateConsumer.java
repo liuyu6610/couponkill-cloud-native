@@ -2,7 +2,7 @@
 package com.aliyun.seckill.coupon.mq;
 
 import com.aliyun.seckill.common.pojo.OrderMessage;
-import com.aliyun.seckill.coupon.service.CouponService;
+import com.aliyun.seckill.common.service.coupon.CouponService;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.beans.factory.annotation.Autowired;

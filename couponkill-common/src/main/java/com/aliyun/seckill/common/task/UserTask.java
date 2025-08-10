@@ -1,7 +1,5 @@
 // couponkill-user-service/src/main/java/com/aliyun/seckill/user/task/UserTask.java
-package com.aliyun.seckill.user.task;
-
-
+package com.aliyun.seckill.common.task;
 import com.aliyun.seckill.common.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

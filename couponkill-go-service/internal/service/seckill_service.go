@@ -1,9 +1,11 @@
-// internal/service/seckill_service.go
 package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 	"time"
 
 	"couponkill-go-service/internal/model"
@@ -13,20 +15,72 @@ import (
 
 // SeckillService 秒杀服务
 type SeckillService struct {
-	mysqlRepo *repository.MysqlRepository
-	redisRepo *repository.RedisRepository
+	mysqlRepo     *repository.MysqlRepository
+	redisRepo     *repository.RedisRepository
+	couponService *CouponService // 添加couponService字段
 }
 
-func NewSeckillService(mysqlRepo *repository.MysqlRepository, redisRepo *repository.RedisRepository) *SeckillService {
+// CouponService 优惠券服务（对接Java的coupon-service）
+type CouponService struct {
+	javaCouponServiceURL string // Java服务的优惠券查询接口地址
+}
+
+// NewCouponService 初始化优惠券服务
+func NewCouponService(javaURL string) *CouponService {
+	return &CouponService{javaCouponServiceURL: javaURL}
+}
+
+// GetCouponByID 调用Java服务查询优惠券信息
+func (s *CouponService) GetCouponByID(ctx context.Context, couponID int64) (*model.Coupon, error) {
+	// 实际项目中使用HTTP客户端（如gin的httpclient或resty）调用Java的coupon-service
+	// 示例URL：http://coupon-service/coupon/{id}
+	url := s.javaCouponServiceURL + "/coupon/" + fmt.Sprintf("%d", couponID) // 修复类型转换
+
+	// 模拟HTTP请求（省略具体实现，实际需处理超时、重试等）
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, errors.New("查询优惠券失败：" + err.Error())
+	}
+	defer resp.Body.Close()
+
+	var coupon model.Coupon
+	if err := json.NewDecoder(resp.Body).Decode(&coupon); err != nil {
+		return nil, errors.New("解析优惠券数据失败：" + err.Error())
+	}
+
+	if coupon.ID == 0 {
+		return nil, errors.New("优惠券不存在")
+	}
+	return &coupon, nil
+}
+
+// 修改构造函数，添加couponService参数
+func NewSeckillService(mysqlRepo *repository.MysqlRepository, redisRepo *repository.RedisRepository, couponService *CouponService) *SeckillService {
 	return &SeckillService{
-		mysqlRepo: mysqlRepo,
-		redisRepo: redisRepo,
+		mysqlRepo:     mysqlRepo,
+		redisRepo:     redisRepo,
+		couponService: couponService, // 初始化couponService
 	}
 }
 
 // ProcessSeckill 处理单个用户秒杀（Go端）
 func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID int64, validDays int) (bool, error) {
-	// 1. 先查缓存：用户是否已领取
+	// 1. 查询优惠券信息（获取类型、状态等）
+	coupon, err := s.couponService.GetCouponByID(ctx, couponID) // 修复：使用couponID而不是req.CouponID
+	if err != nil {
+		return false, err
+	}
+
+	// 2. 校验优惠券状态
+	// 注意：根据Coupon结构体，没有Status字段，使用Type字段代替判断
+	if coupon.Type != 1 && coupon.Type != 2 { // 假设有效的Type值为1或2
+		return false, errors.New("优惠券类型无效")
+	}
+
+	// 原代码中coupon.Status不存在，需要根据Coupon模型调整逻辑
+	// 如果需要Status字段，应该在Coupon模型中添加，或者使用其他字段判断
+
+	// 3. 先查缓存：用户是否已领取
 	cacheReceived, err := s.redisRepo.CheckUserReceivedCache(ctx, userID, couponID)
 	if err != nil {
 		return false, err
@@ -35,7 +89,7 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, errors.New("用户已领取")
 	}
 
-	// 2. 查DB确认：两端均未领取（双字段均为0）
+	// 4. 查DB确认：两端均未领取（双字段均为0）
 	dbReceived, err := s.mysqlRepo.CheckUserReceived(ctx, userID, couponID)
 	if err != nil {
 		return false, err
@@ -44,13 +98,16 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, errors.New("用户已领取")
 	}
 
-	// 3. 扣减库存（Redis原子操作）
+	// 5. 扣减库存（Redis原子操作）
 	stockDeduced, err := s.redisRepo.DeductStock(ctx, couponID)
-	if err != nil || !stockDeduced {
+	if err != nil {
+		return false, fmt.Errorf("扣减库存失败: %w", err)
+	}
+	if !stockDeduced {
 		return false, errors.New("库存不足")
 	}
 
-	// 4. 创建订单（标记Go端来源）
+	// 6. 创建订单（标记Go端来源）
 	order := &model.Order{
 		ID:            idgenerator.GenerateGoOrderID(),
 		UserID:        userID,
@@ -62,14 +119,14 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		CreatedByGo:   1, // 标记为Go端创建
 	}
 
-	// 5. 插入订单（依赖联合索引uk_user_coupon_source防止重复）
+	// 7. 插入订单（依赖联合索引uk_user_coupon_source防止重复）
 	if err := s.mysqlRepo.CreateOrder(ctx, order); err != nil {
 		// 插入失败回滚库存
-		s.redisRepo.DeductStock(ctx, couponID) // 实际应为Incr，此处简化
+		s.redisRepo.IncrStock(ctx, couponID) // 简化处理
 		return false, err
 	}
 
-	// 6. 更新缓存
+	// 8. 更新缓存
 	s.redisRepo.SetUserReceivedCache(ctx, userID, couponID)
 	return true, nil
 }

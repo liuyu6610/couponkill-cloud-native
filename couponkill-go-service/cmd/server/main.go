@@ -30,9 +30,10 @@ func main() {
 	defer redisCli.Close()
 
 	// 3. 初始化依赖
-	redisRepo := repository.NewRedisRepository(redisCli, cfg.Seckill.Redis.StockKeyPrefix)
+	redisRepo := repository.NewRedisRepository(redisCli, cfg.Seckill.Redis.StockKeyPrefix, cfg.Seckill.Redis.StockKeyPrefix)
 	mysqlRepo := repository.NewMysqlRepository(mysqlCli)
-	seckillService := service.NewSeckillService(mysqlRepo, redisRepo)
+	couponService := service.NewCouponService("http://coupon-service:8080")
+	seckillService := service.NewSeckillService(mysqlRepo, redisRepo, couponService)
 	seckillHandler := handler.NewSeckillHandler(seckillService, cfg.Seckill.ValidDays)
 
 	// 4. 路由设置
