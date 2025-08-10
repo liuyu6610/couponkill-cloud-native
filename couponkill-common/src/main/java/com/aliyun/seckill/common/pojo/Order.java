@@ -2,6 +2,7 @@
 package com.aliyun.seckill.common.pojo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -37,4 +38,9 @@ public class Order implements Serializable {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
+    // 新增来源标识字段
+    @TableField("created_by_java")
+    private Integer createdByJava = 0; // Java端创建时设为1
+    @TableField("created_by_go")
+    private Integer createdByGo = 0; // 固定为0（Java端创建不影响Go端标识）
 }
