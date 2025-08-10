@@ -93,6 +93,7 @@
         <commons.lang3.version>3.4</commons.lang3.version>
         <hutool.version>5.8.26</hutool.version>
         <jjwt.version>0.11.5</jjwt.version>
+        <sentinel.version>1.8.6</sentinel.version>
         <rocketmq.version>5.1.4</rocketmq.version>
         <rocketmq.starter.version>2.2.3</rocketmq.starter.version> <!-- Starter专用版本 -->
         <!-- SpringDoc OpenAPI 版本 (替代Knife4j) -->
