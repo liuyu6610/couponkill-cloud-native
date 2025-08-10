@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/console?charset=utf8mb4&parseTime=True&loc=Local
+    username: root
+    password: 1234  # 使用环境变量注入密码
+  # Redis配置（开发环境）
+  data:
+    redis:
+      host: localhost  # 开发环境应使用本地或局域网地址
+      port: 6379
+      password: 1234  # 使用环境变量注入密码
+      # Sentinel配置（开发环境）
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080  # 开发环境Sentinel控制台地址
+        port: 8719
+      eager: true
+
+  # RocketMQ配置（开发环境）
+rocketmq:
+  producer:
+    name-server: localhost:9876
+    group: couponkill-producer-group
+ 
+  
+
+  
+# 分布式事务Seata配置
+seata:
+  # 1. 应用ID（使用服务名作为唯一标识）
+  application-id: ${spring.application.name}
+  # 2. 事务服务组（按环境区分）
+  tx-service-group: ${spring.profiles.active}-tx-group
+  # 3. 注册中心配置（Seata服务器注册到Nacos，客户端从Nacos发现它）
+  registry:
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:localhost:8848}
+      namespace: ${NACOS_NAMESPACE:dev}
+      group: DEFAULT_GROUP
+      application: seata-server
+  # 4. 配置中心配置（从Nacos获取Seata客户端配置）
+  config:
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:localhost:8848}
+      namespace: ${NACOS_NAMESPACE:dev}
+      group: DEFAULT_GROUP

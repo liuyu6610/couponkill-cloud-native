@@ -1,4 +1,8 @@
+server:
+  port: 8081
 spring:
-  config:
-    import:
-      - optional:nacos:couponkill-user-service.yaml?serverAddr=localhost:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/console?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root  # 替换为你的数据库用户名
+    password: 1234  # 替换为你的数据库密码

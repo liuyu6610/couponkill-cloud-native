@@ -1,7 +1,7 @@
 // com.aliyun.seckill.admin.service.SeckillActivityService.java
 package com.aliyun.seckill.admin.service;
 
-import com.aliyun.seckill.pojo.SeckillActivity;
+import com.aliyun.seckill.common.pojo.SeckillActivity;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

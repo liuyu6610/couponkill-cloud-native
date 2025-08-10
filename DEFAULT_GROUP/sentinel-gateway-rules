@@ -1,0 +1,9 @@
+[
+    {
+        "resource": "coupon_route", 
+        "count": 2000,
+        "grade": 1,
+        "limitApp": "default",
+        "strategy": 0
+    }
+]

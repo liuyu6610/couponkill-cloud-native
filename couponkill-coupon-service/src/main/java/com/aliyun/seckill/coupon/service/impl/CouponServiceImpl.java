@@ -2,10 +2,10 @@
 package com.aliyun.seckill.coupon.service.impl;
 
 import com.aliyun.seckill.common.exception.BusinessException;
-import com.aliyun.seckill.common.result.ResultCode;
+import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.coupon.mapper.CouponMapper;
 import com.aliyun.seckill.coupon.service.CouponService;
-import com.aliyun.seckill.pojo.Coupon;
+import com.aliyun.seckill.common.pojo.Coupon;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;

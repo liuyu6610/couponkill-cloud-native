@@ -15,7 +15,7 @@ spring:
         server-addr: localhost:8848  # Nacos地址（环境变量优先）
         namespace: dev # 命名空间（dev/prod，与环境对应）
       config:  # 配置中心配置
-        server-addr: 8848
+        server-addr: localhost:8848
         file-extension: yaml  # 配置文件格式
         group: DEFAULT_GROUP  # 配置组
         namespace: dev

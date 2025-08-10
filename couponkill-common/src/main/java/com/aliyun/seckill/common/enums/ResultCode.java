@@ -1,5 +1,5 @@
-// com.aliyun.seckill.common.result.ResultCode.java
-package com.aliyun.seckill.common.result;
+// com.aliyun.seckill.common.enums.ResultCode.java
+package com.aliyun.seckill.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

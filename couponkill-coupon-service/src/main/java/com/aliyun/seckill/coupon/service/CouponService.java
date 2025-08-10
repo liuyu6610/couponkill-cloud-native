@@ -1,7 +1,7 @@
 // com.aliyun.seckill.coupon.service.CouponService.java
 package com.aliyun.seckill.coupon.service;
 
-import com.aliyun.seckill.pojo.Coupon;
+import com.aliyun.seckill.common.pojo.Coupon;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

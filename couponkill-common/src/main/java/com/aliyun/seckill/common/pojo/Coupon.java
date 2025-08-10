@@ -1,5 +1,5 @@
-// com.aliyun.seckill.pojo.Coupon.java
-package com.aliyun.seckill.pojo;
+// com.aliyun.seckill.common.pojo.Coupon.java
+package com.aliyun.seckill.common.pojo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

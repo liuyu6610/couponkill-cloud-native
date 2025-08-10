@@ -1,7 +1,7 @@
 // com.aliyun.seckill.common.exception.BusinessException.java
 package com.aliyun.seckill.common.exception;
 
-import com.aliyun.seckill.common.result.ResultCode;
+import com.aliyun.seckill.common.enums.ResultCode;
 import lombok.Getter;
 
 @Getter

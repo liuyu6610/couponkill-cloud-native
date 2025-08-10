@@ -1,0 +1,13 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: couponkill-coupon-service
+
+# 优惠券业务配置
+coupon:
+  publish:
+    max-count: 10000  # 单批次最大发布数量（开发环境）
+  cache:
+    preload: true  # 启动时预加载优惠券到缓存

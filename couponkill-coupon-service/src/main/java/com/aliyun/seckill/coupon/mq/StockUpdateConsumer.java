@@ -1,7 +1,7 @@
 // couponkill-coupon-service/src/main/java/com/aliyun/seckill/coupon/mq/StockUpdateConsumer.java
 package com.aliyun.seckill.coupon.mq;
 
-import com.aliyun.seckill.pojo.OrderMessage;
+import com.aliyun.seckill.common.pojo.OrderMessage;
 import com.aliyun.seckill.coupon.service.CouponService;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;

@@ -1,7 +1,7 @@
 // com.aliyun.seckill.user.mapper.UserMapper.java
 package com.aliyun.seckill.user.mapper;
 
-import com.aliyun.seckill.pojo.User;
+import com.aliyun.seckill.common.pojo.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;

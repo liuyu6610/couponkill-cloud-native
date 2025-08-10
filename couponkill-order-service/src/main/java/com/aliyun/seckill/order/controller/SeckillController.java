@@ -4,9 +4,9 @@ package com.aliyun.seckill.order.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.aliyun.seckill.common.result.Result;
-import com.aliyun.seckill.common.result.ResultCode;
+import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.order.service.OrderService;
-import com.aliyun.seckill.pojo.Order;
+import com.aliyun.seckill.common.pojo.Order;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -68,5 +68,37 @@ public class SeckillController {
             @RequestParam(required = false) String endTime) {
         Page<Order> orders = orderService.getAllOrderByCondition(pageNum, pageSize, startTime, endTime);
         return Result.success(orders);
+    }
+    /**
+     * 新增秒杀接口
+     */
+    @PostMapping("/seckill/doSeckill")
+    @Operation(summary = "执行优惠券秒杀")
+    @SentinelResource(
+            value = "couponSeckill",
+            blockHandler = "seckillBlockHandler",
+            fallback = "seckillFallback"
+    )
+    public Result<Order> doSeckill(
+            @RequestParam Long userId,
+            @RequestParam Long couponId) {
+        Order order = orderService.createOrder(userId, couponId);
+        return Result.success(order);
+    }
+
+    /**
+     * 限流/熔断处理方法
+     */
+    public Result<Order> seckillBlockHandler(Long userId, Long couponId, BlockException e) {
+        e.printStackTrace();
+        return Result.fail( ResultCode.SYSTEM_BUSY);
+    }
+
+    /**
+     * 业务异常处理方法
+     */
+    public Result<Order> seckillFallback(Long userId, Long couponId, Throwable e) {
+        e.printStackTrace();
+        return Result.fail(500, "秒杀失败：" + e.getMessage());
     }
 }

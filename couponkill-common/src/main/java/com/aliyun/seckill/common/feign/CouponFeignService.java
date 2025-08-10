@@ -2,7 +2,7 @@
 package com.aliyun.seckill.common.feign;
 
 import com.aliyun.seckill.common.result.Result;
-import com.aliyun.seckill.pojo.Coupon;
+import com.aliyun.seckill.common.pojo.Coupon;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

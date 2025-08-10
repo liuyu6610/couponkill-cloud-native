@@ -2,9 +2,9 @@
 package com.aliyun.seckill.user.service.impl;
 
 import com.aliyun.seckill.common.exception.BusinessException;
-import com.aliyun.seckill.common.result.ResultCode;
+import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.utils.JwtUtils;
-import com.aliyun.seckill.pojo.User;
+import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.user.mapper.UserMapper;
 import com.aliyun.seckill.user.service.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

@@ -1,7 +1,7 @@
 // com.aliyun.seckill.coupon.mapper.CouponMapper.java
 package com.aliyun.seckill.coupon.mapper;
 
-import com.aliyun.seckill.pojo.Coupon;
+import com.aliyun.seckill.common.pojo.Coupon;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

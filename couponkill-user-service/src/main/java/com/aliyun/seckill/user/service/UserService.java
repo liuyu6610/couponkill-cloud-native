@@ -1,7 +1,7 @@
 // com.aliyun.seckill.user.service.UserService.java
 package com.aliyun.seckill.user.service;
 
-import com.aliyun.seckill.pojo.User;
+import com.aliyun.seckill.common.pojo.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.Map;

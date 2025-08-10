@@ -2,7 +2,7 @@
 package com.aliyun.seckill.user.controller;
 
 import com.aliyun.seckill.common.result.Result;
-import com.aliyun.seckill.pojo.User;
+import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

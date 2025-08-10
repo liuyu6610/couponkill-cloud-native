@@ -1,6 +1,7 @@
 // com.aliyun.seckill.common.result.Result.java
 package com.aliyun.seckill.common.result;
 
+import com.aliyun.seckill.common.enums.ResultCode;
 import lombok.Data;
 
 @Data

@@ -1,7 +1,7 @@
 // com.aliyun.seckill.order.service.OrderService.java
 package com.aliyun.seckill.order.service;
 
-import com.aliyun.seckill.pojo.Order;
+import com.aliyun.seckill.common.pojo.Order;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

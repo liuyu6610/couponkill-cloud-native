@@ -10,6 +10,7 @@
           <option value="couponkill-user-service" />
           <option value="couponkill-user-service" />
           <option value="couponkill-common" />
+          <option value="couponkill-common" />
         </list>
       </option>
       <option name="ignoredPackages">
@@ -19,10 +20,12 @@
           <option value="com.squareup.okio:okio-jvm:3.0.0" />
           <option value="commons-lang:commons-lang:2.6" />
           <option value="commons-lang:commons-lang:2.6" />
+          <option value="com.google.guava:guava:30.1-jre" />
         </list>
       </option>
       <option name="ignoredReasons">
         <list>
+          <option value="不可利用" />
           <option value="不可利用" />
           <option value="不可利用" />
           <option value="不可利用" />

@@ -1,6 +1,6 @@
 package com.aliyun.seckill.order.mapper;
 
-import com.aliyun.seckill.pojo.Order;
+import com.aliyun.seckill.common.pojo.Order;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;

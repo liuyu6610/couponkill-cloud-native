@@ -1,4 +1,4 @@
-package com.aliyun.seckill.pojo;
+package com.aliyun.seckill.common.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

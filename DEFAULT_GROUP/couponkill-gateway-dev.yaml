@@ -1,0 +1,18 @@
+server:
+  port: 8099  # 网关端口
+
+spring:
+  cloud:
+    gateway:
+      # 路由配置（动态调整，无需硬编码在本地文件）
+      routes:
+        - id: user-service
+          uri: lb://couponkill-user-service  # 负载均衡到用户服务
+          predicates:
+            - Path=/user/**
+          filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: user-service
+                fallbackUri: forward:/fallback/user

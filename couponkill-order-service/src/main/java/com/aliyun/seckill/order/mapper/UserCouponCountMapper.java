@@ -1,6 +1,6 @@
 package com.aliyun.seckill.order.mapper;
 
-import com.aliyun.seckill.pojo.UserCouponCount;
+import com.aliyun.seckill.common.pojo.UserCouponCount;
 
 public class UserCouponCountMapper {
     public UserCouponCount selectById (Long userId) {
