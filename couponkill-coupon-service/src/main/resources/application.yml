@@ -1,2 +1,19 @@
-server:
-  port: 8083
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${KAFKA:broker:9092}
+    producer:
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+    template:
+      default-topic: seckill.order.create
+couponkill:
+  seckill:
+    cooldownSeconds: 2
+    resultTtlSeconds: 300
+    deductTtlSeconds: 300

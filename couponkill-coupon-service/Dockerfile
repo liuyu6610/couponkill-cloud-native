@@ -1,13 +1,16 @@
-# couponkill-coupon-service/Dockerfile
-FROM openjdk:21-jdk-slim
-
+# coupon-service/Dockerfile
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY common ./common
+COPY coupon-service ./coupon-service
+RUN mvn -pl coupon-service -am -DskipTests package
 
-COPY target/couponkill-coupon-service-1.0-SNAPSHOT.jar app.jar
-
-VOLUME /app/logs
-VOLUME /app/config
-
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]
-
-EXPOSE 8082
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S app && adduser -S app -G app
+USER app
+WORKDIR /app
+COPY --from=build /app/coupon-service/target/*.jar app.jar
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=2s --retries=3 CMD wget -qO- http://127.0.0.1:8080/actuator/health || exit 1
+ENTRYPOINT ["java","-jar","/app/app.jar"]

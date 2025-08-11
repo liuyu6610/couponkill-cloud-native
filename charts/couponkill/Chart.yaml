@@ -1,0 +1,5 @@
+apiVersion: v2
+name: couponkill
+version: 0.1.0
+description: CouponKill services
+type: application

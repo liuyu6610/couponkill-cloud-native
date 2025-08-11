@@ -1,0 +1,17 @@
+apiVersion: ops.couponkill.io/v1
+kind: SeckillScalePolicy
+metadata:
+  name: default-seckill-scale
+  namespace: couponkill
+spec:
+  goServiceName: couponkill-go-service
+  goMinReplicas: 3
+  goMaxReplicas: 50
+  cpuTarget: 60
+  otherServices:
+    - name: couponkill-coupon-service
+      minReplicas: 2
+      maxReplicas: 20
+    - name: couponkill-order-service
+      minReplicas: 2
+      maxReplicas: 20

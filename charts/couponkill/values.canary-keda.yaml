@@ -1,0 +1,52 @@
+namespace: couponkill
+
+image:
+  registry: registry.example.com/couponkill
+  tag: latest
+
+# Canary settings per service (weights sum to 100)
+canary:
+  coupon:
+    enabled: true
+    stableSubsetLabel: "version=stable"
+    canarySubsetLabel: "version=canary"
+    weightStable: 90
+    weightCanary: 10
+  order:
+    enabled: true
+    stableSubsetLabel: "version=stable"
+    canarySubsetLabel: "version=canary"
+    weightStable: 95
+    weightCanary: 5
+
+# KEDA autoscaling by Kafka lag
+keda:
+  enabled: true
+  kafka:
+    bootstrapServers: "broker:9092"    # PLAINTEXT for demo; use SASL if needed
+    # Scale coupon-go edge (optional) by seckill topic backlog
+    goEdge:
+      enabled: true
+      deploymentName: couponkill-go-service
+      minReplicaCount: 3
+      maxReplicaCount: 50
+      topic: "seckill.order.create"
+      consumerGroup: "go-dispatcher"
+      lagThreshold: "1000"            # scale out when lag > 1000
+    # Scale order service by backlog as consumer group 'order-create'
+    order:
+      enabled: true
+      deploymentName: couponkill-order-service
+      minReplicaCount: 2
+      maxReplicaCount: 30
+      topic: "seckill.order.create"
+      consumerGroup: "order-create"
+      lagThreshold: "1000"
+
+istio:
+  enabled: true
+  gateway:
+    name: couponkill-gw
+    host: couponkill.example.com
+    port: 80
+    tls: false

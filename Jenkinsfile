@@ -1,57 +1,35 @@
 pipeline {
-  agent {
-    kubernetes {
-      label 'jenkins-couponkill'
-      yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: maven
-    image: maven:3.9.4-eclipse-temurin-21
-    command:
-    - cat
-    tty: true
-  - name: golang
-    image: golang:1.23
-    command:
-    - cat
-    tty: true
-"""
-    }
-  }
+  agent any
+  options { timestamps() }
   environment {
-    REGISTRY = "registry.example.com/couponkill"
-    BRANCH_NAME = "${env.BRANCH_NAME}"
+    REG = 'registry.example.com/couponkill'
   }
   stages {
-    stage('Build Java') {
+    stage('Checkout'){ steps{ checkout scm } }
+    stage('Build & Test'){
       steps {
-        container('maven') {
-          sh 'mvn clean package -DskipTests'
-        }
+        sh 'mvn -T1C -DskipTests=false test package'
       }
     }
-    stage('Build Go') {
+    stage('Build Images'){
       steps {
-        container('golang') {
-          sh 'cd couponkill-seckill-service && go build -o app main.go'
-        }
+        sh 'docker build -t $REG/coupon:$(git rev-parse --short HEAD) -f couponkill-coupon-service/Dockerfile .'
+        sh 'docker build -t $REG/order:$(git rev-parse --short HEAD) -f couponkill-order-service/Dockerfile .'
       }
     }
-    stage('Docker Build & Push') {
+    stage('Push'){ steps{ sh 'docker push $REG/coupon:$(git rev-parse --short HEAD); docker push $REG/order:$(git rev-parse --short HEAD)' } }
+    stage('Deploy Dev'){
       steps {
         sh '''
-        docker build -t $REGISTRY/java-service:$BRANCH_NAME .
-        docker build -t $REGISTRY/go-seckill:$BRANCH_NAME ./couponkill-seckill-service
-        docker push $REGISTRY/java-service:$BRANCH_NAME
-        docker push $REGISTRY/go-seckill:$BRANCH_NAME
+        helm upgrade --install couponkill charts/               --namespace dev --create-namespace               --set image.coupon.tag=$(git rev-parse --short HEAD)               --set image.order.tag=$(git rev-parse --short HEAD)
         '''
       }
     }
-    stage('Deploy to K8s') {
-      steps {
-        sh 'kubectl apply -f deploy/k8s/'
+    stage('Perf (JMeter)'){
+      steps{
+        sh '''
+        docker run --rm -v $WORKSPACE/jmeter:/scripts ghcr.io/graalvm/jdk-community:latest bash -lc "echo JMeter placeholder"
+        '''
       }
     }
   }

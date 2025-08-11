@@ -1,0 +1,25 @@
+{{- if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata: {name: {{ .Values.istio.gateway.name }}, namespace: {{ .Values.namespace }}}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port: {number: {{ .Values.istio.gateway.port }}, name: http, protocol: HTTP}
+      hosts: ["{{ .Values.istio.gateway.host }}"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata: {name: couponkill-vs, namespace: {{ .Values.namespace }}}
+spec:
+  hosts: ["{{ .Values.istio.gateway.host }}"]
+  gateways: ["{{ .Values.istio.gateway.name }}"]
+  http:
+    - match: [{uri: {prefix: "/api/v1/seckill"}}]
+      route: [{destination: {host: {{ .Values.services.coupon.name }}, port: {number: 80}}}]
+    - match: [{uri: {prefix: "/api/v1/auth"}}]
+      route: [{destination: {host: {{ .Values.services.user.name }}, port: {number: 80}}}]
+    - match: [{uri: {prefix: "/api/v1"}}]
+      route: [{destination: {host: {{ .Values.services.order.name }}, port: {number: 80}}}]
+{{- end }}

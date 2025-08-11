@@ -1,4 +1,4 @@
-package com.aliyun.seckill.order;
+package com.aliyun.seckill.order.service;
 
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.result.Result;

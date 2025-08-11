@@ -1,0 +1,28 @@
+{{- if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata: {name: couponkill-vs, namespace: {{ .Values.namespace }}}
+spec:
+  hosts: ["{{ .Values.istio.gateway.host }}"]
+  gateways: ["{{ .Values.istio.gateway.name }}"]
+  http:
+    - name: coupon-route
+      match: [{uri: {prefix: "/api/v1/seckill"}}]
+      route:
+        - destination: {host: {{ .Values.services.coupon.name }}, subset: stable, port: {number: 80}}
+          weight: {{ default 100 .Values.canary.coupon.weightStable }}
+        - destination: {host: {{ .Values.services.coupon.name }}, subset: canary, port: {number: 80}}
+          weight: {{ default 0 .Values.canary.coupon.weightCanary }}
+    - name: user-route
+      match: [{uri: {prefix: "/api/v1/auth"}}]
+      route:
+        - destination: {host: {{ .Values.services.user.name }}, port: {number: 80}}
+          weight: 100
+    - name: order-route
+      match: [{uri: {prefix: "/api/v1"}}]
+      route:
+        - destination: {host: {{ .Values.services.order.name }}, subset: stable, port: {number: 80}}
+          weight: {{ default 100 .Values.canary.order.weightStable }}
+        - destination: {host: {{ .Values.services.order.name }}, subset: canary, port: {number: 80}}
+          weight: {{ default 0 .Values.canary.order.weightCanary }}
+{{- end }}
