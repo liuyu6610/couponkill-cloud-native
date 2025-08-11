@@ -32,5 +32,5 @@ public interface OrderService extends IService<Order> {
 /**
  * 保存订单
  */
-    void saveOrder (Order order);
+    Order saveOrder (Order order);
 }

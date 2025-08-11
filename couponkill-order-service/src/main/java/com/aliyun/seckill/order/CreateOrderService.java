@@ -20,9 +20,12 @@ public class CreateOrderService {
     @Autowired
     private OrderService orderService; // 假设存在OrderService处理订单持久化
 
-    public void createOrder(Long userId, Long couponId) {
+    public Order createOrder(Long userId, Long couponId) {
         long threshold = 100; // 自定义阈值
         long current = orderService.count(); // 假设OrderService有count方法
+        Order order = new Order();
+        order.setUserId(userId);
+        order.setCouponId(couponId);
 
         if (current > threshold) {
             log.info("高并发检测，调用 Go 模块处理秒杀请求");
@@ -31,22 +34,18 @@ public class CreateOrderService {
             log.info("Go 模块返回: {}", result);
 
             // 根据 Go 模块处理结果插入订单（倒序 ID）
-            Order order = new Order();
-            order.setUserId(userId);
-            order.setCouponId(couponId);
+
             order.setCreatedByGo(1);
             order.setCreatedByJava(0);
             // 使用适当的方法生成ID，这里假设OrderService会处理
             orderService.saveOrder(order); // 假设存在saveOrder方法
-            return;
+            return order;
         }
 
         // 正常 Java 流程（正序 ID）
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setCouponId(couponId);
         order.setCreatedByJava(1);
         order.setCreatedByGo(0);
-        orderService.saveOrder(order); // 假设存在saveOrder方法
+        orderService.saveOrder(order);// 假设存在saveOrder方法
+        return order;
     }
 }

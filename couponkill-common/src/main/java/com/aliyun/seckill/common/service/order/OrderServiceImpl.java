@@ -234,7 +234,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
-    public void saveOrder (Order order) {
+    public Order saveOrder (Order order) {
+        if (order.getId() == null) {
+            order.setId(UUID.randomUUID().toString());
+        }
+        // 设置创建时间
+        if (order.getCreateTime() == null) {
+            order.setCreateTime(LocalDateTime.now());
+        }
+        save(order);
+        return order;
 
     }
 

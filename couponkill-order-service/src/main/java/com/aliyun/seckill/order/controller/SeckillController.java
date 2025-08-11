@@ -7,7 +7,7 @@ import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.result.Result;
 import com.aliyun.seckill.common.service.order.OrderService;
-import com.aliyun.seckill.order.CreateOrder;
+import com.aliyun.seckill.order.CreateOrderService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +21,8 @@ public class SeckillController {
 
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private CreateOrderService createOrderService;
 
     @PostMapping("/create")
     @Operation(summary = "创建秒杀订单")
@@ -83,7 +85,7 @@ public class SeckillController {
     public Result<Order> doSeckill(
             @RequestParam Long userId,
             @RequestParam Long couponId) {
-        Order order = CreateOrder.createOrder(userId, couponId);
+        Order order = createOrderService.createOrder(userId, couponId);
         return Result.success(order);
     }
 

@@ -1,68 +1,58 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      label 'jenkins-couponkill'
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: maven
+    image: maven:3.9.4-eclipse-temurin-21
+    command:
+    - cat
+    tty: true
+  - name: golang
+    image: golang:1.23
+    command:
+    - cat
+    tty: true
+"""
+    }
+  }
   environment {
-    DOCKER_REGISTRY = credentials('DOCKER_REGISTRY') // Jenkins credential (username:password) or registry token
-    IMAGE_TAG = "${env.BUILD_NUMBER ?: 'local'}"
-    KUBE_CONFIG_CREDENTIAL_ID = 'kubeconfig-credentials' // place your kubeconfig in Jenkins credentials
-    DOCKER_BUILDX = '' // optional
+    REGISTRY = "registry.example.com/couponkill"
+    BRANCH_NAME = "${env.BRANCH_NAME}"
   }
   stages {
-    stage('Checkout') {
+    stage('Build Java') {
       steps {
-        checkout scm
-      }
-    }
-    stage('Build') {
-      steps {
-        sh 'mvn -B -DskipTests clean package'
-      }
-    }
-    stage('Unit Test') {
-      steps {
-        sh 'mvn test -q'
-      }
-    }
-    stage('Build Docker Images') {
-      steps {
-        script {
-          // Example: build user, order, seckill-go images if directories present
-          sh '''
-            docker build -t ${DOCKER_REGISTRY}/couponkill-user-service:${IMAGE_TAG} ./couponkill-user-service || true
-            docker build -t ${DOCKER_REGISTRY}/couponkill-order-service:${IMAGE_TAG} ./couponkill-order-service || true
-            docker build -t ${DOCKER_REGISTRY}/seckill-go:${IMAGE_TAG} ./seckill-go || true
-          '''
+        container('maven') {
+          sh 'mvn clean package -DskipTests'
         }
       }
     }
-    stage('Push Images') {
+    stage('Build Go') {
       steps {
-        script {
-          sh '''
-            docker login -u $DOCKER_REGISTRY_USR -p $DOCKER_REGISTRY_PSW ${DOCKER_REGISTRY_HOST}
-            docker push ${DOCKER_REGISTRY}/couponkill-user-service:${IMAGE_TAG} || true
-            docker push ${DOCKER_REGISTRY}/couponkill-order-service:${IMAGE_TAG} || true
-            docker push ${DOCKER_REGISTRY}/seckill-go:${IMAGE_TAG} || true
-          '''
+        container('golang') {
+          sh 'cd couponkill-seckill-service && go build -o app main.go'
         }
       }
     }
-    stage('Deploy to Kubernetes') {
+    stage('Docker Build & Push') {
       steps {
-        withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG_FILE')]) {
-          sh '''
-            export KUBECONFIG=${KUBECONFIG_FILE}
-            kubectl apply -f k8s/ || true
-          '''
-        }
+        sh '''
+        docker build -t $REGISTRY/java-service:$BRANCH_NAME .
+        docker build -t $REGISTRY/go-seckill:$BRANCH_NAME ./couponkill-seckill-service
+        docker push $REGISTRY/java-service:$BRANCH_NAME
+        docker push $REGISTRY/go-seckill:$BRANCH_NAME
+        '''
       }
     }
-  }
-  post {
-    success {
-      echo 'Pipeline succeeded'
-    }
-    failure {
-      echo 'Pipeline failed'
+    stage('Deploy to K8s') {
+      steps {
+        sh 'kubectl apply -f deploy/k8s/'
+      }
     }
   }
 }
