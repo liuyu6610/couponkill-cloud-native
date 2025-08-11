@@ -29,4 +29,8 @@ public interface OrderService extends IService<Order> {
     Page<Order> getOrderByUserId (Long userId, Integer pageNum, Integer pageSize);
 
     Page<Order> getAllOrderByCondition (Integer pageNum, Integer pageSize, String startTime, String endTime);
+/**
+ * 保存订单
+ */
+    void saveOrder (Order order);
 }

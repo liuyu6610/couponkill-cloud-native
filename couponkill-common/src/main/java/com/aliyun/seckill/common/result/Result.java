@@ -4,6 +4,8 @@ package com.aliyun.seckill.common.result;
 import com.aliyun.seckill.common.enums.ResultCode;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 public class Result<T> {
     private int code;
@@ -40,4 +42,12 @@ public class Result<T> {
         result.message = message;
         return result;
     }
+
+   public static Result<Map<String, Object>> error(String message) {
+    Result<Map<String, Object>> result = new Result<>();
+    result.code = ResultCode.FAIL.getCode();
+    result.message = message;
+    return result;
+}
+
 }

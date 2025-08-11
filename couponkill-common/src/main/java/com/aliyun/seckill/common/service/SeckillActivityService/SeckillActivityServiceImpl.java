@@ -2,12 +2,14 @@ package com.aliyun.seckill.common.service.SeckillActivityService;
 
 import com.aliyun.seckill.common.mapper.SeckillActivityMapper;
 import com.aliyun.seckill.common.pojo.SeckillActivity;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 @Service
-public class SeckillActivityServiceImpl implements SeckillActivityService {
+public class SeckillActivityServiceImpl extends ServiceImpl<SeckillActivityMapper, SeckillActivity> implements SeckillActivityService {
     @Autowired
     private SeckillActivityMapper seckillActivityMapper;
     @Override
@@ -25,11 +27,13 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
 
     @Override
     public List<SeckillActivity> getAllActivities() {
-        return seckillActivityMapper.selectList(null);
+        return list();
     }
 
     @Override
-    public List<SeckillActivity> getInactiveActivities () {
-        return List.of();
+    public List<SeckillActivity> getInactiveActivities() {
+        QueryWrapper<SeckillActivity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("status", 0);
+        return list(queryWrapper);
     }
 }

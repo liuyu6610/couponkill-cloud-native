@@ -211,13 +211,31 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
-    public Page<Order> getOrderByUserId (Long userId, Integer pageNum, Integer pageSize) {
-        return null;
+    public Page<Order> getOrderByUserId(Long userId, Integer pageNum, Integer pageSize) {
+        Page<Order> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<Order> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", userId);
+        return page(page, queryWrapper);
     }
 
     @Override
-    public Page<Order> getAllOrderByCondition (Integer pageNum, Integer pageSize, String startTime, String endTime) {
-        return null;
+    public Page<Order> getAllOrderByCondition(Integer pageNum, Integer pageSize, String startTime, String endTime) {
+        Page<Order> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<Order> queryWrapper = new QueryWrapper<>();
+
+        if (startTime != null && !startTime.isEmpty()) {
+            queryWrapper.ge("create_time", startTime);
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            queryWrapper.le("create_time", endTime);
+        }
+
+        return page(page, queryWrapper);
+    }
+
+    @Override
+    public void saveOrder (Order order) {
+
     }
 
     @Transactional

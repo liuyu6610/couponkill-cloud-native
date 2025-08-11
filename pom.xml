@@ -90,8 +90,10 @@
         <admin-starter-server.version>2.7.16</admin-starter-server.version>
         <!-- 其他工具 -->
         <lombok.version>1.18.30</lombok.version>
+        <guava.version>31.1-jre</guava.version>
         <commons.lang3.version>3.4</commons.lang3.version>
         <hutool.version>5.8.26</hutool.version>
+        <spring-boot-starter-security.version>2.7.18</spring-boot-starter-security.version>
         <jjwt.version>0.11.5</jjwt.version>
         <sentinel.version>1.8.6</sentinel.version>
         <rocketmq.version>5.1.4</rocketmq.version>
@@ -130,6 +132,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <!--spring cloud nacos配置和发现-->
 
 
@@ -170,6 +173,12 @@
                 <artifactId>druid-spring-boot-starter</artifactId>
                 <version>1.2.16</version> <!-- 修复systemPath错误的版本 -->
             </dependency>
+            <!--spring-boot-starter-security-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+                <version>${spring-boot-starter-security.version}</version>
+            </dependency>
 
             <!-- Lombok -->
             <dependency>
@@ -188,6 +197,18 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
+            </dependency>
+            <!--guava-->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                 <version>${guava.version}</version>
+            </dependency>
+            <!--sentinel-core-->
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-core</artifactId>
+                <version>${sentinel.version}</version>
             </dependency>
 
             <!-- Hutool 工具类 -->

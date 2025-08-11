@@ -1,16 +1,8 @@
 package com.aliyun.seckill.common.mapper;
 
 import com.aliyun.seckill.common.pojo.UserCouponCount;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
-public class UserCouponCountMapper {
-    public UserCouponCount selectById (Long userId) {
-        return null;
-    }
+public interface UserCouponCountMapper extends BaseMapper<UserCouponCount> {
 
-    public void insert (UserCouponCount newCount) {
-    }
-
-    public void updateById (UserCouponCount count) {
-
-    }
 }
