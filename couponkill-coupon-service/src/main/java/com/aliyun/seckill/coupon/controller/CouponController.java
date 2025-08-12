@@ -7,18 +7,17 @@ import com.aliyun.seckill.common.service.coupon.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/coupon")
+//@RequestMapping("/api/v1")
 @Tag(name = "优惠券管理", description = "优惠券查询、库存操作接口")
 public class CouponController {
 
     @Autowired
-    @Lazy
     private CouponService couponService;
 
     @GetMapping("/available")

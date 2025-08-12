@@ -1,6 +1,7 @@
 package com.aliyun.seckill.couponkillgateway.security;
-import com.aliyun.seckill.common.api.ErrorCodes;
-import com.aliyun.seckill.common.utils.JwtUtil;
+
+import com.aliyun.seckill.couponkillgateway.api.ErrorCodes;
+import com.aliyun.seckill.couponkillgateway.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

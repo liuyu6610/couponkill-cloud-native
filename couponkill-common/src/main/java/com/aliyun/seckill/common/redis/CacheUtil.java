@@ -1,4 +1,4 @@
-package com.aliyun.seckill.common.cache;
+package com.aliyun.seckill.common.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

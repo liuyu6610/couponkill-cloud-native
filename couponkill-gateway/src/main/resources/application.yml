@@ -1,2 +1,21 @@
 server:
   port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: couponkill-gateway
+  cloud:
+    sentinel:
+      filter:
+        enabled: true
+      transport:
+        dashboard: localhost:25000
+        port: 8719
+      eager: true
+      scg:
+        fallback:
+          mode: response
+          response-status: 429
+          response-body: "Too Many Requests"

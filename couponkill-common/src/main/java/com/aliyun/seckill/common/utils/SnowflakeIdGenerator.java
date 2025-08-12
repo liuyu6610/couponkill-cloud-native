@@ -1,4 +1,4 @@
-package com.aliyun.seckill.common.id;
+package com.aliyun.seckill.common.utils;
 
         /**
   * 雪花算法 ID 生成器
