@@ -6,6 +6,3 @@ spring:
   jpa:
     hibernate.ddl-auto: update
     properties.hibernate.jdbc.batch_size: 100
-couponkill:
-  order:
-    max-retry: 3
