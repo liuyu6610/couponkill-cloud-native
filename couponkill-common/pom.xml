@@ -13,12 +13,6 @@
     <name>couponkill-common</name>
     <description>秒杀系统通用模块</description>
     <dependencies>
-        <!-- 引入POJO模块 -->
-        <dependency>
-            <groupId>com.aliyun.seckill</groupId>
-            <artifactId>couponkill-pojo</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- Feign进行跨服务传递文件依赖 -->
         <dependency>
             <groupId>io.github.openfeign.form</groupId>
@@ -29,6 +23,12 @@
             <groupId>io.github.openfeign.form</groupId>
             <artifactId>feign-form-spring</artifactId>
             <version>3.8.0</version>
+        </dependency>
+        <!--mybatis-->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>${mybatis-spring-boot-starter.version}</version>
         </dependency>
 
         <!-- Lombok -->
@@ -42,10 +42,6 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
 

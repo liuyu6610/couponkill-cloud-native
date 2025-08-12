@@ -3,6 +3,7 @@ package com.aliyun.seckill.couponkillgateway.security;
 import com.aliyun.seckill.couponkillgateway.api.ErrorCodes;
 import com.aliyun.seckill.couponkillgateway.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -16,7 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
+@Slf4j
 @Component
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
@@ -31,7 +32,17 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
         // Bypass for auth and actuator
-        if (path.startsWith("/api/v1/auth/") || path.startsWith("/actuator")) {
+        log.info("Request path: {}", path);
+        if (path.startsWith("/api/v1/auth/")
+                || path.startsWith("/actuator")
+                // 新增：放行用户注册和登录接口
+                || path.startsWith("/user/register")
+                || path.startsWith("/user/login")
+                // 补充：放行Swagger/Knife4j文档（如果需要通过网关访问）
+                || path.startsWith("/doc.html")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")) {
+            log.info("Bypassing authentication for path: {}", path);
             return chain.filter(exchange);
         }
         String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);

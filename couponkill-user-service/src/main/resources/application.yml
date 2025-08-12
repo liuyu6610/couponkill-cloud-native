@@ -1,0 +1,12 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+  sql:
+    init:
+      mode: never
+  data:
+    redis:
+      host: 116.62.178.91
+      port: 6379
+      password: 1234

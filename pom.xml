@@ -79,7 +79,6 @@
         <mysql.version>8.0.33</mysql.version>
         <mybatis.version>3.5.13</mybatis.version>
         <mybatis-spring-boot-starter.version>3.0.3</mybatis-spring-boot-starter.version>
-        <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <nacos.version>2.2.3</nacos.version>
         <pagehelper.version>1.4.6</pagehelper.version>
         <redis.version>2.7.18</redis.version> <!-- 替换为data-redis -->
@@ -142,12 +141,11 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-
-            <!-- MyBatis-Plus -->
+            <!--mybatis-->
             <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>3.5.6</version>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot-starter.version}</version>
             </dependency>
 
             <!-- Redis -->
@@ -294,12 +292,30 @@
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring.boot.version}</version>
                     <configuration>
+                        <compilerArguments>
+                            <!-- 添加 -parameters 参数 -->
+                            <parameters/>
+                        </compilerArguments>
                         <excludes>
                             <exclude>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
                             </exclude>
                         </excludes>
+                    </configuration>
+                </plugin>
+                <!-- 添加Maven编译器插件配置 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>21</source>
+                        <target>21</target>
+                        <encoding>UTF-8</encoding>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>

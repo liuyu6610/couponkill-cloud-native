@@ -1,6 +1,3 @@
-server:
-  port: 8080
-
 spring:
   main:
     web-application-type: reactive
@@ -19,3 +16,7 @@ spring:
           mode: response
           response-status: 429
           response-body: "Too Many Requests"
+logging:
+  level:
+    org.springframework.cloud.gateway: debug
+    org.springframework.cloud.client: debug
