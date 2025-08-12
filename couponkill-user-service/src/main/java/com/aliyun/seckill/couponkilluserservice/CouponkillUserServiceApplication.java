@@ -1,13 +1,13 @@
 package com.aliyun.seckill.couponkilluserservice;
 
-import io.seata.spring.boot.autoconfigure.SeataAutoConfiguration;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @EnableDiscoveryClient
 @SpringBootApplication
+@MapperScan(basePackages = "com.aliyun.seckill.common.mapper")
 public class CouponkillUserServiceApplication {
 
     public static void main (String[] args) {

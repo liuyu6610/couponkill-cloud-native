@@ -1,21 +1,24 @@
 package com.aliyun.seckill.coupon.service;
+
 import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.pojo.SeckillOrderCommand;
 import lombok.RequiredArgsConstructor;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.kafka.core.KafkaTemplate;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
-import org.springframework.core.io.ClassPathResource;
 @Service
 @RequiredArgsConstructor
 public class SeckillService {
     private final StringRedisTemplate redis;
-    private final KafkaTemplate<String, SeckillOrderCommand> kafka;
+    private final RocketMQTemplate rocketMQTemplate;
 
     private DefaultRedisScript<Long> enterScript;
 
@@ -48,7 +51,7 @@ public class SeckillService {
             redis.opsForValue().set(kReq(reqId), "PENDING", Duration.ofMinutes(5));
             // 投递下游
             var cmd = new SeckillOrderCommand(reqId, couponId, userId, System.currentTimeMillis());
-            kafka.send("seckill.order.create", reqId, cmd);
+            rocketMQTemplate.send("seckill.order.create", MessageBuilder.withPayload(cmd).setHeader("reqId", reqId).build());
             return new EnterResult(reqId, "QUEUED", 0);
         }
         if (r == 0L) return new EnterResult(reqId, "REJECTED", ErrorCodes.OUT_OF_STOCK);

@@ -1,17 +1,8 @@
 spring:
   data:
     redis:
-      host: ${REDIS_HOST:redis}
+      host: ${REDIS_HOST:116.62.178.91}
       port: ${REDIS_PORT:6379}
-  kafka:
-    bootstrap-servers: ${KAFKA:broker:9092}
-    producer:
-      acks: all
-      retries: 3
-      properties:
-        enable.idempotence: true
-    template:
-      default-topic: seckill.order.create
 couponkill:
   seckill:
     cooldownSeconds: 2

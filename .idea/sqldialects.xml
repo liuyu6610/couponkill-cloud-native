@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/c5a9fdcb-0c78-4200-9b0f-88f3d5222c26/console_6.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/couponkill-go-service/internal/repository/mysql_repo.go" dialect="GenericSQL" />
     <file url="PROJECT" dialect="MySQL" />
   </component>

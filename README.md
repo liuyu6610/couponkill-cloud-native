@@ -1,6 +1,5 @@
-# CouponKill Cloud-Native – 快速集成包
+# CouponKill Cloud-Native – 快速集成
 
-本补充包包含：
 - **user-service**：`/api/v1/auth/token/mock` 生成压测用 JWT
 - **couponkill-common**：`JwtUtil` 工具类（HS256）、统一响应/错误码 DTO（若你已引入则复用）
 - **OpenAPI**：`api-spec/openapi.yaml` 覆盖秒杀与 mock token
@@ -90,5 +89,3 @@ helm upgrade --install couponkill charts/couponkill       --namespace couponkill
 - 灰度/金丝雀：在 Istio `VirtualService` 中增加 subset 路由 + `DestinationRule`；或使用 Argo Rollouts
 
 ---
-
-Happy hacking！

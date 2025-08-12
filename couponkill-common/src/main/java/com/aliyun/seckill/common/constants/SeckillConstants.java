@@ -36,9 +36,8 @@ public class SeckillConstants {
     public static final int SECKILL_STATUS_CANCELLED = 3; // 已取消
     
     // RocketMQ 主题
-    public static final String ROCKETMQ_ORDER_TOPIC = "seckill_order_topic";
+    public static final String ROCKETMQ_ORDER_TOPIC = "seckill.order.topic";
     public static final String ROCKETMQ_STOCK_TOPIC = "seckill_stock_topic";
-    public static final String ROCKETMQ_REFUND_TOPIC = "seckill_refund_topic";
     
     // 分布式锁前缀
     public static final String LOCK_PRODUCT_PREFIX = "seckill:lock:product:";
