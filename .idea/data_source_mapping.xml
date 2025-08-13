@@ -9,6 +9,5 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/c5a9fdcb-0c78-4200-9b0f-88f3d5222c26/console_5.sql" value="c5a9fdcb-0c78-4200-9b0f-88f3d5222c26" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/c5a9fdcb-0c78-4200-9b0f-88f3d5222c26/console_6.sql" value="c5a9fdcb-0c78-4200-9b0f-88f3d5222c26" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/c5a9fdcb-0c78-4200-9b0f-88f3d5222c26/console_7.sql" value="c5a9fdcb-0c78-4200-9b0f-88f3d5222c26" />
-    <file url="file://$PROJECT_DIR$/couponkill-user-service/src/main/java/com/aliyun/seckill/couponkilluserservice/mapper/UserCouponCountMapper.java" value="f7b354d1-8027-4c74-9b7c-f1cd3e49b4db" />
   </component>
 </project>

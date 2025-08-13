@@ -1,23 +1,26 @@
-// 文件路径: com/aliyun/seckill/couponkilluserservice/mapper/UserMapper.java
 package com.aliyun.seckill.couponkilluserservice.mapper;
 
 import com.aliyun.seckill.common.pojo.User;
+import com.aliyun.seckill.common.pojo.UserCouponCount;
 import org.apache.ibatis.annotations.*;
+
+;
 
 @Mapper
 public interface UserMapper {
+    User selectByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
+    int insertUser(User user);
+    User selectUserById(@Param("id") Long id);
+    @Select("SELECT user_id, total_count, seckill_count, normal_count, expired_count, update_time, version FROM user_coupon_count WHERE user_id = #{userId}")
+    UserCouponCount selectById(@Param("userId") Long userId);
 
-    @Select("SELECT * FROM user WHERE username = #{username}")
-    User selectByUsername(@Param("username") String username);
+    @Insert("INSERT INTO user_coupon_count(user_id, total_count, seckill_count, normal_count, expired_count) " +
+            "VALUES(#{count.userId}, #{count.totalCount}, #{count.seckillCount}, #{count.normalCount}, #{count.expiredCount})")
+    int insert(@Param("count") UserCouponCount count);
 
-    @Select("SELECT * FROM user WHERE id = #{id}")
-    User selectById(@Param("id") Long id);
-
-    @Insert("INSERT INTO user(username, password, phone, status, create_time, update_time) " +
-            "VALUES(#{user.username}, #{user.password}, #{user.phone}, #{user.status}, #{user.createTime}, #{user.updateTime})")
-    @Options(useGeneratedKeys = true, keyProperty = "user.id")
-    int insert(@Param("user") User user);
-
-    @Update("UPDATE user SET password = #{password}, update_time = #{updateTime} WHERE id = #{id}")
-    int updatePassword(@Param("id") Long id, @Param("password") String password, @Param("updateTime") java.time.LocalDateTime updateTime);
+    @Update("UPDATE user_coupon_count SET total_count = #{totalCount}, seckill_count = #{seckillCount}, " +
+            "normal_count = #{normalCount}, expired_count = #{expiredCount}, update_time = NOW() WHERE user_id = #{userId}")
+    int update(@Param("userId") Long userId, @Param("totalCount") int totalCount,
+               @Param("seckillCount") int seckillCount, @Param("normalCount") int normalCount,
+               @Param("expiredCount") int expiredCount);
 }

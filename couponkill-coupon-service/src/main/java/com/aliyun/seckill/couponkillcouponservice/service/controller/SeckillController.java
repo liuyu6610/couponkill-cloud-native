@@ -1,4 +1,4 @@
-package com.aliyun.seckill.couponkillcouponservice.controller;
+package com.aliyun.seckill.couponkillcouponservice.service.controller;
 
 import com.aliyun.seckill.common.api.ApiResp;
 import com.aliyun.seckill.common.api.ErrorCodes;
