@@ -1,0 +1,18 @@
+[
+    {
+        "resource": "couponSeckill",
+        "limitApp": "default",
+        "grade": 1,
+        "count": 5000,
+        "strategy": 0,
+        "controlBehavior": 0
+    },
+    {
+        "resource": "goSeckill",
+        "limitApp": "default",
+        "grade": 1,
+        "count": 3000,
+        "strategy": 0,
+        "controlBehavior": 0
+    }
+]

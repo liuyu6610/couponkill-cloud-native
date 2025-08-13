@@ -1,0 +1,21 @@
+server:
+  port: 8090
+
+seckill:
+  max-concurrency: 2000
+  redis-key-prefix: "seckill:"
+  valid-days: 7
+  redis:
+    stock-key-prefix: "coupon:stock:"
+
+mysql:
+  dsn: "root:1234@tcp(localhost:3306)/console?charset=utf8mb4&parseTime=True&loc=Local"
+
+data.redis:
+  host: "116.62.178.91:6379"
+  password: "1234"
+  db: 0
+
+nacos:
+  server-addr: "localhost:8848"
+  namespace-id: "c6504e82-cdbf-41e6-922a-53341dbdc9d2"

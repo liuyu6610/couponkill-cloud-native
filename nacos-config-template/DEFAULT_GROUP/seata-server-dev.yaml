@@ -1,0 +1,43 @@
+# 假设文件名为 application.yml 或 seata-server.yaml
+seata:
+  # 配置中心（从Nacos读取配置）
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848  # 本地Nacos地址
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2  # 与Nacos中配置的namespace一致（dev环境）
+      group: DEFAULT_GROUP  # 生产环境配置组
+      data-id: seata-server-dev  # Nacos中Seata的配置文件名（测试环境）
+
+  # 注册中心（注册到Nacos）
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848  # 本地Nacos地址
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2  # 同上
+      group: DEFAULT_GROUP  # 同上
+      application: seata-server  # 注册到Nacos的服务名
+      cluster: default  # 集群名称（默认即可）
+
+# 其他已有配置（如store、server等，保持不变）
+  store:
+    mode: db
+    db:
+      datasource: druid  # 连接池类型
+      db-type: mysql  # 数据库类型
+      driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL驱动[2,4](@ref)
+      url: jdbc:mysql://127.0.0.1:3306/seata?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      user: root  # 数据库用户名
+      password: 1234  # 数据库密码（需替换为实际密码）
+   
+  server:
+    service-port: 8091
+  service:
+    vgroup-mapping:
+      couponkill_tx_group: default  # 客户端的tx-service-group映射到Seata的默认集群
+      order-service-seata-service-group: default
+      couponkill-user-service-tx-group: default
+      couponkill-coupon-service-tx-group: default
+      couponkill-order-service-tx-group: default
+    grouplist:
+      default: localhost:8091  # Seata服务器的事务端口（与server.service-port一致）

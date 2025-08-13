@@ -1,0 +1,23 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: couponkill-order-service
+seata:
+  enabled: true
+  application-id: couponkill-order-service
+  tx-service-group: couponkill-order-service-tx-group
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      group: DEFAULT_GROUP
+      application: seata-server
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      group: DEFAULT_GROUP

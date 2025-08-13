@@ -1,0 +1,53 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/console?charset=utf8mb4&parseTime=True&loc=Local
+    username: root
+    password: 1234  # 使用环境变量注入密码
+  # Redis配置（开发环境）
+  data:
+    redis:
+      host: 116.62.178.91  # 开发环境应使用本地或局域网地址
+      port: 6379
+      password: 1234  # 使用环境变量注入密码
+      # Sentinel配置（开发环境）
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080  # 开发环境Sentinel控制台地址
+        port: 8719
+      eager: true
+      datasource:
+          ds1:
+            nacos:
+             server-addr: localhost:8848
+             namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+             data-id: sentinel-gateway-rules
+             data-type: json
+             group: DEFAULT_GROUP
+             rule-type: flow
+
+  # RocketMQ配置（开发环境）
+  rocketmq:
+    producer:
+      name-server: 116.62.178.91:9876
+      group: couponkill-producer-group
+ 
+  
+
+  
+# Seata 公共配置
+seata:
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      group: DEFAULT_GROUP
+      application: seata-server
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      group: DEFAULT_GROUP
