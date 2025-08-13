@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableDiscoveryClient
 @SpringBootApplication // 如果有feign客户端需要启用
 @EnableFeignClients
-@ComponentScan(basePackages = {"com.aliyun.seckill.couponkilluserservice.feign", "com.aliyun.seckill.common"})
+@ComponentScan(basePackages = {"com.aliyun.seckill.couponkilluserservice", "com.aliyun.seckill.common"})
 public class CouponkillUserServiceApplication {
 
     public static void main (String[] args) {

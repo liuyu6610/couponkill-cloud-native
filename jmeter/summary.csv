@@ -1,0 +1,4 @@
+Label,# Samples,Average,Min,Max,Std. Dev.,Error %,Throughput,Received KB/sec,Sent KB/sec,Avg. Bytes
+获取压测token,2000,4,1,490,16.43,0.000%,3.97052,1.66,0.86,427.9
+秒杀请求,2000,1,0,267,6.04,100.000%,3.97084,0.53,0.95,136.0
+TOTAL,4000,2,0,490,12.48,50.000%,7.94105,2.19,1.81,282.0
