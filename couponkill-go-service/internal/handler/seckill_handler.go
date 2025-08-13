@@ -2,6 +2,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,16 +26,63 @@ func NewSeckillHandler(service *service.SeckillService, validDays int) *SeckillH
 
 // HandleSeckill 处理秒杀请求
 func (h *SeckillHandler) HandleSeckill(c *gin.Context) {
+	// 检查Content-Type
+	contentType := c.GetHeader("Content-Type")
+	if contentType != "" && contentType != "application/json" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Content-Type必须为application/json",
+		})
+		return
+	}
+
+	// 读取请求体
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "读取请求体失败: " + err.Error(),
+		})
+		return
+	}
+
+	// 检查请求体是否为空
+	if len(body) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "请求体不能为空",
+		})
+		return
+	}
+
+	// 解析JSON
 	var req struct {
 		UserID   int64 `json:"user_id" binding:"required"`
 		CouponID int64 `json:"coupon_id" binding:"required"`
 	}
 
-	// 参数校验
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := json.Unmarshal(body, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    400,
-			"message": "参数错误: " + err.Error(),
+			"message": "JSON解析失败: " + err.Error(),
+			"details": string(body), // 返回原始数据便于调试
+		})
+		return
+	}
+
+	// 参数校验
+	if req.UserID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "用户ID必须大于0",
+		})
+		return
+	}
+
+	if req.CouponID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "优惠券ID必须大于0",
 		})
 		return
 	}
