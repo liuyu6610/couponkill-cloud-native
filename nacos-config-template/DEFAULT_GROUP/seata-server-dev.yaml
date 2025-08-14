@@ -26,9 +26,9 @@ seata:
       datasource: druid  # 连接池类型
       db-type: mysql  # 数据库类型
       driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL驱动[2,4](@ref)
-      url: jdbc:mysql://127.0.0.1:3306/seata?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      url: jdbc:mysql://116.62.178.91:3306/seata?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       user: root  # 数据库用户名
-      password: 1234  # 数据库密码（需替换为实际密码）
+      password: 4321  # 数据库密码（需替换为实际密码）
    
   server:
     service-port: 8091
