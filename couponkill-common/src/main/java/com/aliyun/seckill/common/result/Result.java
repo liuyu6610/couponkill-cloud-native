@@ -29,7 +29,7 @@ public class Result<T> {
         return result;
     }
 
-    public static <T> Result<T> fail(ResultCode resultCode) {
+    public static <T> Result<T> fail(ResultCode resultCode, String message) {
         Result<T> result = new Result<>();
         result.code = resultCode.getCode();
         result.message = resultCode.getMessage();
@@ -50,4 +50,7 @@ public class Result<T> {
     return result;
 }
 
+    public boolean isSuccess() {
+        return code == ResultCode.SUCCESS.getCode();
+    }
 }

@@ -14,4 +14,5 @@ public class OrderMessage {
     private Long userId;
     private Long couponId;
     private Date createTime;
+    private String status;
 }

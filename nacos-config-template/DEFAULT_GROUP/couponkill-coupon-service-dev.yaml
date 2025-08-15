@@ -4,7 +4,7 @@ server:
 spring:
   application:
     name: couponkill-coupon-service
-
+  
 # 优惠券业务配置
 coupon:
   publish:
@@ -27,12 +27,20 @@ seata:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP
       application: seata-server
   config:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP
+# 流量控制配置
+traffic:
+  control:
+    threshold: 1000  # Java服务处理阈值，超过则调用Go服务
+    go-service:
+      enabled: true
+      url: http://seckill-go-svc:8090
+      timeout: 2000

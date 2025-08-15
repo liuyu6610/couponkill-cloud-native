@@ -19,11 +19,10 @@ public enum ResultCode {
     USER_EXIST(5002, "用户已存在"),
     PASSWORD_ERROR(5003, "密码错误"),
     TOKEN_INVALID(6001, "令牌无效"),
-    ACTIVITY_NOT_START(7001, "活动未开始"),
-    ACTIVITY_ENDED(7002, "活动已结束"),
     SYSTEM_BUSY( 7003, "系统繁忙，请稍后再试"  ),
-    AUTH_FAIL(8001,"用户信息出错" );
-
+    AUTH_FAIL(8001,"用户信息出错" ),
+    COOLING_DOWN(9001, "用户冷却中" ),
+    MQ_SEND_FAILED(9002,"消息发送失败" );
     private final int code;
     private final String message;
 }

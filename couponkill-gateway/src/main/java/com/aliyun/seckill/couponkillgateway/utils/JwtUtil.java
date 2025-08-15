@@ -22,4 +22,12 @@ public class JwtUtil {
 
         return claimsJws.getBody();
     }
+
+    public static boolean verifyToken(String token) {
+        return parse("secret", token) != null;
+    }
+
+    public static String getUserId(String token) {
+        return parse("secret", token).get("userId", String.class);
+    }
 }

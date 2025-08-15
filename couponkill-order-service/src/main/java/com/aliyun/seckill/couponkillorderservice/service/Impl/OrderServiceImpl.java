@@ -1,6 +1,5 @@
 // 文件路径: com/aliyun/seckill/couponkillorderservice/service/Impl/OrderServiceImpl.java
 package com.aliyun.seckill.couponkillorderservice.service.Impl;
-
 import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
@@ -11,17 +10,25 @@ import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
+import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -36,6 +43,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
+    // 在OrderServiceImpl类中添加缺少的字段
+    @Value("${couponkill.seckill.compensation-amount:10.0}")
+    private double compensationAmount;
+
+    @Value("${rocketmq.topic.seckill-order-create:seckill.order.create}")
+    private String seckillOrderCreateTopic;
+
+    @Value("${rocketmq.topic.seckill-compensation:seckill.compensation}")
+    private String seckillCompensationTopic;
 
     // 初始化雪花算法ID生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
@@ -47,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @GlobalTransactional(rollbackFor = Exception.class)
     public Order createOrder(Long userId, Long couponId) {
         // 1. 获取优惠券信息 (通过Feign调用)
         Coupon coupon = couponServiceFeignClient.getCouponById(couponId);
@@ -92,15 +109,28 @@ public class OrderServiceImpl implements OrderService {
             redisTemplate.opsForValue().increment(USER_COUPON_COUNT_KEY + userId + ":seckill");
         }
 
-        // 发送订单创建成功消息
-        OrderMessage orderMessage = new OrderMessage();
-        orderMessage.setOrderId(order.getId());
-        orderMessage.setUserId(userId);
-        orderMessage.setCouponId(couponId);
-        orderMessage.setCreateTime(new Date());
+        try {
+            OrderMessage orderMessage = new OrderMessage();
+            orderMessage.setOrderId(order.getId());
+            orderMessage.setUserId(userId);
+            orderMessage.setCouponId(couponId);
+            orderMessage.setCreateTime(new Date());
+            orderMessage.setStatus("PENDING"); // 初始状态：处理中
 
-        // 使用RocketMQ发送消息
-        rocketMQTemplate.convertAndSend("order-create-topic", orderMessage);
+            // 将OrderMessage包装成Message对象
+            Message<OrderMessage> message = MessageBuilder.withPayload(orderMessage).build();
+
+            // 发送事务消息（确保本地事务提交后消息才被消费）
+            rocketMQTemplate.sendMessageInTransaction(
+                    seckillOrderCreateTopic,
+                    message, // 使用包装后的Message对象
+                    order // 附加参数，用于事务回调判断
+            );
+        } catch (Exception e) {
+            // 消息发送失败时，Seata会回滚本地事务
+            log.error("发送秒杀订单创建消息失败", e);
+            throw new BusinessException(ResultCode.MQ_SEND_FAILED);
+        }
 
         return order;
     }
@@ -239,6 +269,8 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
 
+
+
     @Override
     @Transactional
     public void updateUserCouponCount(Long userId, int couponType, int change) {
@@ -268,23 +300,83 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    /**
+     * 检查用户是否在冷却期
+     */
+    @Override
+    public boolean checkUserInCooldown(Long userId, Long couponId) {
+        String key = "seckill:cooldown:" + userId + ":" + couponId;
+        return redisTemplate.hasKey(key);
+    }
+
+    /**
+     * 设置用户冷却期
+     */
+    @Override
+    public void setUserCooldown(Long userId, Long couponId, int seconds) {
+        String key = "seckill:cooldown:" + userId + ":" + couponId;
+        redisTemplate.opsForValue().set(key, "1", Duration.ofSeconds(seconds));
+    }
+
+    /**
+     * 处理秒杀失败补偿
+     */
+    @Override
+    public void handleSeckillFailure(String orderId, Long userId, Long couponId) {
+        // 1. 恢复库存
+        couponServiceFeignClient.increaseStock(couponId);
+
+        // 2. 创建补偿优惠券
+        Coupon compensationCoupon = new Coupon();
+        compensationCoupon.setUserId(userId);
+        compensationCoupon.setType(1); // 普通优惠券
+        compensationCoupon.setAmount(BigDecimal.valueOf(compensationAmount)); // 从配置获取
+        compensationCoupon.setValidDays(1); // 1天有效期
+        compensationCoupon.setStatus(1);
+        couponServiceFeignClient.createCompensationCoupon(compensationCoupon);
+
+        // 3. 发送补偿结果消息（用于监控和对账）
+        OrderMessage compensationMsg = new OrderMessage();
+        compensationMsg.setOrderId(orderId);
+        compensationMsg.setUserId(userId);
+        compensationMsg.setCouponId(couponId);
+        compensationMsg.setStatus("COMPENSATED"); // 状态：已补偿
+        compensationMsg.setCreateTime(new Date());
+
+        rocketMQTemplate.convertAndSend(
+                "${rocketmq.topic.seckill-compensation}",
+                compensationMsg
+        );
+    }
+
+@Override
+public void updateOrderStatus(String orderId, int status) {
+    // 更新订单状态
+    orderMapper.updateStatus(orderId, status, LocalDateTime.now());
+}
+
+@Override
+public Order createOrder(Order order) {
+    // 复用已有的保存订单方法
+    return saveOrder(order);
+}
+
+@Override
+public Order getOrderById(Long id) {
+    // 注意：由于订单ID是String类型，此方法可能需要调整
+    // 根据实际情况决定是否需要实现
+    return orderMapper.selectById(String.valueOf(id));
+}
+
+@Override
+public boolean payOrder(Long orderId) {
+    // 更新订单状态为已支付
+    int result = orderMapper.updateStatus(String.valueOf(orderId), 3, LocalDateTime.now());
+    return result > 0;
+}
     @Override
     public long count() {
-        return orderMapper.countAll();
+        return 0;
     }
 
-    @Override
-    public Order createOrder(Order order) {
-        return null;
-    }
-
-    @Override
-    public Order getOrderById(Long id) {
-        return null;
-    }
-
-    @Override
-    public boolean payOrder(Long orderId) {
-        return false;
-    }
 }

@@ -1,0 +1,11 @@
+service协同:
+  java:
+    qps-threshold: 500  # Java服务处理阈值
+  go:
+    enabled: true        # 是否启用Go服务
+    url: http://couponkill-go-service:8090  # Go服务地址
+  fallback-to-go: false  # 是否强制路由到Go服务（用于故障转移）
+  seckill-cooldown: 2    # 秒杀冷却时间（秒）
+  compensation-coupon:
+    amount: 5            # 补偿优惠券金额
+    valid-days: 1        # 补偿优惠券有效期（天）

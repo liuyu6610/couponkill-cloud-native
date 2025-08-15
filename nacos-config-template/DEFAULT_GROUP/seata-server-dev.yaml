@@ -5,7 +5,7 @@ seata:
     type: nacos
     nacos:
       server-addr: localhost:8848  # 本地Nacos地址
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2  # 与Nacos中配置的namespace一致（dev环境）
+      namespace: 120  # 与Nacos中配置的namespace一致（dev环境）
       group: DEFAULT_GROUP  # 生产环境配置组
       data-id: seata-server-dev  # Nacos中Seata的配置文件名（测试环境）
 
@@ -14,7 +14,7 @@ seata:
     type: nacos
     nacos:
       server-addr: localhost:8848  # 本地Nacos地址
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2  # 同上
+      namespace: 120  # 同上
       group: DEFAULT_GROUP  # 同上
       application: seata-server  # 注册到Nacos的服务名
       cluster: default  # 集群名称（默认即可）
@@ -35,9 +35,9 @@ seata:
   service:
     vgroup-mapping:
       couponkill_tx_group: default  # 客户端的tx-service-group映射到Seata的默认集群
+      order-service-seata-service-group: default
       couponkill-user-service-tx-group: default
       couponkill-coupon-service-tx-group: default
       couponkill-order-service-tx-group: default
-      default_tx_group: default
     grouplist:
       default: localhost:8091  # Seata服务器的事务端口（与server.service-port一致）

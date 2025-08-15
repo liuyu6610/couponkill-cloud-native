@@ -1,0 +1,29 @@
+[
+    {
+        "resource": "coupon-service",
+        "limitApp": "default",
+        "grade": 1,
+        "count": 2000,
+        "strategy": 0,
+        "controlBehavior": 0,
+        "clusterMode": false
+    },
+    {
+        "resource": "order-service",
+        "limitApp": "default",
+        "grade": 1,
+        "count": 1000,
+        "strategy": 0,
+        "controlBehavior": 0,
+        "clusterMode": false
+    },
+    {
+        "resource": "seckill-go-service",
+        "limitApp": "default",
+        "grade": 1,
+        "count": 5000,
+        "strategy": 0,
+        "controlBehavior": 0,
+        "clusterMode": false
+    }
+]

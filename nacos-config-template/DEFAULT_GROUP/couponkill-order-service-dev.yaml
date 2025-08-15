@@ -12,12 +12,19 @@ seata:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP
       application: seata-server
   config:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP
+# 订单服务专属配置（仅订单服务使用）
+rocketmq:
+  consumer:
+    group:
+      seckill-result: seckill-order-result-group  # 订单服务专属消费组
+  topic:
+    seckill-order-result: seckill.order.result    # 订单服务监听的主题

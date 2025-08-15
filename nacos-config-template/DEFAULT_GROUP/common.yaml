@@ -21,33 +21,31 @@ spring:
           ds1:
             nacos:
              server-addr: localhost:8848
-             namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
-             data-id: sentinel-gateway-rules
+             namespace: 120
+             data-id: couponkill-gateway-sentine
              data-type: json
-             group: DEFAULT_GROUP
+             group: SENTINEL_GROUP
              rule-type: flow
 
-  # RocketMQ配置（开发环境）
-  rocketmq:
-    producer:
-      name-server: 116.62.178.91:9876
-      group: couponkill-producer-group
- 
-  
-
-  
+# 通用配置（common模块使用）
+rocketmq:
+  name-server: 116.62.178.91:9876  # 所有服务共享的NameServer地址
+  producer:
+    group: common-producer-group  # 通用生产者组
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
 # Seata 公共配置
 seata:
   registry:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP
       application: seata-server
   config:
     type: nacos
     nacos:
       server-addr: localhost:8848
-      namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+      namespace: 120
       group: DEFAULT_GROUP

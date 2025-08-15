@@ -3,9 +3,9 @@ package com.aliyun.seckill.couponkillcouponservice.controller;
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,7 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/coupon")
 public class CouponController {
-
     private final CouponService couponService;
 
     public CouponController(CouponService couponService) {

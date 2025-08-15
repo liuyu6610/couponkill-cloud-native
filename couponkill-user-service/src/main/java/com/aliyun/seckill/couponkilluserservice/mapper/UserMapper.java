@@ -7,8 +7,17 @@ import org.apache.ibatis.annotations.*;
 @Mapper
 public interface UserMapper {
     User selectByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
+
+    @Insert("INSERT INTO user(username, password, phone, email, status, create_time, update_time) " +
+            "VALUES(#{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insertUser(User user);
+
+
     User selectUserById(@Param("id") Long id);
+
+    @Select("SELECT id, username, password, phone, email, status, create_time as createTime, update_time as updateTime FROM user WHERE username = #{username}")
+    User selectByUsername(String username);
 
     @Select("SELECT user_id as userId, total_count as totalCount, seckill_count as seckillCount, " +
             "normal_count as normalCount, expired_count as expiredCount, update_time as updateTime " +
@@ -24,6 +33,4 @@ public interface UserMapper {
     int update(@Param("userId") Long userId, @Param("totalCount") int totalCount,
                @Param("seckillCount") int seckillCount, @Param("normalCount") int normalCount,
                @Param("expiredCount") int expiredCount);
-
-    User selectByUsername(String username);
 }

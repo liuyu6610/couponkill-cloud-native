@@ -22,4 +22,13 @@ public interface OrderService {
 
     // 用户优惠券计数相关方法
     void updateUserCouponCount(Long userId, int couponType, int change);
+
+    boolean checkUserInCooldown(Long userId, Long couponId);
+
+    void setUserCooldown(Long userId, Long couponId, int cooldownSeconds);
+
+    
+    void handleSeckillFailure(String orderId, Long userId, Long couponId);
+
+    void updateOrderStatus(String orderId, int i);
 }

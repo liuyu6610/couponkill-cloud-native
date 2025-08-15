@@ -3,6 +3,8 @@ package nacosclient
 import (
 	"fmt"
 	"log"
+	"net"
+	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
@@ -25,12 +27,20 @@ func NewNacosClient(serverAddr, namespaceId string) (*NacosClient, error) {
 		LogLevel:            "debug",
 	}
 
-	// 创建服务器配置
+	host, portStr, err := net.SplitHostPort(serverAddr)
+	if err != nil {
+		return nil, fmt.Errorf("解析Nacos服务器地址失败: %v", err)
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return nil, fmt.Errorf("解析Nacos端口失败: %v", err)
+	}
+
 	serverConfigs := []constant.ServerConfig{
 		{
-			IpAddr:      serverAddr,
+			IpAddr:      host, // 仅IP地址
 			ContextPath: "/nacos",
-			Port:        8848,
+			Port:        uint64(port), // 正确解析的端口
 			Scheme:      "http",
 		},
 	}

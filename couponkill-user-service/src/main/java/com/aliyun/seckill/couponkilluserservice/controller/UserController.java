@@ -30,8 +30,11 @@ public class UserController {
 
     @Operation(summary = "用户注册", description = "用户注册接口")
     @PostMapping("/register")
-    public ApiResponse<User> register(@RequestBody User user) {
-        return ApiResponse.success(userService.register(user.getUsername(), user.getPassword(), user.getPhone()));
+    public ApiResponse<User> register(
+                                      @Parameter(description = "用户名") @RequestParam String username,
+                                      @Parameter(description = "密码") @RequestParam String password,
+                                      @Parameter(description = "手机号") @RequestParam String phone) {
+        return ApiResponse.success(userService.register(username, password, phone));
     }
 
     @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")

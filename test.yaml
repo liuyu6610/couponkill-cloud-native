@@ -1,0 +1,51 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: coupon-service
+          uri: lb://couponkill-coupon-service
+          predicates:
+            - Path=/coupon/**filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: coupon-service
+                fallbackUri: forward:/fallback/coupon
+
+        - id: order-service
+          uri: lb://couponkill-order-service
+          predicates:
+            - Path=/order/**filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: order-service
+                fallbackUri: forward:/fallback/order
+
+        - id: admin-service
+          uri: lb://couponkill-admin-service
+          predicates:
+            - Path=/admin/**filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: admin-service
+                fallbackUri: forward:/fallback/admin
+
+        - id: seckill-go-service
+          uri: lb://seckill-go-svc
+          predicates:
+            - Path=/seckill/go/**filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: seckill-go-service
+                fallbackUri: forward:/fallback/seckill
+  sentinel:
+      datasource:
+        ds1:
+          nacos:
+            server-addr: localhost:8848
+            dataId: couponkill-gateway-sentinel
+            groupId: SENTINEL_GROUP
+            rule-type: flow

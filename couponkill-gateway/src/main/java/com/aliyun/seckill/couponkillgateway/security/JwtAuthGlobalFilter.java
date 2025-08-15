@@ -1,122 +1,71 @@
 // 文件路径: com/aliyun/seckill/couponkillgateway/security/JwtAuthGlobalFilter.java
 package com.aliyun.seckill.couponkillgateway.security;
 
-import com.aliyun.seckill.couponkillgateway.api.ErrorCodes;
 import com.aliyun.seckill.couponkillgateway.utils.JwtUtil;
-import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
 @Component
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
-    @Value("${auth.jwt.secret:CHANGE_ME_256bit_secret_please_CHANGE_ME_1234567890}")
-    private String secret;
-
-    @Value("${auth.jwt.issuer:https://auth.couponkill}")
-    private String issuer;
-
-    @Value("${auth.jwt.audience:couponkill}")
-    private String audience;
+    // 不需要认证的路径前缀
+    private static final List<String> WHITE_LIST = List.of(
+            "/fallback/",              // 网关降级接口
+            "/api/v1/user/register",   // 用户注册接口
+            "/api/v1/user/login"       // 用户登录接口
+    );
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String path = exchange.getRequest().getURI().getPath();
-        log.info("Request path: {}", path);
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getURI().getPath();
 
-        // 放行不需要认证的路径
-        if (path.startsWith("/api/v1/auth/")
-                || path.startsWith("/actuator")
-                || path.startsWith("/user/register")
-                || path.startsWith("/user/login")
-                || path.startsWith("/doc.html")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")) {
-            log.info("Bypassing authentication for path: {}", path);
+        // 检查是否在白名单中
+        if (isWhitelisted(path)) {
             return chain.filter(exchange);
         }
 
-        String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            return unauthorized(exchange, "Missing or invalid Authorization");
+        // 对于需要认证的接口进行JWT验证
+        String token = extractToken(request);
+        if (token == null || !JwtUtil.verifyToken(token)) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
 
-        String token = auth.substring(7);
-        try {
-            Claims claims = JwtUtil.parse(secret, token);
+        // 将用户ID存入请求头
+        String userId = JwtUtil.getUserId(token);
+        ServerHttpRequest mutatedRequest = request.mutate()
+                .header("X-User-ID", userId)
+                .build();
+        ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
 
-            // 验证issuer
-            if (!issuer.equals(claims.getIssuer())) {
-                return unauthorized(exchange, "Invalid issuer");
-            }
-
-            // 验证audience
-            Object audObj = claims.get("aud");
-            List<String> aud;
-            if (audObj instanceof String) {
-                aud = Collections.singletonList((String) audObj);
-            } else if (audObj instanceof List) {
-                aud = (List<String>) audObj;
-            } else {
-                return unauthorized(exchange, "Invalid audience");
-            }
-
-            if (!aud.contains(audience)) {
-                return unauthorized(exchange, "Invalid audience");
-            }
-
-            String userId = claims.getSubject();
-            Object rolesObj = claims.get("roles");
-            String rolesStr = "";
-
-            if (rolesObj instanceof List) {
-                List<String> roles = (List<String>) rolesObj;
-                rolesStr = String.join(",", roles);
-            } else if (rolesObj instanceof String) {
-                rolesStr = (String) rolesObj;
-            }
-
-            // 传递用户信息到下游服务
-            var mutated = exchange.getRequest().mutate()
-                    .header("X-User-Id", userId)
-                    .header("X-User-Roles", rolesStr)
-                    .header("X-Authenticated", "true")
-                    .build();
-
-            return chain.filter(exchange.mutate().request(mutated).build());
-        } catch (Exception e) {
-            log.error("Token validation error", e);
-            return unauthorized(exchange, "Invalid token");
-        }
+        return chain.filter(mutatedExchange);
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange, String msg) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        var body = ("{" +
-                "\"code\": " + ErrorCodes.AUTH_FAIL + "," +
-                "\"message\": \"" + msg + "\"," +
-                "\"data\": null}"
-        ).getBytes(StandardCharsets.UTF_8);
-        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
+    private boolean isWhitelisted(String path) {
+        return WHITE_LIST.stream().anyMatch(path::startsWith);
+    }
+
+    private String extractToken(ServerHttpRequest request) {
+        String authHeader = request.getHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 
     @Override
     public int getOrder() {
-        return -100; // 确保在其他过滤器之前执行
+        return -100; // 确保在路由前执行
     }
 }

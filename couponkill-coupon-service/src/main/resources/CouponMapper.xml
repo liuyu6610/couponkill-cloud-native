@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper">
+
+    <resultMap id="CouponResultMap" type="com.aliyun.seckill.common.pojo.Coupon">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="type" column="type"/>
+        <result property="faceValue" column="face_value"/>
+        <result property="minSpend" column="min_spend"/>
+        <result property="validDays" column="valid_days"/>
+        <result property="perUserLimit" column="per_user_limit"/>
+        <result property="totalStock" column="total_stock"/>
+        <result property="seckillTotalStock" column="seckill_total_stock"/>
+        <result property="remainingStock" column="remaining_stock"/>
+        <result property="seckillRemainingStock" column="seckill_remaining_stock"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="selectAvailableCoupons" resultMap="CouponResultMap">
+        SELECT * FROM coupon
+        WHERE status = 1
+        AND remaining_stock > 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectAll" resultMap="CouponResultMap">
+        SELECT * FROM coupon
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectById" parameterType="long" resultMap="CouponResultMap">
+        SELECT * FROM coupon WHERE id = #{id}
+    </select>
+
+    <insert id="insertCoupon" parameterType="com.aliyun.seckill.common.pojo.Coupon">
+        INSERT INTO coupon (
+            name, description, type, face_value, min_spend, valid_days,
+            per_user_limit, total_stock, seckill_total_stock, remaining_stock,
+            seckill_remaining_stock, status, create_time, update_time
+        ) VALUES (
+            #{name}, #{description}, #{type}, #{faceValue}, #{minSpend}, #{validDays},
+            #{perUserLimit}, #{totalStock}, #{seckillTotalStock}, #{remainingStock},
+            #{seckillRemainingStock}, #{status}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateStock">
+        UPDATE coupon
+        SET remaining_stock = remaining_stock + #{change},
+            update_time = NOW()
+        WHERE id = #{couponId}
+        AND remaining_stock + #{change} >= 0
+    </update>
+
+    <update id="updateRemainingStock">
+        UPDATE coupon
+        SET remaining_stock = #{remainingStock},
+            update_time = #{updateTime}
+        WHERE id = #{couponId}
+    </update>
+
+    <insert id="batchGrantCoupons">
+        INSERT INTO user_coupon (user_id, coupon_id, create_time)
+        VALUES
+        <foreach collection="userIds" item="userId" separator=",">
+            (#{userId}, #{couponId}, NOW())
+        </foreach>
+    </insert>
+</mapper>

@@ -35,4 +35,6 @@ public class Coupon implements Serializable {
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private Long userId;
+    private BigDecimal amount;
 }
