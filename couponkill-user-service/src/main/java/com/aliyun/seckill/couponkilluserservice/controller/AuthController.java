@@ -1,9 +1,14 @@
 package com.aliyun.seckill.couponkilluserservice.controller;
-import com.aliyun.seckill.common.api.ApiResp;
-import com.aliyun.seckill.common.utils.JwtUtil;
+
+import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.utils.JwtUtils;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 
 @RestController
@@ -20,14 +25,15 @@ public class AuthController {
     private long ttlSeconds;
 
     @PostMapping("/token/mock")
-    public ApiResp<TokenResp> mock(@RequestBody MockReq req){
-        String token = JwtUtil.createToken(secret, issuer, audience, req.getUserId(), req.getRoles()==null? List.of("user"):req.getRoles(), ttlSeconds);
+    public ApiResponse<TokenResp> mock(@RequestBody MockReq req){
+        String token = JwtUtils.createToken(secret, issuer, audience, req.getUserId(), req.getRoles()==null? List.of("user"):req.getRoles(), ttlSeconds);
         TokenResp resp = new TokenResp();
         resp.setToken(token);
         resp.setTokenType("Bearer");
         resp.setExpiresIn(ttlSeconds);
-        return ApiResp.ok(resp, null);
+        return ApiResponse.success(resp);
     }
+
 
     @Data
     public static class MockReq {

@@ -1,4 +1,3 @@
-// com.aliyun.seckill.order.controller.SeckillController.java
 package com.aliyun.seckill.couponkillorderservice.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
@@ -7,83 +6,81 @@ import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.result.Result;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
-import com.aliyun.seckill.couponkillorderservice.service.CreateOrderService;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "秒杀管理", description = "秒杀相关接口")
 @RestController
 @RequestMapping("/seckill")
-@Tag(name = "秒杀管理", description = "秒杀相关接口")
 public class SeckillController {
 
     @Autowired
     private OrderService orderService;
+
     @Autowired
-    private CreateOrderService createOrderService;
-    @Autowired
-    private CouponServiceFeignClient couponServiceFeignClient; // 使用 CouponServiceFeignClient 替代 SeckillClient
+    private CouponServiceFeignClient couponServiceFeignClient;
 
-    @Value("${couponkill.seckill.cooldown-seconds:2}") int cooldownSeconds;
-    @Value("${couponkill.seckill.deduct-ttl-seconds:300}") int deductTtlSeconds;
+    @Value("${couponkill.seckill.cooldown-seconds:2}")
+    int cooldownSeconds;
 
-    // 注意：以下与秒杀活动相关的方法需要在 CouponServiceFeignClient 中添加对应接口
-    // 或者创建一个新的 Feign Client 专门用于秒杀相关接口
+    @Value("${couponkill.seckill.deduct-ttl-seconds:300}")
+    int deductTtlSeconds;
 
+    @Operation(summary = "创建秒杀订单", description = "为用户创建秒杀订单")
     @PostMapping("/create")
-    @Operation(summary = "创建秒杀订单")
     @SentinelResource(value = "createSeckillOrder", blockHandler = "createSeckillOrderBlockHandler")
     public Result<Order> createSeckillOrder(
-            @RequestParam Long userId,
-            @RequestParam Long couponId) {
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "优惠券ID") @RequestParam Long couponId) {
         Order order = orderService.createOrder(userId, couponId);
         return Result.success(order);
     }
 
     // 降级处理方法
     public Result<Order> createSeckillOrderBlockHandler(Long userId, Long couponId, BlockException e) {
-        Result<Order> fail = Result.fail(ResultCode.SYSTEM_BUSY);
-        return fail;
+        return Result.fail(ResultCode.SYSTEM_BUSY);
     }
 
+    @Operation(summary = "取消秒杀订单", description = "取消指定的秒杀订单")
     @PostMapping("/cancel")
-    @Operation(summary = "取消秒杀订单")
     public Result<Boolean> cancelSeckillOrder(
-            @RequestParam String orderId,
-            @RequestParam Long userId) {
+            @Parameter(description = "订单ID") @RequestParam String orderId,
+            @Parameter(description = "用户ID") @RequestParam Long userId) {
         return Result.success(orderService.cancelOrder(orderId, userId));
     }
 
+    @Operation(summary = "检查用户是否已领取优惠券", description = "检查指定用户是否已领取指定优惠券")
     @GetMapping("/check/{userId}/{couponId}")
-    @Operation(summary = "检查用户是否已领取优惠券")
     public Result<Boolean> checkUserReceived(
-            @PathVariable Long userId,
-            @PathVariable Long couponId) {
+            @Parameter(description = "用户ID") @PathVariable Long userId,
+            @Parameter(description = "优惠券ID") @PathVariable Long couponId) {
         return Result.success(orderService.hasUserReceivedCoupon(userId, couponId));
     }
 
+    @Operation(summary = "查询用户订单", description = "分页查询指定用户的订单列表")
     @GetMapping("/user/{userId}")
-    @Operation(summary = "查询用户订单")
     public Result<List<Order>> getUserOrders(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
+            @Parameter(description = "用户ID") @PathVariable Long userId,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer pageSize) {
         List<Order> orders = orderService.getOrderByUserId(userId, pageNum, pageSize);
         return Result.success(orders);
     }
 
+    @Operation(summary = "管理员查询所有订单", description = "管理员分页查询所有订单")
     @GetMapping("/admin")
-    @Operation(summary = "管理员查询所有订单")
     public Result<List<Order>> getAllOrders(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String startTime,
-            @RequestParam(required = false) String endTime) {
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer pageSize,
+            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
         List<Order> orders = orderService.getAllOrderByCondition(pageNum, pageSize, startTime, endTime);
         return Result.success(orders);
     }
@@ -91,17 +88,17 @@ public class SeckillController {
     /**
      * 新增秒杀接口
      */
+    @Operation(summary = "执行优惠券秒杀", description = "执行指定优惠券的秒杀操作")
     @PostMapping("/seckill/doSeckill")
-    @Operation(summary = "执行优惠券秒杀")
     @SentinelResource(
             value = "couponSeckill",
             blockHandler = "seckillBlockHandler",
             fallback = "seckillFallback"
     )
     public Result<Order> doSeckill(
-            @RequestParam Long userId,
-            @RequestParam Long couponId) {
-        Order order = createOrderService.createOrder(userId, couponId);
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "优惠券ID") @RequestParam Long couponId) {
+        Order order = orderService.createOrder(userId, couponId);
         return Result.success(order);
     }
 
@@ -109,7 +106,6 @@ public class SeckillController {
      * 限流/熔断处理方法
      */
     public Result<Order> seckillBlockHandler(Long userId, Long couponId, BlockException e) {
-        e.printStackTrace();
         return Result.fail(ResultCode.SYSTEM_BUSY);
     }
 
@@ -117,7 +113,6 @@ public class SeckillController {
      * 业务异常处理方法
      */
     public Result<Order> seckillFallback(Long userId, Long couponId, Throwable e) {
-        e.printStackTrace();
         return Result.fail(500, "秒杀失败：" + e.getMessage());
     }
 }

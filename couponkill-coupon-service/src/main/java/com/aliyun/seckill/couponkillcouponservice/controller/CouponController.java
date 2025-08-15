@@ -1,16 +1,16 @@
 package com.aliyun.seckill.couponkillcouponservice.controller;
+
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-;
-
-@Api(tags = "优惠券管理")
+@Tag(name = "优惠券管理", description = "优惠券相关操作接口")
 @RestController
 @RequestMapping("/api/v1/coupon")
 public class CouponController {
@@ -21,27 +21,30 @@ public class CouponController {
         this.couponService = couponService;
     }
 
-    @ApiOperation("查询可用优惠券列表")
+    @Operation(summary = "查询可用优惠券列表", description = "获取所有可用的优惠券")
     @GetMapping("/available")
     public ApiResponse<List<Coupon>> getAvailableCoupons() {
         return ApiResponse.success(couponService.getAvailableCoupons());
     }
 
-    @ApiOperation("创建优惠券")
+    @Operation(summary = "创建优惠券", description = "创建一个新的优惠券")
     @PostMapping("/create")
-    public ApiResponse<Coupon> createCoupon(@RequestBody Coupon coupon) {
+    public ApiResponse<Coupon> createCoupon(
+            @Parameter(description = "优惠券信息") @RequestBody Coupon coupon) {
         return ApiResponse.success(couponService.createCoupon(coupon));
     }
 
-    @ApiOperation("根据ID查询优惠券")
+    @Operation(summary = "根据ID查询优惠券", description = "根据优惠券ID获取优惠券详情")
     @GetMapping("/{id}")
-    public ApiResponse<Coupon> getCouponById(@PathVariable Long id) {
+    public ApiResponse<Coupon> getCouponById(
+            @Parameter(description = "优惠券ID") @PathVariable Long id) {
         return ApiResponse.success(couponService.getCouponById(id));
     }
 
-    @ApiOperation("后台管理接口：批量发放优惠券")
+    @Operation(summary = "后台管理接口：批量发放优惠券", description = "向指定用户列表批量发放优惠券")
     @PostMapping("/admin/grant")
-    public ApiResponse<Boolean> grantCoupons(@RequestBody List<Long> userIds) {
+    public ApiResponse<Boolean> grantCoupons(
+            @Parameter(description = "用户ID列表") @RequestBody List<Long> userIds) {
         return ApiResponse.success(couponService.grantCoupons(userIds));
     }
 }

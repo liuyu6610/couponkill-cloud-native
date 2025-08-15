@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +25,8 @@ public class UserContext {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
-                return attributes.getRequest().getHeader(USER_ID_HEADER);
+                HttpServletRequest request = attributes.getRequest();
+                return request.getHeader(USER_ID_HEADER);
             }
         } catch (Exception e) {
             log.warn("Failed to get current user id", e);
@@ -40,7 +42,8 @@ public class UserContext {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
-                String roles = attributes.getRequest().getHeader(USER_ROLES_HEADER);
+                HttpServletRequest request = attributes.getRequest();
+                String roles = request.getHeader(USER_ROLES_HEADER);
                 if (roles != null && !roles.isEmpty()) {
                     return Arrays.asList(roles.split(","));
                 }
@@ -59,7 +62,8 @@ public class UserContext {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
-                String authenticated = attributes.getRequest().getHeader(AUTHENTICATED_HEADER);
+                HttpServletRequest request = attributes.getRequest();
+                String authenticated = request.getHeader(AUTHENTICATED_HEADER);
                 return "true".equals(authenticated);
             }
         } catch (Exception e) {

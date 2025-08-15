@@ -1,16 +1,17 @@
 package com.aliyun.seckill.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel("统一响应结构")
+@Schema(description = "统一响应结构")
 public class ApiResponse<T> {
 
-    @ApiModelProperty("状态码，0 表示成功")
+    @Schema(description = "状态码，0 表示成功")
     private int code;
-    @ApiModelProperty("提示信息")
+
+    @Schema(description = "提示信息")
     private String message;
-    @ApiModelProperty("返回数据")
+
+    @Schema(description = "返回数据")
     private T data;
 
     public ApiResponse() {}
@@ -33,7 +34,28 @@ public class ApiResponse<T> {
         return new ApiResponse<>(code, message, null);
     }
 
-    public int getCode() { return code; }
-    public String getMessage() { return message; }
-    public T getData() { return data; }
+    // Getters and Setters
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
 }

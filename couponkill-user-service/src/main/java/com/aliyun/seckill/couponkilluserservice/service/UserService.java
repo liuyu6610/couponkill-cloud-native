@@ -9,7 +9,7 @@ public interface UserService {
     /**
      * 用户注册
      */
-    void register(String username, String password, String phone);
+     User register(String username, String password, String phone);
 
     /**
      * 用户登录

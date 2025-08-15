@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void register(String username, String password, String phone) {
+    public User register(String username, String password, String phone) {
         // 检查用户名是否已存在
         User existUser = userMapper.selectByUsername(username);
         if (existUser != null) {
@@ -54,6 +54,7 @@ public class UserServiceImpl implements UserService {
         user.setUpdateTime(LocalDateTime.now());
 
         userMapper.insert(user);
+        return user;
     }
 
     @Override
@@ -86,7 +87,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(Long userId) {
-        return userMapper.selectById(userId);
+        return (User) userMapper.selectById(userId);
     }
 
     @Override

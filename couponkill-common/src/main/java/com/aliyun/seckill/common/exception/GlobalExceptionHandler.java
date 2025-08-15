@@ -1,6 +1,6 @@
 package com.aliyun.seckill.common.exception;
 
-import com.aliyun.seckill.common.api.ApiResp;
+import com.aliyun.seckill.common.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    public ApiResp<String> handleBusiness(BusinessException e) {
+    public ApiResponse<String> handleBusiness(BusinessException e) {
         log.warn("business error", e);
-        return ApiResp.err(e.getCode(), e.getMessage());
+        return ApiResponse.fail(e.getCode(), e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ApiResp<String> handleException(Exception e) {
+    public ApiResponse<String> handleException(Exception e) {
         log.error("unexpected error", e);
-        return ApiResp.err(500, "系统异常: " + e.getMessage());
+        return ApiResponse.fail(500, "系统异常: " + e.getMessage());
     }
 }

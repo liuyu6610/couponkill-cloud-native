@@ -1,4 +1,4 @@
-package com.aliyun.seckill.couponkillorderservice.config;
+package com.aliyun.seckill.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

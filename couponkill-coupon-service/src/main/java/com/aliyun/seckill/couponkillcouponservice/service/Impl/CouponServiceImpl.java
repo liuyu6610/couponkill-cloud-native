@@ -1,4 +1,4 @@
-// 文件路径: com/aliyun/seckill/couponkillcouponservice/service/Impl/CouponServiceImpl.java
+// com/aliyun/seckill/couponkillcouponservice/service/Impl/CouponServiceImpl.java
 package com.aliyun.seckill.couponkillcouponservice.service.Impl;
 
 import com.aliyun.seckill.common.enums.ResultCode;
@@ -39,11 +39,19 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    public Coupon createCoupon(Coupon coupon) {
+        coupon.setCreateTime(LocalDateTime.now());
+        coupon.setUpdateTime(LocalDateTime.now());
+        couponMapper.insertCoupon(coupon);
+        return coupon;
+    }
+
+    @Override
     public Coupon getCouponById(Long couponId) {
         // 先查缓存
         String key = COUPON_DETAIL_KEY + couponId;
         Coupon coupon = (Coupon) redisTemplate.opsForValue().get(key);
-        if (coupon != null) {
+        if (coupon != null && coupon.getId() != null) {
             return coupon;
         }
 
@@ -130,6 +138,12 @@ public class CouponServiceImpl implements CouponService {
             redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, coupon);
             redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId, newStock);
         }
+    }
+
+    @Override
+    public boolean grantCoupons(List<Long> userIds) {
+        // 实现批量发放优惠券逻辑
+        return true;
     }
 
     @Override

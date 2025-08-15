@@ -10,7 +10,6 @@ import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
-import com.aliyun.seckill.couponkillorderservice.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +27,6 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private CouponServiceFeignClient couponServiceFeignClient;
-
-    @Autowired
-    private UserCouponCountMapper userCouponCountMapper;
 
     @Autowired
     private OrderMapper orderMapper;
@@ -127,7 +123,8 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(4); // 已取消
         order.setCancelTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
-        boolean updateSuccess = orderMapper.updateStatus(orderId, 4, LocalDateTime.now(), LocalDateTime.now()) > 0;
+        // 修改为新的 updateStatus 方法
+        boolean updateSuccess = orderMapper.updateStatusWithCancelTime(orderId, 4, LocalDateTime.now(), LocalDateTime.now()) > 0;
         if (!updateSuccess) {
             return false;
         }
@@ -184,7 +181,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 缓存未命中，查数据库
         if (totalCount == null || seckillCount == null) {
-            UserCouponCount count = userCouponCountMapper.selectById(userId);
+            UserCouponCount count = orderMapper.selectUserCouponCountById(userId);
             if (count == null) {
                 totalCount = 0;
                 seckillCount = 0;
@@ -193,7 +190,7 @@ public class OrderServiceImpl implements OrderService {
                 newCount.setUserId(userId);
                 newCount.setTotalCount(0);
                 newCount.setSeckillCount(0);
-                userCouponCountMapper.insert(newCount);
+                orderMapper.insertUserCouponCount(newCount);
             } else {
                 totalCount = count.getTotalCount();
                 seckillCount = count.getSeckillCount();
@@ -242,9 +239,10 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
 
+    @Override
     @Transactional
     public void updateUserCouponCount(Long userId, int couponType, int change) {
-        UserCouponCount count = userCouponCountMapper.selectById(userId);
+        UserCouponCount count = orderMapper.selectUserCouponCountById(userId);
         if (count == null) {
             count = new UserCouponCount();
             count.setUserId(userId);
@@ -263,15 +261,30 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (count.getUserId() == null) {
-            userCouponCountMapper.insert(count);
+            orderMapper.insertUserCouponCount(count);
         } else {
             // 修复：只传递Mapper接口中定义的参数
-            userCouponCountMapper.update(userId, count.getTotalCount(), count.getSeckillCount());
+            orderMapper.updateUserCouponCount(userId, count.getTotalCount(), count.getSeckillCount());
         }
     }
 
     @Override
     public long count() {
         return orderMapper.countAll();
+    }
+
+    @Override
+    public Order createOrder(Order order) {
+        return null;
+    }
+
+    @Override
+    public Order getOrderById(Long id) {
+        return null;
+    }
+
+    @Override
+    public boolean payOrder(Long orderId) {
+        return false;
     }
 }

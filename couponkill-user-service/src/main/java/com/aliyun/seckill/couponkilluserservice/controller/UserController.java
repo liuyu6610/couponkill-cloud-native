@@ -1,37 +1,43 @@
 package com.aliyun.seckill.couponkilluserservice.controller;
 
 import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.couponkilluserservice.service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Api(tags = "用户管理")
+@Tag(name = "用户管理", description = "用户相关操作接口")
 @RestController
 @RequestMapping("/api/v1/user")
 public class UserController {
-
     private final UserService userService;
 
+    @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
-    @ApiOperation("用户登录")
+    @Operation(summary = "用户登录", description = "用户登录接口")
     @PostMapping("/login")
-    public ApiResponse<User> login(@RequestParam String username, @RequestParam String password) {
-        return ApiResponse.success(userService.login(username, password));
+    public ApiResponse<User> login(
+            @Parameter(description = "用户名") @RequestParam String username,
+            @Parameter(description = "密码") @RequestParam String password) {
+        return ApiResponse.success((User) userService.login(username, password));
     }
 
-    @ApiOperation("用户注册")
+    @Operation(summary = "用户注册", description = "用户注册接口")
     @PostMapping("/register")
     public ApiResponse<User> register(@RequestBody User user) {
-        return ApiResponse.success(userService.register(user));
+        return ApiResponse.success(userService.register(user.getUsername(), user.getPassword(), user.getPhone()));
     }
 
-    @ApiOperation("获取用户信息")
+    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
     @GetMapping("/profile")
-    public ApiResponse<User> getProfile(@RequestParam Long userId) {
-        return ApiResponse.success(userService.getProfile(userId));
+    public ApiResponse<User> getProfile(
+            @Parameter(description = "用户ID") @RequestParam Long userId) {
+        return ApiResponse.success(userService.getUserById(userId));
     }
 }

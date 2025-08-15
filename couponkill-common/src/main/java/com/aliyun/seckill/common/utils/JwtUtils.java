@@ -32,6 +32,25 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
+    // 修复后的静态方法
+    public static String createToken(String secret, String issuer, String audience, String userId, List<String> roles, long ttlSeconds) {
+        Key signingKey = Keys.hmacShaKeyFor(secret.getBytes());
+        long now = System.currentTimeMillis();
+        Date iat = new Date(now);
+        Date exp = new Date(now + ttlSeconds * 1000);
+
+        return Jwts.builder()
+                .setHeaderParam("kid", UUID.randomUUID().toString())
+                .setSubject(userId)
+                .setIssuer(issuer)
+                .setAudience(audience)
+                .claim("roles", roles)
+                .setIssuedAt(iat)
+                .setExpiration(exp)
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact(); // 添加.compact()以生成完整的JWT字符串
+    }
+
     // 生成令牌 (原有方法)
     public String generateToken(Long userId) {
         Map<String, Object> claims = new HashMap<>();
@@ -48,23 +67,7 @@ public class JwtUtils {
                 .compact();
     }
 
-    // 新增：支持创建带角色的token
-    public String createToken(String userId, List<String> roles, long ttlSeconds) {
-        long now = System.currentTimeMillis();
-        Date iat = new Date(now);
-        Date exp = new Date(now + ttlSeconds * 1000);
 
-        return Jwts.builder()
-                .setHeaderParam("kid", UUID.randomUUID().toString())
-                .setSubject(userId)
-                .setIssuer(issuer)
-                .setAudience(audience)
-                .claim("roles", roles)
-                .setIssuedAt(iat)
-                .setExpiration(exp)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
 
     // 从令牌中获取用户ID
     public Long extractUserId(String token) {

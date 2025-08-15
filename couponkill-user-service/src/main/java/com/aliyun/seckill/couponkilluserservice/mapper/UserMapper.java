@@ -4,14 +4,15 @@ import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 import org.apache.ibatis.annotations.*;
 
-;
-
 @Mapper
 public interface UserMapper {
     User selectByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
     int insertUser(User user);
     User selectUserById(@Param("id") Long id);
-    @Select("SELECT user_id, total_count, seckill_count, normal_count, expired_count, update_time, version FROM user_coupon_count WHERE user_id = #{userId}")
+
+    @Select("SELECT user_id as userId, total_count as totalCount, seckill_count as seckillCount, " +
+            "normal_count as normalCount, expired_count as expiredCount, update_time as updateTime " +
+            "FROM user_coupon_count WHERE user_id = #{userId}")
     UserCouponCount selectById(@Param("userId") Long userId);
 
     @Insert("INSERT INTO user_coupon_count(user_id, total_count, seckill_count, normal_count, expired_count) " +
@@ -23,4 +24,6 @@ public interface UserMapper {
     int update(@Param("userId") Long userId, @Param("totalCount") int totalCount,
                @Param("seckillCount") int seckillCount, @Param("normalCount") int normalCount,
                @Param("expiredCount") int expiredCount);
+
+    User selectByUsername(String username);
 }
