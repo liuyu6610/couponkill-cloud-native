@@ -1,3 +1,4 @@
+// 文件路径: com/aliyun/seckill/couponkillgateway/security/JwtAuthGlobalFilter.java
 package com.aliyun.seckill.couponkillgateway.security;
 
 import com.aliyun.seckill.couponkillgateway.api.ErrorCodes;
@@ -16,60 +17,94 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
+
 @Slf4j
 @Component
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     @Value("${auth.jwt.secret:CHANGE_ME_256bit_secret_please_CHANGE_ME_1234567890}")
     private String secret;
+
     @Value("${auth.jwt.issuer:https://auth.couponkill}")
     private String issuer;
+
     @Value("${auth.jwt.audience:couponkill}")
     private String audience;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
-        // Bypass for auth and actuator
         log.info("Request path: {}", path);
+
+        // 放行不需要认证的路径
         if (path.startsWith("/api/v1/auth/")
                 || path.startsWith("/actuator")
-                // 新增：放行用户注册和登录接口
                 || path.startsWith("/user/register")
                 || path.startsWith("/user/login")
-                // 补充：放行Swagger/Knife4j文档（如果需要通过网关访问）
                 || path.startsWith("/doc.html")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")) {
             log.info("Bypassing authentication for path: {}", path);
             return chain.filter(exchange);
         }
+
         String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (auth == null || !auth.startsWith("Bearer ")) {
             return unauthorized(exchange, "Missing or invalid Authorization");
         }
+
         String token = auth.substring(7);
         try {
-            Claims c = JwtUtil.parse(secret, token);
-            if (!issuer.equals(c.getIssuer())) {
+            Claims claims = JwtUtil.parse(secret, token);
+
+            // 验证issuer
+            if (!issuer.equals(claims.getIssuer())) {
                 return unauthorized(exchange, "Invalid issuer");
             }
-            // 修复点：安全地获取 audience 并判断是否包含目标 audience
-            List<String> aud = (List<String>) c.get("aud");
-            if (aud == null || !aud.contains(audience)) {
+
+            // 验证audience
+            Object audObj = claims.get("aud");
+            List<String> aud;
+            if (audObj instanceof String) {
+                aud = Collections.singletonList((String) audObj);
+            } else if (audObj instanceof List) {
+                aud = (List<String>) audObj;
+            } else {
                 return unauthorized(exchange, "Invalid audience");
             }
-            String userId = c.getSubject();
-            // propagate X-User-Id to downstream services
-            var mutated = exchange.getRequest().mutate().header("X-User-Id", userId).build();
+
+            if (!aud.contains(audience)) {
+                return unauthorized(exchange, "Invalid audience");
+            }
+
+            String userId = claims.getSubject();
+            Object rolesObj = claims.get("roles");
+            String rolesStr = "";
+
+            if (rolesObj instanceof List) {
+                List<String> roles = (List<String>) rolesObj;
+                rolesStr = String.join(",", roles);
+            } else if (rolesObj instanceof String) {
+                rolesStr = (String) rolesObj;
+            }
+
+            // 传递用户信息到下游服务
+            var mutated = exchange.getRequest().mutate()
+                    .header("X-User-Id", userId)
+                    .header("X-User-Roles", rolesStr)
+                    .header("X-Authenticated", "true")
+                    .build();
+
             return chain.filter(exchange.mutate().request(mutated).build());
         } catch (Exception e) {
+            log.error("Token validation error", e);
             return unauthorized(exchange, "Invalid token");
         }
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange, String msg){
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String msg) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         var body = ("{" +
@@ -81,5 +116,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public int getOrder() { return -100; } // run early
+    public int getOrder() {
+        return -100; // 确保在其他过滤器之前执行
+    }
 }

@@ -21,43 +21,63 @@
     </modules>
 
     <repositories>
-        <!-- 1. 阿里云仓库（包含大部分国内常用依赖） -->
+
+        <!-- 阿里云中央仓库镜像（优先使用） -->
         <repository>
-            <id>aliyun</id>
+            <id>aliyun-central</id>
+            <url>https://maven.aliyun.com/repository/central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+
+        <!-- 阿里云公共仓库 -->
+        <repository>
+            <id>aliyun-public</id>
             <url>https://maven.aliyun.com/repository/public</url>
             <releases><enabled>true</enabled></releases>
             <snapshots><enabled>false</enabled></snapshots>
         </repository>
-        <!-- 阿里云镜像（加速国内下载） -->
+
+        <!-- 阿里云Spring镜像 -->
         <repository>
-            <id>aliyun-shardingsphere</id>
-            <url>https://maven.aliyun.com/repository/apache-snapshots</url>
+            <id>aliyun-spring</id>
+            <url>https://maven.aliyun.com/repository/spring</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
         </repository>
 
-
-        <!-- 2. Maven中央仓库（官方仓库） -->
+        <!-- Maven中央仓库（备用） -->
         <repository>
-            <id>maven-central</id>
+            <id>central</id>
+            <name>Maven Central Repository</name>
             <url>https://repo1.maven.org/maven2</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
         </repository>
 
-        <!-- 3. Spring官方仓库（Spring相关依赖） -->
+        <!-- Spring官方仓库 -->
         <repository>
             <id>spring-milestones</id>
             <url>https://repo.spring.io/milestone</url>
         </repository>
-        <!-- 补充Jest所在的Maven中央仓库镜像 -->
-        <repository>
-            <id>central</id>
-            <url>https://maven.aliyun.com/repository/central</url>
-        </repository>
 
-        <!-- 4. JitPack仓库（仅作为补充，放最后） -->
+        <!-- JitPack仓库 -->
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <!-- 添加插件仓库配置 -->
+        <pluginRepository>
+            <id>central</id>
+            <name>Maven Central Plugin Repository</name>
+            <url>https://repo1.maven.org/maven2</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
     <properties>
         <!-- Java版本保持为21 -->

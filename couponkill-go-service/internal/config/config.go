@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/yaml.v3"
-
 	"couponkill-go-service/pkg/nacosclient"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Config 应用配置

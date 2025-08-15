@@ -8,12 +8,12 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
       config:
         server-addr: localhost:8848
         file-extension: yaml
         group: DEFAULT_GROUP
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
         extension-configs:
           - data-id: common.yaml
             group: DEFAULT_GROUP

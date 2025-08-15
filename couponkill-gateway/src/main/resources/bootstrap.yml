@@ -8,13 +8,13 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
         heart-beat-timeout: 30000
       config:
         server-addr: localhost:8848
         file-extension: yaml  # 配置文件格式
         group: DEFAULT_GROUP  # 配置组
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
         # 引入共用配置common.yaml
         extension-configs:
           - data-id: common.yaml

@@ -1,8 +1,6 @@
 package redisclient
 
-import (
-	"github.com/go-redis/redis/v8"
-)
+import "github.com/redis/go-redis/v9"
 
 // NewRedisClient 初始化Redis连接
 func NewRedisClient(addr, password string, db int) *redis.Client {

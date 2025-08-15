@@ -11,13 +11,13 @@ spring:
       discovery:
         # 服务注册地址
         server-addr: localhost:8848
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
         heart-beat-timeout: 30000
         heart-beat-interval: 30000
       config:
         # 配置中心地址
         server-addr: localhost:8848
-        namespace: c6504e82-cdbf-41e6-922a-53341dbdc9d2
+        namespace: 120
         # 配置文件格式
         file-extension: yaml
         extension-configs:
