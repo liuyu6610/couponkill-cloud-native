@@ -65,29 +65,6 @@ create table orders
         unique (request_id)
 );
 
-create table seckill_activity
-(
-    id                      bigint auto_increment comment '活动ID'
-        primary key,
-    coupon_id               bigint                             not null comment '优惠券ID',
-    start_time              datetime                           not null comment '开始时间',
-    end_time                datetime                           not null comment '结束时间',
-    activity_stock          int                                not null comment '活动总库存（与coupon表秒杀库存一致）',
-    activity_per_user_limit int      default 1                 not null comment '活动每人限购数量（优先级高于coupon表）',
-    status                  tinyint  default 0                 not null comment '状态(0-未开始,1-进行中,2-已结束)',
-    create_time             datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time             datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
-)
-    comment '秒杀活动表';
-
-create index idx_coupon_activity
-    on seckill_activity (coupon_id, status)
-    comment '按优惠券ID+状态查询活动';
-
-create index idx_time_status
-    on seckill_activity (start_time, end_time, status)
-    comment '查询指定时间范围内的活动状态';
-
 create table stock_log
 (
     id           bigint auto_increment comment '日志ID'
@@ -116,15 +93,16 @@ create index idx_related_id
 
 create table user
 (
-    id          bigint auto_increment comment '用户ID'
+    id               bigint auto_increment comment '用户ID'
         primary key,
-    username    varchar(50)                        not null comment '用户名',
-    password    varchar(100)                       not null comment '密码（加密存储，如bcrypt）',
-    phone       varchar(20)                        null comment '手机号',
-    email       varchar(100)                       null comment '邮箱',
-    status      tinyint  default 1                 not null comment '状态(0-禁用,1-正常)',
-    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    username         varchar(50)                        not null comment '用户名',
+    password         varchar(100)                       not null comment '密码（加密存储，如bcrypt）',
+    phone            varchar(20)                        null comment '手机号',
+    email            varchar(100)                       null comment '邮箱',
+    status           tinyint  default 1                 not null comment '状态(0-禁用,1-正常)',
+    create_time      datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    last_active_time datetime                           null comment '最后活跃时间',
     constraint uk_username
         unique (username) comment '用户名唯一'
 )

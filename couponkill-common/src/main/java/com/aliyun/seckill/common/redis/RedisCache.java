@@ -3,7 +3,6 @@ package com.aliyun.seckill.common.redis;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Component
 public class RedisCache {
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     // 布隆过滤器，解决缓存穿透（抑制 Guava @Beta 警告）
     @SuppressWarnings("UnstableApiUsage")
@@ -27,6 +25,11 @@ public class RedisCache {
 
     // 解决缓存击穿的锁
     private final ReentrantLock lock = new ReentrantLock();
+
+    // 构造函数注入
+    public RedisCache(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     // 添加到布隆过滤器
     public void addToBloomFilter(String key) {

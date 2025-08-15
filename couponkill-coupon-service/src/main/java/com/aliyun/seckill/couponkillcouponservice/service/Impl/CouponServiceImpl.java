@@ -4,16 +4,19 @@ package com.aliyun.seckill.couponkillcouponservice.service.Impl;
 import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
+import com.aliyun.seckill.common.redis.CacheUtil;
 import com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class CouponServiceImpl implements CouponService {
@@ -23,11 +26,16 @@ public class CouponServiceImpl implements CouponService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
     private static final String COUPON_DETAIL_KEY = "coupon:detail:";
     private static final String COUPON_STOCK_KEY = "coupon:stock:";
     private static final String COUPON_AVAILABLE_KEY = "coupon:available";
-
+    private CacheUtil cacheUtil;
+    @PostConstruct
+    public void init() {
+        cacheUtil = new CacheUtil(stringRedisTemplate);
+    }
     @Override
     public List<Coupon> getAvailableCoupons() {
         return couponMapper.selectAvailableCoupons();
@@ -42,24 +50,19 @@ public class CouponServiceImpl implements CouponService {
     public Coupon getCouponById(Long couponId) {
         // 先查缓存
         String key = COUPON_DETAIL_KEY + couponId;
-        Coupon coupon = (Coupon) redisTemplate.opsForValue().get(key);
-        if (coupon != null) {
-            return coupon;
-        }
-
-        // 缓存未命中，查数据库
-        coupon = couponMapper.selectById(couponId);
-        if (coupon != null) {
-            // 设置缓存，添加随机过期时间防止缓存雪崩
-            redisTemplate.opsForValue().set(key, coupon, 30 + (int)(Math.random() * 10), TimeUnit.MINUTES);
-            // 缓存库存
-            redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId, coupon.getRemainingStock());
-        } else {
-            // 缓存空对象，解决缓存穿透
-            redisTemplate.opsForValue().set(key, new Coupon(), 5, TimeUnit.MINUTES);
-        }
-
-        return coupon;
+        return cacheUtil.queryWithPassThrough(
+                key,
+                Coupon.class,
+                () -> {
+                    Coupon coupon = couponMapper.selectById(couponId);
+                    if (coupon != null) {
+                        // 同时缓存库存信息
+                        redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId, coupon.getRemainingStock());
+                    }
+                    return coupon;
+                },
+                Duration.ofMinutes(30)
+        );
     }
 
     @Override

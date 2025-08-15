@@ -25,4 +25,6 @@ public interface UserService {
      * 定时任务，处理失效用户
      */
     void handleInactiveUsers();
+
+    User getCurrentUserInfo();
 }

@@ -7,6 +7,7 @@ import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.pojo.OrderMessage;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
+import com.aliyun.seckill.common.redis.RedisCache;
 import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -34,6 +36,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderMapper orderMapper;
+    // 注入RedisCache
+    @Autowired
+    private RedisCache redisCache;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -156,21 +161,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public boolean hasUserReceivedCoupon(Long userId, Long couponId) {
-        // 先查缓存
+        // 使用RedisCache优化查询，解决缓存穿透和击穿问题
         String key = USER_RECEIVED_KEY + userId + ":" + couponId;
-        Boolean hasReceived = (Boolean) redisTemplate.opsForValue().get(key);
-        if (Boolean.TRUE.equals(hasReceived)) {
-            return true;
-        }
 
-        // 缓存未命中，查数据库
-        long count = orderMapper.countByUserAndCoupon(userId, couponId);
-        if (count > 0) {
-            redisTemplate.opsForValue().set(key, true);
-            return true;
-        }
+        // 将key添加到布隆过滤器
+        redisCache.addToBloomFilter(key);
 
-        return false;
+        Object hasReceivedObj = redisCache.get(
+                key,
+                () -> {
+                    long count = orderMapper.countByUserAndCoupon(userId, couponId);
+                    return count > 0;
+                },
+                10, // 过期时间10分钟
+                TimeUnit.MINUTES
+        );
+
+        return (Boolean) hasReceivedObj;
     }
 
     @Override
