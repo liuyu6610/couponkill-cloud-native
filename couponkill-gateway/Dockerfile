@@ -1,12 +1,16 @@
-# couponkill-gateway/Dockerfile
-FROM openjdk:21-jdk-slim
-
+FROM maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
+//复制pom.xml和源码
+COPY couponkill-gateway/pom.xml .
+COPY couponkill-gateway/src ./src
+COPY pom.xml ../pom.xml
 
-COPY target/couponkill-gateway-1.0-SNAPSHOT.jar app.jar
+# 打包（跳过测试）
+RUN mvn -f pom.xml clean package -DskipTests
 
-# 暴露端口
+
+From openjdk:17-slim
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
-
-# JVM参数优化
-ENTRYPOINT ["java", "-jar", "-Xms512m", "-Xmx512m", "app.jar"]
+CMD ["java", "-jar", "app.jar"]

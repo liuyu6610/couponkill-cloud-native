@@ -1,19 +1,25 @@
 # couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+  sql:
+    init:
+      mode: never
   application:
     name: couponkill-user-service
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
-        namespace: 120
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:120}
       config:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         file-extension: yaml
         group: DEFAULT_GROUP
-        namespace: 120
+        namespace: ${NACOS_NAMESPACE:120}
         extension-configs:
           - data-id: common.yaml
             group: DEFAULT_GROUP

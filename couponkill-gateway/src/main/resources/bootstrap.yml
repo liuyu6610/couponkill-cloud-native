@@ -1,22 +1,25 @@
 # couponkill-user-service/src/main/resources/bootstrap.yml
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: couponkill-gateway
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
-        namespace: 120
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:120}
         heart-beat-timeout: 30000
       config:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         file-extension: yaml  # 配置文件格式
         group: DEFAULT_GROUP  # 配置组
-        namespace: 120
+        namespace: ${NACOS_NAMESPACE:120}
         # 引入共用配置common.yaml
         extension-configs:
           - data-id: common.yaml
             group: DEFAULT_GROUP
             refresh: true
+        refresh-enabled: true

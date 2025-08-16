@@ -1,16 +1,22 @@
-# coupon-service/Dockerfile
-FROM maven:3.9-eclipse-temurin-21 AS build
+# 构建阶段
+FROM maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
-COPY pom.xml .
-COPY common ./common
-COPY coupon-service ./coupon-service
-RUN mvn -pl coupon-service -am -DskipTests package
+# 复制依赖模块和当前模块代码
+COPY couponkill-coupon-service/pom.xml .
+COPY couponkill-coupon-service/src ./src
+COPY couponkill-common ../couponkill-common
+COPY pom.xml ../pom.xml
 
-FROM eclipse-temurin:21-jre-alpine
-RUN addgroup -S app && adduser -S app -G app
-USER app
+# 打包
+RUN mvn -f pom.xml clean package -DskipTests
+
+# 运行阶段
+FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/coupon-service/target/*.jar app.jar
-EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=2s --retries=3 CMD wget -qO- http://127.0.0.1:8080/actuator/health || exit 1
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+COPY --from=builder /app/target/*.jar app.jar
+
+# 暴露端口（与配置一致）
+EXPOSE 8081
+
+# 启动命令（依赖内置bootstrap.yml读取nacos配置）
+ENTRYPOINT ["java", "-jar", "app.jar"]

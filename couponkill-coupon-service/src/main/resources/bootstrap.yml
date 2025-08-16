@@ -1,23 +1,26 @@
 # Spring
 spring:
+  sql:
+    init:
+      mode: never
   application:
     # 应用名称
     name: couponkill-coupon-service
   profiles:
     # 环境配置
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
       discovery:
         # 服务注册地址
-        server-addr: localhost:8848
-        namespace: 120
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:120}
         heart-beat-timeout: 30000
         heart-beat-interval: 30000
       config:
         # 配置中心地址
-        server-addr: localhost:8848
-        namespace: 120
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:120}
         # 配置文件格式
         file-extension: yaml
         extension-configs:

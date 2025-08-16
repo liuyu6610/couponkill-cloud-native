@@ -1,34 +1,26 @@
-# couponkill-go-service/Dockerfile
+# 构建阶段
 FROM golang:1.23-alpine AS builder
-
 WORKDIR /app
-
-# 先复制依赖文件，充分利用Docker缓存
-COPY go.mod go.sum ./
+# 复制go模块文件
+COPY couponkill-go-service/go.mod .
+COPY couponkill-go-service/go.sum .
+# 下载依赖
 RUN go mod download
 
-# 再复制源代码
-COPY . .
+# 复制源码
+COPY couponkill-go-service/ .
 
-# 构建应用
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o couponkill-go-service .
+# 编译（静态链接，适应alpine）
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o seckill-go ./cmd/server
 
-# 使用固定版本的基础镜像
+# 运行阶段
 FROM alpine:3.18
-
 WORKDIR /app
+# 复制二进制文件
+COPY --from=builder /app/seckill-go .
 
-# 从构建阶段复制可执行文件
-COPY --from=builder /app/couponkill-go-service .
+# 暴露端口（与部署文件一致）
+EXPOSE 8082
 
-# 暴露端口
-EXPOSE 8090
-
-# 创建日志目录并设置卷
-VOLUME ["/app/logs"]
-
-# 添加健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget --quiet --tries=1 --spider http://localhost:8090/health || exit 1
-
-# 启动应用
-ENTRYPOINT ["./couponkill-go-service"]
+# 启动
+ENTRYPOINT ["./seckill-go"]

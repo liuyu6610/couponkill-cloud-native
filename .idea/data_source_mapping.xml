@@ -10,7 +10,6 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/0f8b951d-233a-4105-ba04-c92702410891/console_6.sql" value="0f8b951d-233a-4105-ba04-c92702410891" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/88ed9333-223a-482f-9df2-92ad1558acb0/console.sql" value="88ed9333-223a-482f-9df2-92ad1558acb0" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/a8bf4cd1-82b9-4b1c-8cba-f1929abab07b/console.sql" value="a8bf4cd1-82b9-4b1c-8cba-f1929abab07b" />
-    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/a8bf4cd1-82b9-4b1c-8cba-f1929abab07b/console_1.sql" value="a8bf4cd1-82b9-4b1c-8cba-f1929abab07b" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/a8bf4cd1-82b9-4b1c-8cba-f1929abab07b/console_2.sql" value="a8bf4cd1-82b9-4b1c-8cba-f1929abab07b" />
     <file url="file://$PROJECT_DIR$/couponkill-user-service/src/main/java/com/aliyun/seckill/couponkilluserservice/mapper/UserMapper.java" value="0f8b951d-233a-4105-ba04-c92702410891" />
   </component>
