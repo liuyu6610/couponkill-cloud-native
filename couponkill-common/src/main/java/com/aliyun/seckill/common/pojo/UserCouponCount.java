@@ -7,16 +7,20 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-
 public class UserCouponCount implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private Long userId; // 关联用户ID（对应表中user_id，主键）
 
-    private Long userId;
-    private Integer totalCount;
-    private Integer seckillCount;
-    private Integer normalCount;
-    private Integer expiredCount;
+    private Integer totalCount = 0;
+
+    private Integer seckillCount = 0;
+
+    private Integer normalCount = 0;
+
+    private Integer expiredCount = 0;
+
     private LocalDateTime updateTime;
-    private Integer version;
+
+    private Integer version = 0;
 }

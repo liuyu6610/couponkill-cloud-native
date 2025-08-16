@@ -108,24 +108,32 @@ create table user
 )
     comment '用户表';
 
-create index idx_email
-    on user (email)
-    comment '按邮箱查询用户';
-
-create index idx_phone
-    on user (phone)
-    comment '按手机号查询用户';
-
 create table user_coupon_count
 (
     user_id       bigint                             not null comment '用户ID'
         primary key,
     total_count   int      default 0                 not null comment '总优惠券数量',
     seckill_count int      default 0                 not null comment '秒杀优惠券数量',
-    normal_count  int                                null,
+    normal_count  int      default 0                 null comment '普通优惠券数量',
     expired_count int      default 0                 not null comment '已过期优惠券数量',
     update_time   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     version       int      default 0                 not null comment '版本号（乐观锁）'
 )
     comment '用户优惠券数量限制表';
+CREATE TABLE IF NOT EXISTS `undo_log` (
+                                          `branch_id` BIGINT NOT NULL COMMENT '分支事务ID',
+                                          `xid` VARCHAR(128) NOT NULL COMMENT '全局事务ID',
+                                          `context` VARCHAR(128) NOT NULL COMMENT '上下文信息',
+                                          `rollback_info` LONGBLOB NOT NULL COMMENT '回滚信息',
+                                          `log_status` INT NOT NULL COMMENT '日志状态：0-正常，1-已删除',
+                                          `log_created` DATETIME NOT NULL COMMENT '创建时间',
+                                          `log_modified` DATETIME NOT NULL COMMENT '修改时间',
+                                          PRIMARY KEY (`branch_id`),
+                                          KEY `idx_xid` (`xid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'AT模式undo日志表';
+ALTER TABLE `order`
+    MODIFY COLUMN request_id varchar(64) NULL COMMENT '请求唯一标识(用于幂等性控制)';
+
+ALTER TABLE `order`
+    MODIFY COLUMN version int DEFAULT 0 NOT NULL COMMENT '版本号（乐观锁，用于并发控制）';
 

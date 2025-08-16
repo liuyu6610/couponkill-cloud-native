@@ -1,24 +1,29 @@
+// 修改 CouponServiceFeignClient.java
 package com.aliyun.seckill.couponkillorderservice.feign;
 
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.common.pojo.EnterSeckillResp;
 import com.aliyun.seckill.common.pojo.SeckillResultResp;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 // 修复CouponServiceFeignClient.java
-@FeignClient(name = "coupon-service")
+@FeignClient(name = "couponkill-coupon-service",
+        fallback = CouponServiceFeignClient.CouponServiceFallback.class
+        )
 public interface CouponServiceFeignClient {
 
     @GetMapping("/api/v1/coupon/{id}")
-    Coupon getCouponById(@PathVariable("id") Long id);
+    ApiResponse<Coupon> getCouponById(@PathVariable("id") Long id);
 
     @PostMapping("/api/v1/coupon/deduct/{id}")
-    boolean deductStock(@PathVariable("id") Long id);
+    ApiResponse<Boolean> deductStock(@PathVariable("id") Long id);
 
     @PostMapping("/api/v1/coupon/increase/{id}")
-    boolean increaseStock(@PathVariable("id") Long id);
+    ApiResponse<Boolean> increaseStock(@PathVariable("id") Long id);
 
     // 添加秒杀相关接口
     @PostMapping("/api/v1/seckill/{couponId}/enter")
@@ -43,11 +48,81 @@ public interface CouponServiceFeignClient {
 
     // 添加缺失的库存锁定相关方法
     @PostMapping("/api/v1/coupon/lock/{id}")
-    boolean lockStock(@PathVariable("id") Long id);
+    ApiResponse<Boolean> lockStock(@PathVariable("id") Long id);
 
     @PostMapping("/api/v1/coupon/confirm/{id}")
-    boolean confirmDeductStock(@PathVariable("id") Long id);
+    ApiResponse<Boolean> confirmDeductStock(@PathVariable("id") Long id);
 
     @PostMapping("/api/v1/coupon/release/{id}")
-    boolean releaseStock(@PathVariable("id") Long id);
+    ApiResponse<Boolean> releaseStock(@PathVariable("id") Long id);
+
+    @Component
+    @Slf4j
+    class CouponServiceFallback implements CouponServiceFeignClient {
+
+        @Override
+        public ApiResponse<Coupon> getCouponById(Long id) {
+            log.error("调用 getCouponById 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Boolean> deductStock(Long id) {
+            log.error("调用 deductStock 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Boolean> increaseStock(Long id) {
+            log.error("调用 increaseStock 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<EnterSeckillResp> enter(String couponId, String userId) {
+            log.error("调用 enter 失败，couponId: {}, userId: {}", couponId, userId);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<SeckillResultResp> result(String requestId) {
+            log.error("调用 result 失败，requestId: {}", requestId);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Void> markSuccess(String requestId, String orderId) {
+            log.error("调用 markSuccess 失败，requestId: {}, orderId: {}", requestId, orderId);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Void> compensate(String requestId, String couponId, String userId) {
+            log.error("调用 compensate 失败，requestId: {}, couponId: {}, userId: {}", requestId, couponId, userId);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public void createCompensationCoupon(Coupon compensationCoupon) {
+            log.error("调用 createCompensationCoupon 失败");
+        }
+
+        @Override
+        public ApiResponse<Boolean> lockStock(Long id) {
+            log.error("调用 lockStock 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Boolean> confirmDeductStock(Long id) {
+            log.error("调用 confirmDeductStock 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Boolean> releaseStock(Long id) {
+            log.error("调用 releaseStock 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
+        }
+    }
 }

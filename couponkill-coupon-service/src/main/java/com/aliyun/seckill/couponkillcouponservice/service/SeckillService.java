@@ -29,8 +29,6 @@ public class SeckillService {
         enterScript = new DefaultRedisScript<>(script, Long.class);
     }
 
-
-
     private String kStock(String couponId){ return "stock:"+couponId; }
     private String kCool(String couponId, String userId){ return "cd:"+couponId+":"+userId; }
     private String kDeduct(String reqId){ return "deduct:"+reqId; }
@@ -51,7 +49,7 @@ public class SeckillService {
             redis.opsForValue().set(kReq(reqId), "PENDING", Duration.ofMinutes(5));
             // 投递下游
             var cmd = new SeckillOrderCommand(reqId, couponId, userId, System.currentTimeMillis());
-            rocketMQTemplate.send("seckill.order.create", MessageBuilder.withPayload(cmd).setHeader("reqId", reqId).build());
+            rocketMQTemplate.send("seckill_order_create", MessageBuilder.withPayload(cmd).setHeader("reqId", reqId).build()); // 修改主题名称
             return new EnterResult(reqId, "QUEUED", 0);
         }
         if (r == 0L) return new EnterResult(reqId, "REJECTED", ErrorCodes.OUT_OF_STOCK);

@@ -18,22 +18,26 @@ spring:
         port: 8719
       eager: true
       datasource:
-          ds1:
-            nacos:
-             server-addr: localhost:8848
-             namespace: 120
-             data-id: couponkill-gateway-sentine
-             data-type: json
-             group: SENTINEL_GROUP
-             rule-type: flow
+        ds1:
+          nacos:
+            server-addr: localhost:8848
+            namespace: 120
+            data-id: couponkill-gateway-sentine
+            data-type: json
+            group: SENTINEL_GROUP
+            rule-type: flow
 
-# 通用配置（common模块使用）
+# RocketMQ 配置
 rocketmq:
-  name-server: 116.62.178.91:9876  # 所有服务共享的NameServer地址
+  name-server: 116.62.178.91:9876
   producer:
-    group: common-producer-group  # 通用生产者组
+    group: common-producer-group
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
+    # 添加事务生产者配置
+    transaction-listener:
+      enabled: true
+
 # Seata 公共配置
 seata:
   registry:

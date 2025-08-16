@@ -1,7 +1,10 @@
+// SeckillOrderResultListener.java
 package com.aliyun.seckill.couponkillorderservice.listener;
 
 import com.aliyun.seckill.common.pojo.OrderMessage;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
+import org.apache.rocketmq.spring.annotation.ConsumeMode;
+import org.apache.rocketmq.spring.annotation.MessageModel;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +16,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RocketMQMessageListener(
         consumerGroup = "seckill-order-result-group",
-        topic = "seckill.order.result",
+        topic = "seckill_order_result",
         selectorExpression = "*",
+        consumeMode = ConsumeMode.CONCURRENTLY,
+        messageModel = MessageModel.CLUSTERING,
         consumeThreadMax = 64
 )
 public class SeckillOrderResultListener implements RocketMQListener<OrderMessage> {
@@ -37,4 +42,3 @@ public class SeckillOrderResultListener implements RocketMQListener<OrderMessage
         }
     }
 }
-

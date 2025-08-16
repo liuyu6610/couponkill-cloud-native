@@ -6,20 +6,19 @@ import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
-
+@Slf4j
 @Tag(name = "优惠券管理", description = "优惠券相关操作接口")
 @RestController
 @RequestMapping("/api/v1/coupon")
 public class CouponController {
-    private final CouponService couponService;
-
-    public CouponController(CouponService couponService) {
-        this.couponService = couponService;
-    }
-
+    @Autowired
+    private CouponService couponService;
     @Operation(summary = "查询可用优惠券列表", description = "获取所有可用的优惠券")
     @GetMapping("/available")
     public ApiResponse<List<Coupon>> getAvailableCoupons() {
@@ -27,11 +26,30 @@ public class CouponController {
     }
 
     @Operation(summary = "创建优惠券", description = "创建一个新的优惠券")
-    @PostMapping("/create")
-    public ApiResponse<Coupon> createCoupon(
-            @Parameter(description = "优惠券信息") @RequestBody Coupon coupon) {
-        return ApiResponse.success(couponService.createCoupon(coupon));
-    }
+@PostMapping("/create")
+public ApiResponse<Coupon> createCoupon(
+        @Parameter(description = "优惠券名称") @RequestParam String name,
+        @Parameter(description = "优惠券描述") @RequestParam(required = false) String description,
+        @Parameter(description = "类型(1-常驻,2-秒抢)") @RequestParam Integer type,
+        @Parameter(description = "面值(元)") @RequestParam BigDecimal faceValue,
+        @Parameter(description = "最低消费(元)") @RequestParam BigDecimal minSpend,
+        @Parameter(description = "有效期(天)") @RequestParam Integer validDays,
+        @Parameter(description = "每人限领数量") @RequestParam Integer perUserLimit,
+        @Parameter(description = "总库存") @RequestParam Integer totalStock,
+        @Parameter(description = "秒杀总库存(仅秒抢类型有效)") @RequestParam(required = false) Integer seckillTotalStock) {
+    Coupon coupon = new Coupon();
+    coupon.setName(name);
+    coupon.setDescription(description);
+    coupon.setType(type);
+    coupon.setFaceValue(faceValue);
+    coupon.setMinSpend(minSpend);
+    coupon.setValidDays(validDays);
+    coupon.setPerUserLimit(perUserLimit);
+    coupon.setTotalStock(totalStock);
+    coupon.setSeckillTotalStock(seckillTotalStock);
+    return ApiResponse.success(couponService.createCoupon(coupon));
+}
+
 
     @Operation(summary = "根据ID查询优惠券", description = "根据优惠券ID获取优惠券详情")
     @GetMapping("/{id}")
@@ -46,4 +64,82 @@ public class CouponController {
             @Parameter(description = "用户ID列表") @RequestBody List<Long> userIds) {
         return ApiResponse.success(couponService.grantCoupons(userIds));
     }
+    // 在 CouponController.java 中添加以下方法
+    @Operation(summary = "锁定优惠券库存")
+    @PostMapping("/lock/{id}")
+    public ApiResponse<Boolean> lockStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        // 实现库存锁定逻辑
+        // 这里可以使用Redis分布式锁或其他机制来实现
+        try {
+            // 示例实现，实际应根据业务需求调整
+            boolean success = couponService.deductStock(id); // 或者使用其他锁定机制
+            return ApiResponse.success(success);
+        } catch (Exception e) {
+            log.error("锁定库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "锁定库存失败");
+        }
+    }
+
+    @Operation(summary = "确认扣减优惠券库存")
+    @PostMapping("/confirm/{id}")
+    public ApiResponse<Boolean> confirmDeductStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        // 实现确认扣减库存逻辑
+        // 这里通常是TCC事务的Confirm阶段，可以为空实现或者执行一些确认操作
+        return ApiResponse.success(true);
+    }
+
+    @Operation(summary = "释放优惠券库存")
+    @PostMapping("/release/{id}")
+    public ApiResponse<Boolean> releaseStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        // 实现释放库存逻辑
+        // 这里通常是TCC事务的Cancel阶段，需要释放之前锁定的库存
+        try {
+            boolean success = couponService.increaseStock(id);
+            return ApiResponse.success(success);
+        } catch (Exception e) {
+            log.error("释放库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "释放库存失败");
+        }
+    }
+    @Operation(summary = "扣减优惠券库存")
+    @PostMapping("/deduct/{id}")
+    public ApiResponse<Boolean> deductStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        try {
+            boolean result = couponService.deductStock(id);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("扣减库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "扣减库存失败: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "增加优惠券库存")
+    @PostMapping("/increase/{id}")
+    public ApiResponse<Boolean> increaseStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        try {
+            boolean result = couponService.increaseStock(id);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("增加库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "增加库存失败: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "创建补偿优惠券")
+    @PostMapping("/compensation")
+    public ApiResponse<Void> createCompensationCoupon(@RequestBody Coupon compensationCoupon) {
+        // 实现创建补偿优惠券的逻辑
+        // 这里可以根据实际业务需求进行实现
+        try {
+            // 示例实现
+            compensationCoupon.setType(1); // 常驻优惠券
+            compensationCoupon.setStatus(1); // 有效状态
+            couponService.createCoupon(compensationCoupon);
+            return ApiResponse.success(null);
+        } catch (Exception e) {
+            log.error("创建补偿优惠券失败", e);
+            return ApiResponse.fail(500, "创建补偿优惠券失败: " + e.getMessage());
+        }
+    }
+
 }

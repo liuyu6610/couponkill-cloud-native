@@ -4,7 +4,9 @@ package com.aliyun.seckill.couponkilluserservice.service.Impl;
 import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.User;
+import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.JwtUtils;
+import com.aliyun.seckill.couponkilluserservice.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserMapper;
 import com.aliyun.seckill.couponkilluserservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private JwtUtils jwtUtils;
+    @Autowired
+    private UserCouponCountMapper userCouponCountMapper;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -49,11 +53,23 @@ public class UserServiceImpl implements UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setPhone(phone);
+        user.setEmail(""); // 设置默认邮箱
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
 
-        userMapper.insert(user);
+        // 插入用户并获取自增ID
+        int result = userMapper.insertUser(user);
+        if (result <= 0 || user.getId() == null) {
+            throw new BusinessException(ResultCode.SYSTEM_BUSY.getCode(), "用户注册失败");
+        }
+        UserCouponCount count = new UserCouponCount();
+        count.setUserId(user.getId());
+        count.setTotalCount(0);
+        count.setSeckillCount(0);
+        count.setNormalCount(0);
+        count.setExpiredCount(0);
+        userCouponCountMapper.insert(count);
         return user;
     }
 

@@ -16,4 +16,9 @@ public interface CouponService {
     boolean increaseStock(Long couponId);
     void updateStock(Long couponId, int newStock);
     void handleExpiredCoupons();
+    // 在 CouponService.java 中添加
+    boolean lockStock(Long couponId);
+    boolean confirmDeductStock(Long couponId);
+    boolean releaseStock(Long couponId);
+
 }

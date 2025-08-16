@@ -12,12 +12,13 @@ import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@Slf4j
 @Tag(name = "订单管理", description = "订单及秒杀相关接口")
 @RestController
 @RequestMapping("/order")
@@ -100,15 +101,17 @@ public class OrderController {
     public Result<?> doSeckill(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "优惠券ID") @RequestParam Long couponId) {
-
+        log.info("收到秒杀请求: userId={}, couponId={}", userId, couponId);
         // 检查用户是否在冷却期
         boolean inCooldown = orderService.checkUserInCooldown(userId, couponId);
         if (inCooldown) {
+            log.info("用户 {} 在冷却期，无法参与秒杀 couponId={}", userId, couponId);
             return Result.fail(ResultCode.COOLING_DOWN, "请在" + cooldownSeconds + "秒后再试");
         }
 
         // 根据负载决定路由到Java还是Go服务
         if (servicegoConfig.shouldRouteToGo()) {
+            log.info("路由到Go服务处理秒杀请求: userId={}, couponId={}", userId, couponId);
             // 路由到Go服务
             GoSeckillFeignClient.SeckillRequest request = new GoSeckillFeignClient.SeckillRequest(userId, couponId);
             Result<?> result = goSeckillFeignClient.seckill(request);
@@ -119,6 +122,7 @@ public class OrderController {
             }
             return result;
         } else {
+            log.info("使用Java服务处理秒杀请求: userId={}, couponId={}", userId, couponId);
             // Java服务处理
             Order order = orderService.createOrder(userId, couponId);
             // 设置冷却时间

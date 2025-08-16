@@ -31,4 +31,11 @@ public interface OrderService {
     void handleSeckillFailure(String orderId, Long userId, Long couponId);
 
     void updateOrderStatus(String orderId, int i);
+
+    /**
+     * 清理用户领取优惠券的状态，允许用户重新参与秒杀
+     * @param userId 用户ID
+     * @param couponId 优惠券ID
+     */
+    void clearUserReceivedStatus(Long userId, Long couponId);
 }

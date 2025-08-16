@@ -4,6 +4,54 @@ server:
 spring:
   application:
     name: couponkill-order-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: 120
+        group: DEFAULT_GROUP
+      config:
+        server-addr: localhost:8848
+        namespace: 120
+        group: DEFAULT_GROUP
+        file-extension: yaml
+    # 添加负载均衡配置
+    loadbalancer:
+      retry:
+        enabled: true
+        max-retries-on-next-service-instance: 2
+        max-retries-on-same-service-instance: 1
+
+# Feign配置
+feign:
+  client:
+    config:
+      coupon-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+  httpclient:
+    enabled: true
+    max-connections: 200
+    max-connections-per-route: 50
+  # 启用熔断器
+  hystrix:
+    enabled: true
+
+# 负载均衡配置
+ribbon:
+  ConnectTimeout: 3000
+  ReadTimeout: 10000
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 2
+
 seata:
   enabled: true
   application-id: couponkill-order-service
@@ -21,10 +69,38 @@ seata:
       server-addr: localhost:8848
       namespace: 120
       group: DEFAULT_GROUP
-# 订单服务专属配置（仅订单服务使用）
+
+# RocketMQ 配置
 rocketmq:
+  name-server: 116.62.178.91:9876
+  producer:
+    group: order-service-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
   consumer:
     group:
-      seckill-result: seckill-order-result-group  # 订单服务专属消费组
+      seckill-result: seckill-order-result-group
   topic:
-    seckill-order-result: seckill.order.result    # 订单服务监听的主题
+    seckill-order-result: seckill.order.result
+    seckill-order-create: seckill.order.create
+    seckill-compensation: seckill.compensation
+
+# 秒杀相关配置
+couponkill:
+  seckill:
+    cooldown-seconds: 2
+    deduct-ttl-seconds: 300
+    compensation-amount: 10.0
+
+logging:
+  level:
+    com:
+      aliyun:
+        seckill:
+          couponkillorderservice:
+            feign: DEBUG
+    org:
+      springframework:
+        cloud:
+          openfeign: DEBUG
+          loadbalancer: DEBUG

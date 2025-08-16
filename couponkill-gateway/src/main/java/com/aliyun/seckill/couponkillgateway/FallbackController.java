@@ -30,10 +30,4 @@ public class FallbackController {
                 .contentType( MediaType.APPLICATION_JSON)
                 .bodyValue("{\"code\":429,\"message\":\"订单服务限流，请稍后再试\"}");
     }
-    @GetMapping("/fallback/admin")
-    public Mono<ServerResponse> adminFallback() {
-        return ServerResponse.status( HttpStatus.TOO_MANY_REQUESTS)
-                .contentType( MediaType.APPLICATION_JSON)
-                .bodyValue("{\"code\":429,\"message\":\"管理员服务限流，请稍后再试\"}");
-    }
 }

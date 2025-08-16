@@ -1,8 +1,8 @@
-// 文件路径: com/aliyun/seckill/couponkillgateway/security/JwtAuthGlobalFilter.java
 package com.aliyun.seckill.couponkillgateway.security;
 
 import com.aliyun.seckill.couponkillgateway.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -25,6 +25,9 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/v1/user/login"       // 用户登录接口
     );
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -37,13 +40,13 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 对于需要认证的接口进行JWT验证
         String token = extractToken(request);
-        if (token == null || !JwtUtil.verifyToken(token)) {
+        if (token == null || !jwtUtil.verifyToken(token)) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
         // 将用户ID存入请求头
-        String userId = JwtUtil.getUserId(token);
+        String userId = jwtUtil.getUserId(token);
         ServerHttpRequest mutatedRequest = request.mutate()
                 .header("X-User-ID", userId)
                 .build();

@@ -33,9 +33,10 @@
         ORDER BY create_time DESC
     </select>
 
-    <select id="selectById" parameterType="long" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE id = #{id}
-    </select>
+    <select id="selectById" resultMap="CouponResultMap">
+    SELECT * FROM coupon WHERE id = #{id}
+</select>
+
 
     <insert id="insertCoupon" parameterType="com.aliyun.seckill.common.pojo.Coupon">
         INSERT INTO coupon (

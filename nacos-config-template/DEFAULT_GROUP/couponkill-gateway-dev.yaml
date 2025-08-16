@@ -17,17 +17,17 @@ spring:
         ds1:
           nacos:
             server-addr: localhost:8848
-            dataId: couponkill-gateway-sentinel-rules
-            groupId: DEFAULT_GROUP
+            dataId: couponkill-gateway-sentinel
+            groupId: SENTINEL_GROUP
             rule-type: flow
     gateway:
       routes:
         - id: user-service
           uri: lb://couponkill-user-service
           predicates:
-            - Path=/user/**
+            - Path=/api/v1/user/**
           filters:
-            - StripPrefix=0
+            - StripPrefix=0  # 修改这里，从0改为1
             - name: Sentinel
               args:
                 resourceName: user-service
@@ -36,9 +36,9 @@ spring:
         - id: coupon-service
           uri: lb://couponkill-coupon-service
           predicates:
-            - Path=/coupon/**
+            - Path=/api/v1/coupon/**
           filters:
-            - StripPrefix=0
+            - StripPrefix=0  # 修改这里，从0改为1
             - name: Sentinel
               args:
                 resourceName: coupon-service
@@ -65,3 +65,7 @@ spring:
               args:
                 resourceName: seckill-go-service
                 fallbackUri: forward:/fallback/seckill
+# 添加到文件末尾
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+

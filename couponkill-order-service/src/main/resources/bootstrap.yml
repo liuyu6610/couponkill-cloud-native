@@ -1,4 +1,3 @@
-## couponkill-order-service/src/main/resources/bootstrap.yml
 spring:
   application:
     name: couponkill-order-service
@@ -9,12 +8,17 @@ spring:
       discovery:
         server-addr: localhost:8848
         namespace: 120
+        heart-beat-timeout: 30000
       config:
         server-addr: localhost:8848
         file-extension: yaml
         group: DEFAULT_GROUP
         namespace: 120
+        # 引入共用配置common.yaml
         extension-configs:
           - data-id: common.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: couponkill-order-service-dev.yaml
             group: DEFAULT_GROUP
             refresh: true

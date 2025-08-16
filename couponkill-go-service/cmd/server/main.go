@@ -4,7 +4,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,9 +36,29 @@ func main() {
 		TimeoutMs:           5000,
 		NotLoadCacheAtStart: true,
 	}
+	// 新增：解析Nacos服务器地址为host和port
+	host, portStr, err := net.SplitHostPort(cfg.Nacos.ServerAddr)
+	if err != nil {
+		log.Fatalf("解析Nacos服务器地址失败: %v", err)
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		log.Fatalf("解析Nacos端口失败: %v", err)
+	}
 
+	// 构建服务器配置
+	serverConfigs := []constant.ServerConfig{
+		{
+			IpAddr: host,
+			Port:   uint64(port),
+			Scheme: "http",
+		},
+	}
+
+	// 创建配置客户端时同时传入serverConfigs和clientConfig
 	configClient, err := clients.CreateConfigClient(map[string]interface{}{
-		"clientConfig": clientConfig,
+		"serverConfigs": serverConfigs, // 补充服务器配置
+		"clientConfig":  clientConfig,
 	})
 	if err != nil {
 		log.Fatalf("创建Nacos配置客户端失败: %v", err)

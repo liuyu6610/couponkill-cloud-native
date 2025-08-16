@@ -22,7 +22,9 @@ public enum ResultCode {
     SYSTEM_BUSY( 7003, "系统繁忙，请稍后再试"  ),
     AUTH_FAIL(8001,"用户信息出错" ),
     COOLING_DOWN(9001, "用户冷却中" ),
-    MQ_SEND_FAILED(9002,"消息发送失败" );
+    MQ_SEND_FAILED(9002,"消息发送失败" ),
+    SERVICE_UNAVAILABLE(503, "服务不可用"),
+    SYSTEM_ERROR(9081, "系统错误" );
     private final int code;
     private final String message;
 }
