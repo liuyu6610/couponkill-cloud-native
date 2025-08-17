@@ -32,7 +32,6 @@ func main() {
 	// 2. 从Nacos获取服务协同配置
 	clientConfig := constant.ClientConfig{
 		NamespaceId:         cfg.Nacos.NamespaceId,
-		ServerAddr:          cfg.Nacos.ServerAddr,
 		TimeoutMs:           5000,
 		NotLoadCacheAtStart: true,
 	}
@@ -84,7 +83,7 @@ func main() {
 	mysqlCli := mysqlclient.NewMysqlClient(cfg.Mysql.DSN)
 	defer mysqlCli.Close()
 
-	redisCli := redisclient.NewRedisClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
+	redisCli := redisclient.NewRedisClient(cfg.Redis.Addr, cfg.Redis.UserName, cfg.Redis.Password, cfg.Redis.DB)
 	defer redisCli.Close()
 
 	// 4. 初始化依赖 - 使用从Nacos获取的Java服务地址

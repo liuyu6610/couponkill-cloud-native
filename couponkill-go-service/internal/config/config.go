@@ -28,6 +28,7 @@ type Config struct {
 	} `yaml:"mysql"`
 	Redis struct {
 		Addr     string `yaml:"host"`
+		UserName string `yaml:"username"`
 		Password string `yaml:"password"`
 		DB       int    `yaml:"db"`
 	} `yaml:"data.redis"`

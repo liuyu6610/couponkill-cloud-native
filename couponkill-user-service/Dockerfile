@@ -1,23 +1,32 @@
-# 构建阶段
-FROM maven:3.8.5-openjdk-17 AS builder
+# 构建阶段：使用Maven镜像
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
+
+# 设置工作目录（项目根目录）
 WORKDIR /app
-# 复制pom.xml和源码
-COPY couponkill-user-service/pom.xml .
-COPY couponkill-user-service/src ./src
-COPY couponkill-common ../couponkill-common
-COPY pom.xml ../pom.xml
 
-# 打包（跳过测试）
-RUN mvn -f pom.xml clean package -DskipTests
+# 1. 先复制父工程POM并安装（关键步骤：让Maven识别父工程）
+COPY pom.xml .
+RUN mvn -f pom.xml clean install -N -DskipTests
 
-# 运行阶段
-FROM openjdk:17-jdk-slim
+# 2. 复制common模块的POM和源码，安装到本地仓库
+COPY couponkill-common/pom.xml couponkill-common/
+COPY couponkill-common/src couponkill-common/src/
+RUN mvn -f couponkill-common/pom.xml clean install -DskipTests
+
+# 3. 复制user-service模块的POM和源码，构建打包
+COPY couponkill-user-service/pom.xml couponkill-user-service/
+COPY couponkill-user-service/src couponkill-user-service/src/
+RUN mvn -f couponkill-user-service/pom.xml clean package -DskipTests
+
+# 运行阶段：使用轻量JRE镜像
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-# 从构建阶段复制jar包
-COPY --from=builder /app/target/*.jar app.jar
 
-# 暴露端口（与bootstrap.yml一致）
-EXPOSE 8082
+# 从构建阶段复制打包好的jar包
+COPY --from=builder /app/couponkill-user-service/target/*.jar app.jar
 
-# 启动命令（使用默认配置，依赖内置的bootstrap.yml）
+# 暴露端口
+EXPOSE 8083
+
+# 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]
