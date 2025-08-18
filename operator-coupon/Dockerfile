@@ -1,4 +1,4 @@
-FROM golang:1.23 AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /workspace
 COPY ./ ./
 RUN go mod tidy

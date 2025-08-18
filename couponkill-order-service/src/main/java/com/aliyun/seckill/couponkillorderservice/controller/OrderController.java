@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "订单管理", description = "订单及秒杀相关接口")
 @RestController
-@RequestMapping("/order")
+@RequestMapping("api/v1/order")
 public class OrderController {
 
     @Autowired
