@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couponkill-order-service  # 固定服务名，替换Helm的{{ .Values.services.order.name }}
+  namespace: couponkill
+spec:
+  replicas: 2  # 固定初始副本数，如需动态调整可通过HPA
+  selector:
+    matchLabels:
+      app: couponkill-order-service
+  template:
+    metadata:
+      labels:
+        app: couponkill-order-service
+    spec:
+      containers:
+        - name: app
+          image: "registry.example.com/couponkill/order:v1.0.0"  # 固定镜像版本，替换Helm变量
+          ports: [{containerPort: 8082}]  # 订单服务端口（假设）
+          readinessProbe:
+            httpGet: {path: /actuator/health, port: 8082}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: DB_USER
+              value: "root"  # 实际环境建议用Secret管理
+            - name: DB_PASS
+              value: "password"
+            - name: KAFKA
+              value: "broker:9092"

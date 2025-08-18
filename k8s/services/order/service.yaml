@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: couponkill-order-service
+  namespace: couponkill
+spec:
+  selector: {app: couponkill-order-service}
+  ports: [{port: 80, targetPort: 8082}]  # 对应Deployment的containerPort

@@ -1,0 +1,21 @@
+# Operator部署（k8s/operator/deployment.yaml）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seckill-scale-operator
+  namespace: couponkill
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seckill-scale-operator
+  template:
+    metadata:
+      labels:
+        app: seckill-scale-operator
+    spec:
+      serviceAccountName: operator-sa  # 需提前创建RBAC权限
+      containers:
+        - name: operator
+          image: "registry.example.com/couponkill/operator:v1.0.0"
+          command: ["./operator"]

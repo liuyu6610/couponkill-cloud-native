@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: couponkill  # 固定命名空间，不再依赖Helm变量
