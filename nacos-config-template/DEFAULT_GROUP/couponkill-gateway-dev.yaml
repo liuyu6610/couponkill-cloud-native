@@ -1,6 +1,5 @@
 server:
-  port: 8080  # 网关端口
-
+  port: 80  # 网关端口
 spring:
   cloud:
     sentinel:

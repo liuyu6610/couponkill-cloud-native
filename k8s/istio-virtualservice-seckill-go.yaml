@@ -15,7 +15,7 @@ spec:
         - destination:
             host: seckill-go-svc
             port:
-              number: 8082
+              number: 8090
       retries:
         attempts: 2
         perTryTimeout: 2s
