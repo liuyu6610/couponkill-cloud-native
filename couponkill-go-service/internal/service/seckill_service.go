@@ -11,6 +11,8 @@ import (
 	"couponkill-go-service/internal/model"
 	"couponkill-go-service/internal/repository"
 	"couponkill-go-service/pkg/idgenerator"
+
+	"github.com/google/uuid"
 )
 
 // SeckillService 秒杀服务
@@ -32,7 +34,6 @@ func NewCouponService(javaURL string) *CouponService {
 
 // GetCouponByID 调用Java服务查询优惠券信息
 func (s *CouponService) GetCouponByID(ctx context.Context, couponID int64) (*model.Coupon, error) {
-	// 实际项目中使用HTTP客户端（如gin的httpclient或resty）调用Java的coupon-service
 	// 示例URL：http://coupon-service/coupon/{id}
 	url := s.javaCouponServiceURL + "/coupon/" + fmt.Sprintf("%d", couponID) // 修复类型转换
 
@@ -72,14 +73,9 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 	}
 
 	// 2. 校验优惠券状态
-	// 注意：根据Coupon结构体，没有Status字段，使用Type字段代替判断
 	if coupon.Type != 1 && coupon.Type != 2 { // 假设有效的Type值为1或2
 		return false, errors.New("优惠券类型无效")
 	}
-
-	// 原代码中coupon.Status不存在，需要根据Coupon模型调整逻辑
-	// 如果需要Status字段，应该在Coupon模型中添加，或者使用其他字段判断
-
 	// 3. 先查缓存：用户是否已领取
 	cacheReceived, err := s.redisRepo.CheckUserReceivedCache(ctx, userID, couponID)
 	if err != nil {
@@ -117,6 +113,8 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		ExpireTime:    time.Now().AddDate(0, 0, validDays),
 		CreatedByJava: 0, // 非Java端创建
 		CreatedByGo:   1, // 标记为Go端创建
+		RequestID:     uuid.New().String(),
+		Version:       0,
 	}
 
 	// 7. 插入订单（依赖联合索引uk_user_coupon_source防止重复）

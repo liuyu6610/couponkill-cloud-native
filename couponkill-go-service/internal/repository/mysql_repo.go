@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"couponkill-go-service/pkg/idgenerator"
 	"database/sql"
 	"errors"
 
@@ -25,6 +26,9 @@ func (r *MysqlRepository) CreateOrder(ctx context.Context, order *model.Order) e
 		(id, user_id, coupon_id, status, get_time, expire_time, created_by_java, created_by_go, create_time, update_time)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 	`
+	requestID := idgenerator.GenerateGoOrderID()
+	order.RequestID = requestID
+	order.Version = 0
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
@@ -36,6 +40,8 @@ func (r *MysqlRepository) CreateOrder(ctx context.Context, order *model.Order) e
 		order.ExpireTime,
 		order.CreatedByJava,
 		order.CreatedByGo,
+		order.Version,
+		order.RequestID,
 	)
 	// 捕获唯一索引冲突错误（并发场景下的重复提交）
 	if err != nil {
@@ -54,7 +60,25 @@ func (r *MysqlRepository) CheckUserReceived(ctx context.Context, userID, couponI
 	var count int
 	err := r.db.QueryRowContext(ctx, query, userID, couponID).Scan(&count)
 	if err != nil {
+		if isDuplicateEntryError(err) {
+			return false, errors.New("用户已领取优惠券")
+
+		}
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// isDuplicateEntryError 检查是否为重复条目错误
+func isDuplicateEntryError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// MySQL重复条目错误
+	return err.Error() == "Error 1062: Duplicate entry" ||
+		// 兼容其他可能的错误信息格式
+		(err.Error() != "" &&
+			(err.Error()[:6] == "Error " ||
+				err.Error()[:9] == "duplicate" ||
+				err.Error()[:9] == "Duplicate"))
 }

@@ -22,6 +22,8 @@ import (
 	"couponkill-go-service/pkg/redisclient"
 )
 
+// main 是程序的入口函数，负责初始化配置、连接依赖服务、设置路由并启动HTTP服务器。
+// 该函数不接受参数，也不返回任何值。
 func main() {
 	// 1. 加载配置
 	cfg, err := config.Load()
