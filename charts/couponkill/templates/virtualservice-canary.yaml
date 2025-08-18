@@ -1,28 +1,45 @@
 {{- if .Values.istio.enabled }}
+# 创建Istio VirtualService资源，用于定义服务网格中的流量路由规则
+# 该VirtualService根据URI前缀将流量路由到不同的微服务
+# 支持金丝雀发布，可以为coupon和order服务配置稳定版本和金丝雀版本的流量权重
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata: {name: couponkill-vs, namespace: {{ .Values.namespace }}}
 spec:
+  # 配置网关主机和网关名称
   hosts: ["{{ .Values.istio.gateway.host }}"]
   gateways: ["{{ .Values.istio.gateway.name }}"]
   http:
+    # 路由规则按顺序匹配，第一个匹配的规则将被应用
+
+    # coupon服务路由规则：处理秒杀相关API请求
     - name: coupon-route
       match: [{uri: {prefix: "/api/v1/seckill"}}]
       route:
+        # 稳定版本路由配置，权重默认为100
         - destination: {host: {{ .Values.services.coupon.name }}, subset: stable, port: {number: 80}}
           weight: {{ default 100 .Values.canary.coupon.weightStable }}
+        # 金丝雀版本路由配置，权重默认为0
         - destination: {host: {{ .Values.services.coupon.name }}, subset: canary, port: {number: 80}}
           weight: {{ default 0 .Values.canary.coupon.weightCanary }}
+
+    # user服务路由规则：处理认证相关API请求
     - name: user-route
       match: [{uri: {prefix: "/api/v1/auth"}}]
       route:
+        # user服务路由配置，全部流量导向稳定版本
         - destination: {host: {{ .Values.services.user.name }}, port: {number: 80}}
           weight: 100
+
+    # order服务路由规则：处理其他API请求
     - name: order-route
       match: [{uri: {prefix: "/api/v1"}}]
       route:
+        # 稳定版本路由配置，权重默认为100
         - destination: {host: {{ .Values.services.order.name }}, subset: stable, port: {number: 80}}
           weight: {{ default 100 .Values.canary.order.weightStable }}
+        # 金丝雀版本路由配置，权重默认为0
         - destination: {host: {{ .Values.services.order.name }}, subset: canary, port: {number: 80}}
           weight: {{ default 0 .Values.canary.order.weightCanary }}
 {{- end }}
+

@@ -1,3 +1,4 @@
+# charts/couponkill/templates/keda.yaml
 {{- if and .Values.keda.enabled .Values.keda.kafka }}
 {{- if .Values.keda.kafka.goEdge.enabled }}
 apiVersion: keda.sh/v1alpha1
@@ -7,18 +8,18 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   scaleTargetRef:
-    name: {{ .Values.keda.kafka.goEdge.deploymentName }}
-  pollingInterval: 15
-  cooldownPeriod: 60
-  minReplicaCount: {{ .Values.keda.kafka.goEdge.minReplicaCount }}
-  maxReplicaCount: {{ .Values.keda.kafka.goEdge.maxReplicaCount }}
+    name: {{ .Values.keda.kafka.goEdge.deploymentName }}  # 关联的Deployment
+  pollingInterval: 15  # 检查间隔15秒
+  cooldownPeriod: 60  # 冷却时间60秒
+  minReplicaCount: {{ .Values.keda.kafka.goEdge.minReplicaCount }}  # 最小副本数
+  maxReplicaCount: {{ .Values.keda.kafka.goEdge.maxReplicaCount }}  # 最大副本数
   triggers:
-    - type: kafka
+    - type: kafka  # 基于Kafka消息队列触发扩缩容
       metadata:
         bootstrapServers: {{ quote .Values.keda.kafka.bootstrapServers }}
         consumerGroup: {{ .Values.keda.kafka.goEdge.consumerGroup | quote }}
-        topic: {{ .Values.keda.kafka.goEdge.topic | quote }}
-        lagThreshold: {{ .Values.keda.kafka.goEdge.lagThreshold | quote }}
+        topic: {{ .Values.keda.kafka.goEdge.topic | quote }}  # 监控的主题
+        lagThreshold: {{ .Values.keda.kafka.goEdge.lagThreshold | quote }}  # 消息堆积阈值
 ---
 {{- end }}
 {{- if .Values.keda.kafka.order.enabled }}
@@ -29,7 +30,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   scaleTargetRef:
-    name: {{ .Values.keda.kafka.order.deploymentName }}
+    name: {{ .Values.keda.kafka.order.deploymentName }}  # 订单服务Deployment
   pollingInterval: 15
   cooldownPeriod: 60
   minReplicaCount: {{ .Values.keda.kafka.order.minReplicaCount }}

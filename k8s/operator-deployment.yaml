@@ -1,9 +1,11 @@
+# k8s/operator-deployment.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: pod-monitor-operator
   namespace: default
 ---
+# 定义ClusterRole，授予Operator必要的权限
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -11,8 +13,10 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["pods"]
+    # 授予对pod的查看、列表、监控和删除权限
     verbs: ["get", "list", "watch", "delete"]
 ---
+# 将ClusterRole绑定到ServiceAccount
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -26,13 +30,14 @@ subjects:
     name: pod-monitor-operator
     namespace: default
 ---
+# Operator部署配置
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pod-monitor-operator
   namespace: default
 spec:
-  replicas: 1
+  replicas: 1  # Operator通常单实例部署
   selector:
     matchLabels:
       app: pod-monitor-operator
@@ -41,9 +46,9 @@ spec:
       labels:
         app: pod-monitor-operator
     spec:
-      serviceAccountName: pod-monitor-operator
+      serviceAccountName: pod-monitor-operator  # 使用上面定义的ServiceAccount
       containers:
         - name: pod-monitor-operator
-          image: pod-monitor-operator:latest
+          image: pod-monitor-operator:latest  # 自定义Operator镜像
           imagePullPolicy: IfNotPresent
-          command: ["/operator"]
+          command: ["/operator"]  # 启动命令，对应main.go中的入口函数

@@ -1,3 +1,12 @@
+# 部署 Coupon 服务的 Deployment 资源定义
+# 该资源用于创建和管理 Coupon 服务的 Pod 副本
+# 参数:
+#   .Values.services.coupon.name: 服务名称
+#   .Values.namespace: 命名空间
+#   .Values.services.coupon.replicas: 初始副本数
+#   .Values.image.registry: 镜像仓库地址
+#   .Values.image.tag: 镜像标签
+#   .Values.services.coupon.port: 容器暴露的端口
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: {{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
@@ -11,13 +20,23 @@ spec:
         - name: app
           image: "{{ .Values.image.registry }}/coupon:{{ .Values.image.tag }}"
           ports: [{containerPort: {{ .Values.services.coupon.port }} }]
+          # 配置就绪探针，检查服务是否准备就绪
+          # 初始延迟5秒，每10秒检查一次
           readinessProbe: {httpGet: {path: /actuator/health, port: {{ .Values.services.coupon.port }}}, initialDelaySeconds: 5, periodSeconds: 10}
           env:
+            # 设置 Redis 主机地址
             - name: REDIS_HOST
               value: "redis"
+            # 设置 Kafka broker 地址
             - name: KAFKA
               value: "broker:9092"
 ---
+# 定义 Coupon 服务的 Service 资源
+# 用于暴露服务，使其他服务可以通过 ClusterIP 访问该服务
+# 参数:
+#   .Values.services.coupon.name: 服务名称
+#   .Values.namespace: 命名空间
+#   .Values.services.coupon.port: 目标端口
 apiVersion: v1
 kind: Service
 metadata: {name: {{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
@@ -25,6 +44,15 @@ spec:
   selector: {app: {{ .Values.services.coupon.name }}}
   ports: [{port: 80, targetPort: {{ .Values.services.coupon.port }} }]
 ---
+# 条件性定义 HorizontalPodAutoscaler (HPA) 资源
+# 当启用 HPA 时，根据 CPU 使用率自动扩缩容 Pod 副本数量
+# 参数:
+#   .Values.services.coupon.hpa.enabled: 是否启用 HPA
+#   .Values.services.coupon.name: 服务名称
+#   .Values.namespace: 命名空间
+#   .Values.services.coupon.hpa.minReplicas: 最小副本数
+#   .Values.services.coupon.hpa.maxReplicas: 最大副本数
+#   .Values.services.coupon.hpa.cpu: 目标 CPU 平均利用率
 {{- if .Values.services.coupon.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -39,3 +67,4 @@ spec:
         name: cpu
         target: {type: Utilization, averageUtilization: {{ .Values.services.coupon.hpa.cpu }}}
 {{- end }}
+

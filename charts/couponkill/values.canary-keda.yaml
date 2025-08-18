@@ -1,52 +1,95 @@
+# couponkill 项目的部署配置文件，定义了服务镜像、金丝雀发布策略、自动扩缩容配置以及 Istio 网关设置。
+# 该配置用于控制多个微服务的部署行为，包括版本管理、流量分配、基于 Kafka 消费延迟的自动扩缩容以及服务网关配置。
+
 namespace: couponkill
 
+# 镜像配置部分，定义了服务使用的镜像仓库地址和标签
 image:
+  # 镜像仓库地址
   registry: registry.example.com/couponkill
+  # 镜像标签，默认使用 latest
   tag: latest
 
-# Canary settings per service (weights sum to 100)
+# 金丝雀发布配置部分，定义了各个服务的金丝雀发布策略
+# 每个服务的权重总和应为 100，用于控制稳定版本和金丝雀版本之间的流量分配
 canary:
+  # coupon 服务的金丝雀发布配置
   coupon:
+    # 是否启用金丝雀发布
     enabled: true
+    # 稳定版本的标签选择器
     stableSubsetLabel: "version=stable"
+    # 金丝雀版本的标签选择器
     canarySubsetLabel: "version=canary"
+    # 稳定版本的流量权重（百分比）
     weightStable: 90
+    # 金丝雀版本的流量权重（百分比）
     weightCanary: 10
+  # order 服务的金丝雀发布配置
   order:
+    # 是否启用金丝雀发布
     enabled: true
+    # 稳定版本的标签选择器
     stableSubsetLabel: "version=stable"
+    # 金丝雀版本的标签选择器
     canarySubsetLabel: "version=canary"
+    # 稳定版本的流量权重（百分比）
     weightStable: 95
+    # 金丝雀版本的流量权重（百分比）
     weightCanary: 5
 
-# KEDA autoscaling by Kafka lag
+# KEDA 自动扩缩容配置部分，基于 Kafka 消费延迟进行扩缩容
 keda:
+  # 是否启用 KEDA 自动扩缩容
   enabled: true
+  # Kafka 配置
   kafka:
-    bootstrapServers: "broker:9092"    # PLAINTEXT for demo; use SASL if needed
-    # Scale coupon-go edge (optional) by seckill topic backlog
+    # Kafka broker 地址，示例中使用明文传输，生产环境建议使用 SASL 认证
+    bootstrapServers: "broker:9092"
+    # coupon-go 边缘服务的扩缩容配置
     goEdge:
+      # 是否启用该服务的扩缩容
       enabled: true
+      # 对应的 Kubernetes Deployment 名称
       deploymentName: couponkill-go-service
+      # 最小副本数
       minReplicaCount: 3
+      # 最大副本数
       maxReplicaCount: 50
+      # 监控的 Kafka 主题
       topic: "seckill.order.create"
+      # 消费者组名称
       consumerGroup: "go-dispatcher"
-      lagThreshold: "1000"            # scale out when lag > 1000
-    # Scale order service by backlog as consumer group 'order-create'
+      # Kafka 消费延迟阈值，当延迟超过该值时触发扩容
+      lagThreshold: "1000"
+    # order 服务的扩缩容配置
     order:
+      # 是否启用该服务的扩缩容
       enabled: true
+      # 对应的 Kubernetes Deployment 名称
       deploymentName: couponkill-order-service
+      # 最小副本数
       minReplicaCount: 2
+      # 最大副本数
       maxReplicaCount: 30
+      # 监控的 Kafka 主题
       topic: "seckill.order.create"
+      # 消费者组名称
       consumerGroup: "order-create"
+      # Kafka 消费延迟阈值，当延迟超过该值时触发扩容
       lagThreshold: "1000"
 
+# Istio 网关配置部分，用于暴露服务到集群外部
 istio:
+  # 是否启用 Istio 网关
   enabled: true
+  # 网关配置
   gateway:
+    # 网关名称
     name: couponkill-gw
+    # 网关绑定的主机名
     host: couponkill.example.com
+    # 网关监听的端口
     port: 80
+    # 是否启用 TLS，当前为明文传输
     tls: false

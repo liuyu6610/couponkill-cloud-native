@@ -1,42 +1,57 @@
-namespace: couponkill
+# couponkill 项目配置文件
+# 定义了微服务架构中各个服务的配置信息，包括镜像、服务部署参数、自动扩缩容配置以及服务网格配置
 
+namespace: couponkill  # Kubernetes 命名空间名称
+
+# 镜像配置信息
 image:
-  registry: registry.example.com/couponkill
-  tag: latest
+  registry: registry.example.com/couponkill  # 镜像仓库地址
+  tag: latest  # 镜像标签
 
+# 微服务配置列表
 services:
+  # 优惠券服务配置
   coupon:
-    name: couponkill-coupon-service
-    port: 8081
-    replicas: 2
+    name: couponkill-coupon-service  # 服务名称
+    port: 8081  # 服务端口
+    replicas: 2  # 初始副本数
+    # 水平自动扩缩容配置
     hpa:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 20
-      cpu: 60
-  order:
-    name: couponkill-order-service
-    port: 8082
-    replicas: 2
-    hpa:
-      enabled: true
-      minReplicas: 2
-      maxReplicas: 20
-      cpu: 60
-  user:
-    name: couponkill-user-service
-    port: 8083
-    replicas: 1
-    hpa:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 10
-      cpu: 60
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 20  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
 
+  # 订单服务配置
+  order:
+    name: couponkill-order-service  # 服务名称
+    port: 8082  # 服务端口
+    replicas: 2  # 初始副本数
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 20  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+
+  # 用户服务配置
+  user:
+    name: couponkill-user-service  # 服务名称
+    port: 8083  # 服务端口
+    replicas: 1  # 初始副本数
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 10  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+
+# Istio 服务网格配置
 istio:
-  enabled: true
+  enabled: true  # 是否启用Istio
+  # 网关配置
   gateway:
-    name: couponkill-gw
-    host: couponkill.example.com
-    port: 80
-    tls: false
+    name: couponkill-gw  # 网关名称
+    host: couponkill.example.com  # 访问域名
+    port: 80  # 网关端口
+    tls: false  # 是否启用TLS加密

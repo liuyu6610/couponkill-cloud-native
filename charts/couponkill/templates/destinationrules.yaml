@@ -1,4 +1,12 @@
 {{- if .Values.istio.enabled }}
+{{/*
+创建优惠券服务的DestinationRule资源，用于定义服务的子集和流量策略
+参数:
+  .Values.istio.enabled - 是否启用istio功能的开关
+  .Values.services.coupon.name - 优惠券服务名称
+  .Values.namespace - 部署命名空间
+返回值: 无
+*/}}
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata: {name: dr-{{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
@@ -10,6 +18,14 @@ spec:
     - name: canary
       labels: { version: canary }
 ---
+{{/*
+创建订单服务的DestinationRule资源，用于定义服务的子集和流量策略
+参数:
+  .Values.istio.enabled - 是否启用istio功能的开关
+  .Values.services.order.name - 订单服务名称
+  .Values.namespace - 部署命名空间
+返回值: 无
+*/}}
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata: {name: dr-{{ .Values.services.order.name }}, namespace: {{ .Values.namespace }}}
@@ -21,3 +37,4 @@ spec:
     - name: canary
       labels: { version: canary }
 {{- end }}
+

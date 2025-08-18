@@ -1,3 +1,10 @@
+# DestinationRule定义了服务的流量策略和故障处理规则
+# 主要包括连接池配置和异常点检测机制
+# 用于提高服务的稳定性和可靠性
+
+# 第一个DestinationRule配置
+# 目标服务: seckill-go-svc
+# 作用: 为秒杀服务配置流量控制和熔断策略
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -5,18 +12,31 @@ metadata:
 spec:
   host: seckill-go-svc
   trafficPolicy:
+    # 连接池配置，用于控制服务间的连接资源
     connectionPool:
       tcp:
+        # TCP连接池最大连接数为100
         maxConnections: 100
       http:
+        # HTTP1最大待处理请求数为50
         http1MaxPendingRequests: 50
+        # 每个连接的最大请求数为10
         maxRequestsPerConnection: 10
+    # 异常点检测配置，用于实现熔断机制
     outlierDetection:
+      # 连续错误次数达到5次时触发熔断
       consecutiveErrors: 5
+      # 检查间隔为10秒
       interval: 10s
+      # 基础驱逐时间为30秒
       baseEjectionTime: 30s
+      # 最大驱逐实例百分比为50%
       maxEjectionPercent: 50
+
 ---
+# 第二个DestinationRule配置
+# 目标服务: couponkill-order-service
+# 作用: 为订单服务配置流量控制和熔断策略
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -24,14 +44,23 @@ metadata:
 spec:
   host: couponkill-order-service
   trafficPolicy:
+    # 连接池配置，资源限制比秒杀服务更高
     connectionPool:
       tcp:
+        # TCP连接池最大连接数为200
         maxConnections: 200
       http:
+        # HTTP1最大待处理请求数为100
         http1MaxPendingRequests: 100
+        # 每个连接的最大请求数为20
         maxRequestsPerConnection: 20
+    # 异常点检测配置，与秒杀服务保持一致的熔断策略
     outlierDetection:
+      # 连续错误次数达到5次时触发熔断
       consecutiveErrors: 5
+      # 检查间隔为10秒
       interval: 10s
+      # 基础驱逐时间为30秒
       baseEjectionTime: 30s
+      # 最大驱逐实例百分比为50%
       maxEjectionPercent: 50

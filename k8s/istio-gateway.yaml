@@ -1,14 +1,24 @@
+# Gateway资源定义，用于配置Istio入口网关
+# 该资源创建一个名为couponkill-gateway的网关，监听80端口，处理HTTP协议请求
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: couponkill-gateway
 spec:
+  # 选择器，指定该网关配置应用于带有istio=ingressgateway标签的网关实例
   selector:
     istio: ingressgateway
+  # 服务器配置列表，定义网关监听的端口和协议
   servers:
+    # 配置HTTP服务器，监听80端口，接受所有主机的请求
     - port:
+        # 端口号，HTTP协议的标准端口
         number: 80
+        # 端口名称，用于标识该端口的用途
         name: http
+        # 协议类型，指定为HTTP协议
         protocol: HTTP
+      # 主机列表，"*"表示接受所有主机名的请求
       hosts:
         - "*"
+

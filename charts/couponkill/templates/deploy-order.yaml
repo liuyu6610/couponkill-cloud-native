@@ -1,17 +1,26 @@
+# Deployment 配置定义了 order 服务的部署信息
+# 用于在 Kubernetes 集群中创建和管理 order 服务的 Pod 副本
+# 包含容器镜像、端口配置、健康检查和环境变量等设置
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: {{ .Values.services.order.name }}, namespace: {{ .Values.namespace }}}
 spec:
+  # 设置副本数量，控制运行的 Pod 实例数
   replicas: {{ .Values.services.order.replicas }}
+  # 选择器用于匹配具有指定标签的 Pod
   selector: {matchLabels: {app: {{ .Values.services.order.name }}}}
   template:
     metadata: {labels: {app: {{ .Values.services.order.name }}}}
     spec:
       containers:
         - name: app
+          # 定义容器使用的镜像，包含注册表地址和标签
           image: "{{ .Values.image.registry }}/order:{{ .Values.image.tag }}"
+          # 指定容器暴露的端口号
           ports: [{containerPort: {{ .Values.services.order.port }} }]
+          # 配置就绪探针，用于检测应用是否准备好接收流量
           readinessProbe: {httpGet: {path: /actuator/health, port: {{ .Values.services.order.port }}}, initialDelaySeconds: 5, periodSeconds: 10}
+          # 设置容器环境变量，包括数据库用户、密码和 Kafka 地址
           env:
             - name: DB_USER
               value: "root"
@@ -20,21 +29,30 @@ spec:
             - name: KAFKA
               value: "broker:9092"
 ---
+# Service 配置为 order 服务提供稳定的网络访问入口
+# 将内部 Pod 端口映射到集群内的固定端口上
 apiVersion: v1
 kind: Service
 metadata: {name: {{ .Values.services.order.name }}, namespace: {{ .Values.namespace }}}
 spec:
+  # 通过标签选择器关联后端的 Pod 实例
   selector: {app: {{ .Values.services.order.name }}}
+  # 定义服务端口映射关系，将外部请求转发到容器端口
   ports: [{port: 80, targetPort: {{ .Values.services.order.port }} }]
 ---
+# HorizontalPodAutoscaler (HPA) 根据 CPU 使用率自动调整 Pod 副本数量
+# 只有当 .Values.services.order.hpa.enabled 为 true 时才会启用该配置
 {{- if .Values.services.order.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata: {name: {{ .Values.services.order.name }}, namespace: {{ .Values.namespace }}}
 spec:
+  # 指定要进行扩缩容的目标资源（Deployment）
   scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: {{ .Values.services.order.name }}}
+  # 设置最小和最大副本数量范围
   minReplicas: {{ .Values.services.order.hpa.minReplicas }}
   maxReplicas: {{ .Values.services.order.hpa.maxReplicas }}
+  # 定义扩缩容指标，基于 CPU 平均利用率触发调整
   metrics:
     - type: Resource
       resource:

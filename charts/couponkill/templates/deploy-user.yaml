@@ -1,3 +1,14 @@
+# charts/couponkill/templates/deploy-user.yaml
+
+# Deployment配置：定义用户服务的部署资源
+# 用于创建和管理用户服务的Pod副本
+# 参数说明：
+#   .Values.services.user.name        - 服务名称
+#   .Values.namespace                 - 命名空间
+#   .Values.services.user.replicas    - 副本数量
+#   .Values.image.registry            - 镜像仓库地址
+#   .Values.image.tag                 - 镜像标签
+#   .Values.services.user.port        - 容器端口
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: {{ .Values.services.user.name }}, namespace: {{ .Values.namespace }}}
@@ -11,19 +22,35 @@ spec:
         - name: app
           image: "{{ .Values.image.registry }}/user:{{ .Values.image.tag }}"
           ports: [{containerPort: {{ .Values.services.user.port }} }]
+          # 就绪探针，检查服务是否可用
           readinessProbe: {httpGet: {path: /actuator/health, port: {{ .Values.services.user.port }}}, initialDelaySeconds: 5, periodSeconds: 10}
           env:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef: {name: jwt-secret, key: secret}
+
 ---
+# Service配置：为用户服务提供稳定的网络访问入口
+# 参数说明：
+#   .Values.services.user.name        - 服务名称
+#   .Values.namespace                 - 命名空间
+#   .Values.services.user.port        - 目标端口
 apiVersion: v1
 kind: Service
 metadata: {name: {{ .Values.services.user.name }}, namespace: {{ .Values.namespace }}}
 spec:
   selector: {app: {{ .Values.services.user.name }}}
   ports: [{port: 80, targetPort: {{ .Values.services.user.port }} }]
+
 ---
+# HorizontalPodAutoscaler配置（可选）：根据CPU使用率自动调整Pod副本数
+# 条件启用：仅当 .Values.services.user.hpa.enabled 为 true 时生效
+# 参数说明：
+#   .Values.services.user.name              - 被扩缩容的目标Deployment名称
+#   .Values.namespace                       - 命名空间
+#   .Values.services.user.hpa.minReplicas   - 最小副本数
+#   .Values.services.user.hpa.maxReplicas   - 最大副本数
+#   .Values.services.user.hpa.cpu           - 触发扩缩容的CPU平均利用率阈值
 {{- if .Values.services.user.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

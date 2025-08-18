@@ -1,4 +1,8 @@
 {{- if .Values.istio.enabled }}
+{{/*
+  创建 Istio Gateway 资源，用于定义入口网关的配置
+  该资源将根据 Helm values 配置来决定是否启用以及相关参数设置
+*/}}
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata: {name: {{ .Values.istio.gateway.name }}, namespace: {{ .Values.namespace }}}
@@ -9,6 +13,13 @@ spec:
     - port: {number: {{ .Values.istio.gateway.port }}, name: http, protocol: HTTP}
       hosts: ["{{ .Values.istio.gateway.host }}"]
 ---
+{{/*
+  创建 Istio VirtualService 资源，用于定义流量路由规则
+  将不同路径的请求路由到对应的服务：
+  - /api/v1/seckill 路径路由到 coupon 服务
+  - /api/v1/auth 路径路由到 user 服务
+  - /api/v1 路径路由到 order 服务
+*/}}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata: {name: couponkill-vs, namespace: {{ .Values.namespace }}}
@@ -16,10 +27,20 @@ spec:
   hosts: ["{{ .Values.istio.gateway.host }}"]
   gateways: ["{{ .Values.istio.gateway.name }}"]
   http:
+    {{/*
+      秒杀接口路由配置：将 /api/v1/seckill 开头的请求路由到 coupon 服务
+    */}}
     - match: [{uri: {prefix: "/api/v1/seckill"}}]
       route: [{destination: {host: {{ .Values.services.coupon.name }}, port: {number: 80}}}]
+    {{/*
+      认证接口路由配置：将 /api/v1/auth 开头的请求路由到 user 服务
+    */}}
     - match: [{uri: {prefix: "/api/v1/auth"}}]
       route: [{destination: {host: {{ .Values.services.user.name }}, port: {number: 80}}}]
+    {{/*
+      订单接口路由配置：将 /api/v1 开头的请求路由到 order 服务
+    */}}
     - match: [{uri: {prefix: "/api/v1"}}]
       route: [{destination: {host: {{ .Values.services.order.name }}, port: {number: 80}}}]
 {{- end }}
+

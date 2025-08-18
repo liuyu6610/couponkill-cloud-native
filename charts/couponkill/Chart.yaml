@@ -1,5 +1,8 @@
+# CouponKill 应用配置
+# 此配置文件定义了 CouponKill 应用的基本信息和配置参数
 apiVersion: v2
 name: couponkill
 version: 0.1.0
 description: CouponKill services
 type: application
+
