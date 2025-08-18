@@ -1,0 +1,11 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: couponkill-vs
+  namespace: couponkill
+spec:
+    hosts: ["couponkill.example.com"]
+    gateways: ["couponkill-gw"]
+    http:
+      - match: [{uri: {prefix: "/api/v1/order"}}]
+        route: [{destination: {host: couponkill-user-service, port: {number: 80}}}]

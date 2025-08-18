@@ -1,27 +1,49 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: couponkill-order-service  # 固定服务名，替换Helm的{{ .Values.services.order.name }}
+  # 部署元数据配置
+  # name: 部署名称，用于标识订单服务的Deployment资源
+  # namespace: 命名空间，将资源隔离在couponkill命名空间中
+  name: couponkill-order-service  # 固定服务名，
   namespace: couponkill
 spec:
+  # Deployment规范定义
+  # replicas: 副本数量，定义运行的Pod实例数
+  # selector: 标签选择器，用于匹配和管理Pod
   replicas: 2  # 固定初始副本数，如需动态调整可通过HPA
   selector:
     matchLabels:
       app: couponkill-order-service
   template:
+    # Pod模板定义
+    # metadata: Pod元数据，包含标签信息
+    # spec: Pod规范，定义容器配置
     metadata:
       labels:
         app: couponkill-order-service
     spec:
       containers:
+        # 容器配置列表
+        # name: 容器名称
+        # image: 容器镜像地址和版本
+        # ports: 容器暴露的端口列表
+        # readinessProbe: 就绪探针配置，用于检查服务是否准备就绪
+        # env: 环境变量配置列表
         - name: app
-          image: "registry.example.com/couponkill/order:v1.0.0"  # 固定镜像版本，替换Helm变量
+          image: "registry.example.com/couponkill/order:v1.1"  # 固定镜像版本，替换Helm变量
           ports: [{containerPort: 8082}]  # 订单服务端口（假设）
           readinessProbe:
+            # HTTP就绪探针配置
+            # httpGet: HTTP GET请求配置
+            # initialDelaySeconds: 初始延迟时间（秒）
+            # periodSeconds: 检查间隔时间（秒）
             httpGet: {path: /actuator/health, port: 8082}
             initialDelaySeconds: 5
             periodSeconds: 10
           env:
+            # 环境变量配置
+            # name: 环境变量名称
+            # value: 环境变量值
             - name: DB_USER
               value: "root"  # 实际环境建议用Secret管理
             - name: DB_PASS

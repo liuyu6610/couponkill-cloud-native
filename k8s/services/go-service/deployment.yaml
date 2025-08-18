@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couponkill-go-service
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels: {app: couponkill-go-service}
+  template:
+    metadata:
+      labels: {app: couponkill-go-service}
+    spec:
+      containers:
+        - name: couponkill-go-service
+          image: registry.example.com/couponkill/gov1.1
+          ports: [{containerPort: 8090}]
+          readinessProbe:
+            httpGet: {path: /actuator/health, port: 8090}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+

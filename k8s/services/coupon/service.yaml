@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: couponkill-coupon-service
+  namespace: couponkill
+spec:
+  selector: {app: couponkill-coupon-service}
+  ports: [{port: 80, targetPort: 8081}]

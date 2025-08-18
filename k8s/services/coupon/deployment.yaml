@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couponkill-coupon-service
+  namespace: couponkill
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: couponkill-coupon-service
+  template:
+    metadata:
+        labels:
+            app: couponkill-coupon-service
+    spec:
+      containers:
+        - name: app
+          image: "registry.example.com/couponkill/coupon:v1.0"
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet: {path: /actuator/health, port: 8081}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+

@@ -1,0 +1,33 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: gateway-vs
+  namespace: couponkill
+spec:
+  hosts: ["couponkill.example.com"]
+  gateways: ["couponkill-gw"]
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v1"
+      route:
+        - destination:
+            host: couponkill-gateway-svc
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: "/seckill"
+      route:
+        - destination:
+            host: couponkill-gateway-svc
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: "/static"
+      route:
+        - destination:
+            host: couponkill-gateway-svc
+            port:
+              number: 80

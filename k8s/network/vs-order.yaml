@@ -8,4 +8,4 @@ spec:
   gateways: ["couponkill-gw"]
   http:
     - match: [{uri: {prefix: "/api/v1/order"}}]  # 订单服务路由前缀
-      route: [{destination: {host: couponkill-order-service, port: {number: 80}}}]
+      route: [{destination: {host: couponkill-gateway-svc, port: {number: 80}}}]

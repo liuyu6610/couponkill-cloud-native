@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couponkill-gateway
+  namespace: couponkill
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: couponkill-gateway
+  template:
+    metadata:
+      labels:
+        app: couponkill-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: registry.example.com/couponkill/gateway:v1.0.0
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          env:
+            - name: NACOS_SERVER_ADDR
+              value: "nacos-service.couponkill.svc:8848"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"

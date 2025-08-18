@@ -1,0 +1,17 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+    name: couponkill-gateway
+    namespace: couponkill
+spec:
+  maxReplicas: 5
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: couponkill-gateway
+  minReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {averageUtilization: 55, type: Utilization}

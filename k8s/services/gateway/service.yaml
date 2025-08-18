@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: couponkill-gateway-svc  # 服务名称，需与vs-gateway.yaml中的host一致
+  namespace: couponkill
+spec:
+  selector:
+    app: couponkill-gateway  # 匹配业务Gateway的Pod标签
+  ports:
+    - port: 80  # Istio转发时使用的端口（与vs-gateway.yaml中的port一致）
+      targetPort: 8080
