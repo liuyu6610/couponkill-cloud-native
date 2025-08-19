@@ -34,10 +34,6 @@ seata:
     service-port: 8091
   service:
     vgroup-mapping:
-      couponkill_tx_group: default  # 客户端的tx-service-group映射到Seata的默认集群
-      order-service-seata-service-group: default
-      couponkill-user-service-tx-group: default
-      couponkill-coupon-service-tx-group: default
-      couponkill-order-service-tx-group: default
+      dev_tx_group: default  # 客户端的tx-service-group映射到Seata的默认集群
     grouplist:
       default: localhost:8091  # Seata服务器的事务端口（与server.service-port一致）

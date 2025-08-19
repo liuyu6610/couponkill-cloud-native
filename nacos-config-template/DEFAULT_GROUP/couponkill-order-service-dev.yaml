@@ -55,7 +55,7 @@ ribbon:
 seata:
   enabled: true
   application-id: couponkill-order-service
-  tx-service-group: couponkill-order-service-tx-group
+  tx-service-group: dev-tx-group
   registry:
     type: nacos
     nacos:

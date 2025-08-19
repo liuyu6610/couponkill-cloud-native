@@ -22,7 +22,7 @@ couponkill:
 seata:
   enabled: true
   application-id: couponkill-coupon-service
-  tx-service-group: couponkill-coupon-service-tx-group
+  tx-service-group: dev-tx-group
   registry:
     type: nacos
     nacos:

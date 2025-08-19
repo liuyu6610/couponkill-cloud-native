@@ -19,7 +19,7 @@ jwt:
 seata:
   enabled: true
   application-id: couponkill-user-service
-  tx-service-group: couponkill-user-service-tx-group
+  tx-service-group: dev-tx-group
   registry:
     type: nacos
     nacos:

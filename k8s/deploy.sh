@@ -4,7 +4,6 @@ kubectl apply -f namespace.yaml
 
 # 部署中间件（如需，如Redis、Kafka，需补充对应YAML）
 # kubectl apply -f middleware/
-
 # 部署指定服务（参数为服务名，如order、coupon）
 deploy_service() {
   if [ -d "services/$1" ]; then

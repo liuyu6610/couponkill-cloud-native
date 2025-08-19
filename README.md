@@ -36,17 +36,25 @@ couponkill-gateway: 网关服务
 
 ### 环境要求
 
-Kubernetes 1.24+（推荐使用kubekey安装）
+Kubernetes 1.26+（推荐使用kubekey安装）
 
-Helm 3.0+
+（如果使用可视化界面，使用kubekey安装时添加kubesphere，
+个人选择kubesphere各种功能开启即可，devops，监控功能，helm的仓库网上自行查找）
 
-Jenkins 2.300+
+helm v3.16.3（个人选择，安装时看官网的版本计算，避免版本问题）
 
-Docker 2.0.10+
+Jenkins （使用云效或者kubesphere就不用自己下载，可视化界面操作修改Jenkins即可）
+
+Docker 云服务器自带（简单快速初始设置即可），比如阿里云的ecs
+
+jmeter 压测工具
+
 
 ### 部署步骤
 
-准备阿里云资源
+准备阿里云资源（使用ack更简单，有米推荐）
+
+配置阿里云Ecs自行搭建（三台搭建最基本高可用集群，1台master和node，一台master，一台node）
 
 配置阿里云 RDS MySQL 实例
 
@@ -94,11 +102,10 @@ helm install rocketmq rocketmq/rocketmq -n middleware
 
 bash
 
-#### 使用Helm部署应用
+#### 自己手动部署应用
 
-```bash
-helm install couponkill ./charts/couponkill -n couponkill --create-namespace
-```
+推荐使用集群生成后的config复制到本地开发工具，比如idea下载插件kubenetes，命令行工具，连接远程即可，比在服务器更加直观
+（每个yaml的注释非常非常详细，建议查看）
 
 #### 部署Operator
 
