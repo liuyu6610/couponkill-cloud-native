@@ -22,7 +22,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private static final List<String> WHITE_LIST = List.of(
             "/fallback/",              // 网关降级接口
             "/api/v1/user/register",   // 用户注册接口
-            "/api/v1/user/login"       // 用户登录接口
+            "/api/v1/user/login" ,// 用户登录接口
+            "/api/v1/auth/token/mock"
     );
 
     @Autowired
