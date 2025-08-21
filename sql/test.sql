@@ -1,110 +1,194 @@
--- 插入测试用户数据
-INSERT INTO user (username, password, phone, email, status, create_time, update_time) VALUES
-                                                                                          ('admin', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138000', 'admin@example.com', 1, NOW(), NOW()),
-                                                                                          ('testuser1', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138001', 'test1@example.com', 1, NOW(), NOW()),
-                                                                                          ('testuser2', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138002', 'test2@example.com', 1, NOW(), NOW()),
-                                                                                          ('testuser3', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138003', 'test3@example.com', 1, NOW(), NOW());
+-- 插入用户数据 (50条)可以使用go语言的代码，看自己选择
+INSERT INTO user (username, password, phone, email, status) VALUES
+('user1', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '13800000001', 'user1@example.com', 1),
+('user2', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '13800000002', 'user2@example.com', 1),
+('user3', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000003', 'user3@example.com', 1),
+('user4', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000004', 'user4@example.com', 1),
+('user5', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000005', 'user5@example.com', 1),
+('user6', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000006', 'user6@example.com', 1),
+('user7', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000007', 'user7@example.com', 1),
+('user8', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000008', 'user8@example.com', 1),
+('user9', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000009', 'user9@example.com', 1),
+('user10', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000010', 'user10@example.com', 1),
+('user11', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000011', 'user11@example.com', 1),
+('user12', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000012', 'user12@example.com', 1),
+('user13', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000013', 'user13@example.com', 1),
+('user14', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000014', 'user14@example.com', 1),
+('user15', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000015', 'user15@example.com', 1),
+('user16', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000016', 'user16@example.com', 1),
+('user17', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000017', 'user17@example.com', 1),
+('user18', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000018', 'user18@example.com', 1),
+('user19', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000019', 'user19@example.com', 1),
+('user20', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000020', 'user20@example.com', 1),
+('user21', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000021', 'user21@example.com', 1),
+('user22', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000022', 'user22@example.com', 1),
+('user23', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000023', 'user23@example.com', 1),
+('user24', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000024', 'user24@example.com', 1),
+('user25', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000025', 'user25@example.com', 1),
+('user26', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000026', 'user26@example.com', 1),
+('user27', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000027', 'user27@example.com', 1),
+('user28', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000028', 'user28@example.com', 1),
+('user29', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000029', 'user29@example.com', 1),
+('user30', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000030', 'user30@example.com', 1),
+('user31', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000031', 'user31@example.com', 1),
+('user32', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000032', 'user32@example.com', 1),
+('user33', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000033', 'user33@example.com', 1),
+('user34', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000034', 'user34@example.com', 1),
+('user35', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000035', 'user35@example.com', 1),
+('user36', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000036', 'user36@example.com', 1),
+('user37', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000037', 'user37@example.com', 1),
+('user38', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000038', 'user38@example.com', 1),
+('user39', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000039', 'user39@example.com', 1),
+('user40', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000040', 'user40@example.com', 1),
+('user41', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000041', 'user41@example.com', 1),
+('user42', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000042', 'user42@example.com', 1),
+('user43', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000043', 'user43@example.com', 1),
+('user44', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000044', 'user44@example.com', 1),
+('user45', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000045', 'user45@example.com', 1),
+('user46', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000046', 'user46@example.com', 1),
+('user47', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000047', 'user47@example.com', 1),
+('user48', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000048', 'user48@example.com', 1),
+('user49', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000049', 'user49@example.com', 1),
+('user50', '$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012349', '13800000050', 'user50@example.com', 1);
 
--- 初始化用户优惠券统计表
-INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count, update_time, version) VALUES
-                                                                                                                           (1, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (2, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (3, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (4, 0, 0, 0, 0, NOW(), 0);
+-- 插入优惠券数据 (15条)
+INSERT INTO coupon (name, description, type, face_value, min_spend, valid_days, per_user_limit, total_stock, seckill_remaining_stock, status) VALUES
+('新人专享券', '新用户专享优惠券', 1, 10.00, 50.00, 7, 1, 1000, 0, 1),
+('满减优惠券', '满100减20优惠券', 1, 20.00, 100.00, 15, 2, 500, 0, 1),
+('秒杀券A', '限时秒杀优惠券A', 2, 5.00, 30.00, 1, 1, 200, 200, 1),
+('秒杀券B', '限时秒杀优惠券B', 2, 10.00, 50.00, 1, 1, 150, 150, 1),
+('秒杀券C', '限时秒杀优惠券C', 2, 15.00, 80.00, 1, 1, 100, 100, 1),
+('节日特惠券', '节日特惠优惠券', 1, 30.00, 150.00, 30, 1, 300, 0, 1),
+('会员专享券', '会员专享优惠券', 1, 25.00, 100.00, 10, 3, 200, 0, 1),
+('周末狂欢券', '周末狂欢优惠券', 1, 15.00, 60.00, 3, 2, 400, 0, 1),
+('秒杀券D', '限时秒杀优惠券D', 2, 8.00, 40.00, 1, 1, 180, 180, 1),
+('秒杀券E', '限时秒杀优惠券E', 2, 12.00, 60.00, 1, 1, 120, 120, 1),
+('生日券', '生日特惠优惠券', 1, 50.00, 200.00, 7, 1, 100, 0, 1),
+('推荐奖励券', '推荐好友奖励券', 1, 10.00, 50.00, 15, 5, 500, 0, 1),
+('积分兑换券', '积分兑换优惠券', 1, 5.00, 20.00, 5, 10, 1000, 0, 1),
+('品牌合作券', '品牌合作优惠券', 1, 40.00, 180.00, 20, 1, 150, 0, 1),
+('限时秒杀券', '限时秒杀优惠券', 2, 20.00, 100.00, 1, 1, 80, 80, 1);
 
--- 插入测试优惠券数据
-INSERT INTO coupon (name, description, type, face_value, min_spend, valid_days, per_user_limit, total_stock, seckill_total_stock, remaining_stock, seckill_remaining_stock, status, create_time, update_time) VALUES
-                                                                                                                                                                                                                  ('新人专享券', '新用户注册专享优惠券', 1, 10.00, 50.00, 30, 1, 1000, 0, 1000, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('满减优惠券', '满100减20优惠券', 1, 20.00, 100.00, 15, 2, 500, 0, 500, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('秒杀优惠券', '限时秒杀优惠券', 2, 5.00, 30.00, 7, 1, 1000, 100, 1000, 100, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('节日特惠券', '节日 special offer', 1, 50.00, 200.00, 30, 1, 200, 0, 200, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('通用优惠券', '全场通用优惠券', 1, 15.00, 60.00, 20, 3, 800, 0, 800, 0, 1, NOW(), NOW());
+-- 插入订单数据 (50条)
+INSERT INTO `order` (id, user_id, coupon_id, status, get_time, expire_time, use_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version) VALUES
+(1000000000000000001, 1, 3, 1, '2023-10-01 10:00:00', '2023-10-08 10:00:00', NULL, NULL, '2023-10-01 10:00:00', '2023-10-01 10:00:00', 1, 0, 'req001', 0),
+(1000000000000000002, 2, 4, 2, '2023-10-01 10:05:00', '2023-10-08 10:05:00', '2023-10-02 14:30:00', NULL, '2023-10-01 10:05:00', '2023-10-02 14:30:00', 1, 0, 'req002', 0),
+(1000000000000000003, 3, 5, 3, '2023-09-01 09:00:00', '2023-09-02 09:00:00', NULL, NULL, '2023-09-01 09:00:00', '2023-09-05 09:00:00', 1, 0, 'req003', 0),
+(1000000000000000004, 4, 3, 4, '2023-10-01 10:10:00', '2023-10-08 10:10:00', NULL, '2023-10-01 11:00:00', '2023-10-01 10:10:00', '2023-10-01 11:00:00', 1, 0, 'req004', 0),
+(1000000000000000005, 5, 4, 1, '2023-10-01 10:15:00', '2023-10-08 10:15:00', NULL, NULL, '2023-10-01 10:15:00', '2023-10-01 10:15:00', 1, 0, 'req005', 0),
+(1000000000000000006, 6, 5, 2, '2023-10-01 10:20:00', '2023-10-08 10:20:00', '2023-10-03 16:45:00', NULL, '2023-10-01 10:20:00', '2023-10-03 16:45:00', 1, 0, 'req006', 0),
+(1000000000000000007, 7, 3, 1, '2023-10-01 10:25:00', '2023-10-08 10:25:00', NULL, NULL, '2023-10-01 10:25:00', '2023-10-01 10:25:00', 1, 0, 'req007', 0),
+(1000000000000000008, 8, 4, 1, '2023-10-01 10:30:00', '2023-10-08 10:30:00', NULL, NULL, '2023-10-01 10:30:00', '2023-10-01 10:30:00', 1, 0, 'req008', 0),
+(1000000000000000009, 9, 5, 4, '2023-10-01 10:35:00', '2023-10-08 10:35:00', NULL, '2023-10-01 11:15:00', '2023-10-01 10:35:00', '2023-10-01 11:15:00', 1, 0, 'req009', 0),
+(1000000000000000010, 10, 3, 2, '2023-10-01 10:40:00', '2023-10-08 10:40:00', '2023-10-02 11:20:00', NULL, '2023-10-01 10:40:00', '2023-10-02 11:20:00', 1, 0, 'req010', 0),
+(1000000000000000011, 11, 6, 1, '2023-10-01 10:45:00', '2023-10-31 10:45:00', NULL, NULL, '2023-10-01 10:45:00', '2023-10-01 10:45:00', 1, 0, 'req011', 0),
+(1000000000000000012, 12, 7, 1, '2023-10-01 10:50:00', '2023-10-11 10:50:00', NULL, NULL, '2023-10-01 10:50:00', '2023-10-01 10:50:00', 1, 0, 'req012', 0),
+(1000000000000000013, 13, 8, 2, '2023-10-01 10:55:00', '2023-10-04 10:55:00', '2023-10-03 13:10:00', NULL, '2023-10-01 10:55:00', '2023-10-03 13:10:00', 1, 0, 'req013', 0),
+(1000000000000000014, 14, 9, 1, '2023-10-01 11:00:00', '2023-10-08 11:00:00', NULL, NULL, '2023-10-01 11:00:00', '2023-10-01 11:00:00', 1, 0, 'req014', 0),
+(1000000000000000015, 15, 10, 4, '2023-10-01 11:05:00', '2023-10-08 11:05:00', NULL, '2023-10-01 12:00:00', '2023-10-01 11:05:00', '2023-10-01 12:00:00', 1, 0, 'req015', 0),
+(1000000000000000016, 16, 11, 1, '2023-10-01 11:10:00', '2023-10-08 11:10:00', NULL, NULL, '2023-10-01 11:10:00', '2023-10-01 11:10:00', 1, 0, 'req016', 0),
+(1000000000000000017, 17, 12, 2, '2023-10-01 11:15:00', '2023-10-16 11:15:00', '2023-10-05 15:30:00', NULL, '2023-10-01 11:15:00', '2023-10-05 15:30:00', 1, 0, 'req017', 0),
+(1000000000000000018, 18, 13, 3, '2023-09-15 09:30:00', '2023-09-20 09:30:00', NULL, NULL, '2023-09-15 09:30:00', '2023-09-25 09:30:00', 1, 0, 'req018', 0),
+(1000000000000000019, 19, 14, 1, '2023-10-01 11:20:00', '2023-10-21 11:20:00', NULL, NULL, '2023-10-01 11:20:00', '2023-10-01 11:20:00', 1, 0, 'req019', 0),
+(1000000000000000020, 20, 15, 2, '2023-10-01 11:25:00', '2023-10-08 11:25:00', '2023-10-04 10:15:00', NULL, '2023-10-01 11:25:00', '2023-10-04 10:15:00', 1, 0, 'req020', 0),
+(1000000000000000021, 21, 3, 1, '2023-10-01 11:30:00', '2023-10-08 11:30:00', NULL, NULL, '2023-10-01 11:30:00', '2023-10-01 11:30:00', 1, 0, 'req021', 0),
+(1000000000000000022, 22, 4, 4, '2023-10-01 11:35:00', '2023-10-08 11:35:00', NULL, '2023-10-01 12:30:00', '2023-10-01 11:35:00', '2023-10-01 12:30:00', 1, 0, 'req022', 0),
+(1000000000000000023, 23, 5, 1, '2023-10-01 11:40:00', '2023-10-08 11:40:00', NULL, NULL, '2023-10-01 11:40:00', '2023-10-01 11:40:00', 1, 0, 'req023', 0),
+(1000000000000000024, 24, 6, 2, '2023-10-01 11:45:00', '2023-10-31 11:45:00', '2023-10-06 17:20:00', NULL, '2023-10-01 11:45:00', '2023-10-06 17:20:00', 1, 0, 'req024', 0),
+(1000000000000000025, 25, 7, 1, '2023-10-01 11:50:00', '2023-10-11 11:50:00', NULL, NULL, '2023-10-01 11:50:00', '2023-10-01 11:50:00', 1, 0, 'req025', 0),
+(1000000000000000026, 26, 8, 3, '2023-09-20 10:00:00', '2023-09-23 10:00:00', NULL, NULL, '2023-09-20 10:00:00', '2023-09-28 10:00:00', 1, 0, 'req026', 0),
+(1000000000000000027, 27, 9, 1, '2023-10-01 11:55:00', '2023-10-08 11:55:00', NULL, NULL, '2023-10-01 11:55:00', '2023-10-01 11:55:00', 1, 0, 'req027', 0),
+(1000000000000000028, 28, 10, 2, '2023-10-01 12:00:00', '2023-10-08 12:00:00', '2023-10-03 12:45:00', NULL, '2023-10-01 12:00:00', '2023-10-03 12:45:00', 1, 0, 'req028', 0),
+(1000000000000000029, 29, 11, 4, '2023-10-01 12:05:00', '2023-10-08 12:05:00', NULL, '2023-10-01 13:00:00', '2023-10-01 12:05:00', '2023-10-01 13:00:00', 1, 0, 'req029', 0),
+(1000000000000000030, 30, 12, 1, '2023-10-01 12:10:00', '2023-10-16 12:10:00', NULL, NULL, '2023-10-01 12:10:00', '2023-10-01 12:10:00', 1, 0, 'req030', 0),
+(1000000000000000031, 31, 13, 2, '2023-10-01 12:15:00', '2023-10-06 12:15:00', '2023-10-05 14:30:00', NULL, '2023-10-01 12:15:00', '2023-10-05 14:30:00', 1, 0, 'req031', 0),
+(1000000000000000032, 32, 14, 1, '2023-10-01 12:20:00', '2023-10-21 12:20:00', NULL, NULL, '2023-10-01 12:20:00', '2023-10-01 12:20:00', 1, 0, 'req032', 0),
+(1000000000000000033, 33, 15, 3, '2023-09-25 08:30:00', '2023-09-26 08:30:00', NULL, NULL, '2023-09-25 08:30:00', '2023-09-30 08:30:00', 1, 0, 'req033', 0),
+(1000000000000000034, 34, 3, 1, '2023-10-01 12:25:00', '2023-10-08 12:25:00', NULL, NULL, '2023-10-01 12:25:00', '2023-10-01 12:25:00', 1, 0, 'req034', 0),
+(1000000000000000035, 35, 4, 2, '2023-10-01 12:30:00', '2023-10-08 12:30:00', '2023-10-02 13:15:00', NULL, '2023-10-01 12:30:00', '2023-10-02 13:15:00', 1, 0, 'req035', 0),
+(1000000000000000036, 36, 5, 4, '2023-10-01 12:35:00', '2023-10-08 12:35:00', NULL, '2023-10-01 14:00:00', '2023-10-01 12:35:00', '2023-10-01 14:00:00', 1, 0, 'req036', 0),
+(1000000000000000037, 37, 6, 1, '2023-10-01 12:40:00', '2023-10-31 12:40:00', NULL, NULL, '2023-10-01 12:40:00', '2023-10-01 12:40:00', 1, 0, 'req037', 0),
+(1000000000000000038, 38, 7, 1, '2023-10-01 12:45:00', '2023-10-11 12:45:00', NULL, NULL, '2023-10-01 12:45:00', '2023-10-01 12:45:00', 1, 0, 'req038', 0),
+(1000000000000000039, 39, 8, 2, '2023-10-01 12:50:00', '2023-10-04 12:50:00', '2023-10-03 11:10:00', NULL, '2023-10-01 12:50:00', '2023-10-03 11:10:00', 1, 0, 'req039', 0),
+(1000000000000000040, 40, 9, 1, '2023-10-01 12:55:00', '2023-10-08 12:55:00', NULL, NULL, '2023-10-01 12:55:00', '2023-10-01 12:55:00', 1, 0, 'req040', 0),
+(1000000000000000041, 41, 10, 3, '2023-09-28 09:45:00', '2023-09-29 09:45:00', NULL, NULL, '2023-09-28 09:45:00', '2023-10-03 09:45:00', 1, 0, 'req041', 0),
+(1000000000000000042, 42, 11, 4, '2023-10-01 13:00:00', '2023-10-08 13:00:00', NULL, '2023-10-01 15:00:00', '2023-10-01 13:00:00', '2023-10-01 15:00:00', 1, 0, 'req042', 0),
+(1000000000000000043, 43, 12, 1, '2023-10-01 13:05:00', '2023-10-16 13:05:00', NULL, NULL, '2023-10-01 13:05:00', '2023-10-01 13:05:00', 1, 0, 'req043', 0),
+(1000000000000000044, 44, 13, 2, '2023-10-01 13:10:00', '2023-10-06 13:10:00', '2023-10-04 16:25:00', NULL, '2023-10-01 13:10:00', '2023-10-04 16:25:00', 1, 0, 'req044', 0),
+(1000000000000000045, 45, 14, 1, '2023-10-01 13:15:00', '2023-10-21 13:15:00', NULL, NULL, '2023-10-01 13:15:00', '2023-10-01 13:15:00', 1, 0, 'req045', 0),
+(1000000000000000046, 46, 15, 3, '2023-09-30 10:30:00', '2023-10-01 10:30:00', NULL, NULL, '2023-09-30 10:30:00', '2023-10-05 10:30:00', 1, 0, 'req046', 0),
+(1000000000000000047, 47, 3, 1, '2023-10-01 13:20:00', '2023-10-08 13:20:00', NULL, NULL, '2023-10-01 13:20:00', '2023-10-01 13:20:00', 1, 0, 'req047', 0),
+(1000000000000000048, 48, 4, 4, '2023-10-01 13:25:00', '2023-10-08 13:25:00', NULL, '2023-10-01 16:00:00', '2023-10-01 13:25:00', '2023-10-01 16:00:00', 1, 0, 'req048', 0),
+(1000000000000000049, 49, 5, 1, '2023-10-01 13:30:00', '2023-10-08 13:30:00', NULL, NULL, '2023-10-01 13:30:00', '2023-10-01 13:30:00', 1, 0, 'req049', 0),
+(1000000000000000050, 50, 6, 2, '2023-10-01 13:35:00', '2023-10-31 13:35:00', '2023-10-07 12:20:00', NULL, '2023-10-01 13:35:00', '2023-10-07 12:20:00', 1, 0, 'req050', 0);
 
--- 插入测试订单数据（可选）
--- 注意：订单表中有一些约束，需要确保user_id和coupon_id存在
-INSERT INTO `order` (id, user_id, coupon_id, status, get_time, expire_time, create_time, update_time, created_by_java, created_by_go, request_id, version) VALUES
-                                                                                                                                                               (1000000000000000001, 2, 1, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW(), 1, 0, 'REQ001', 0),
-                                                                                                                                                               (1000000000000000002, 3, 2, 1, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), NOW(), NOW(), 1, 0, 'REQ002', 0);
+-- 插入用户优惠券数量限制数据 (50条)
+INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count) VALUES
+(1, 3, 2, 1, 0),
+(2, 2, 1, 1, 0),
+(3, 1, 1, 0, 0),
+(4, 2, 1, 1, 0),
+(5, 3, 2, 1, 0),
+(6, 2, 1, 1, 0),
+(7, 1, 1, 0, 0),
+(8, 1, 1, 0, 0),
+(9, 2, 1, 1, 0),
+(10, 2, 1, 1, 0),
+(11, 1, 0, 1, 0),
+(12, 1, 0, 1, 0),
+(13, 1, 0, 1, 0),
+(14, 1, 1, 0, 0),
+(15, 2, 1, 1, 0),
+(16, 1, 0, 1, 0),
+(17, 1, 0, 1, 0),
+(18, 1, 0, 1, 1),
+(19, 1, 0, 1, 0),
+(20, 1, 1, 0, 0),
+(21, 1, 1, 0, 0),
+(22, 2, 1, 1, 0),
+(23, 1, 1, 0, 0),
+(24, 1, 0, 1, 0),
+(25, 1, 0, 1, 0),
+(26, 1, 0, 1, 1),
+(27, 1, 1, 0, 0),
+(28, 1, 1, 0, 0),
+(29, 2, 1, 1, 0),
+(30, 1, 0, 1, 0),
+(31, 1, 0, 1, 0),
+(32, 1, 0, 1, 0),
+(33, 1, 0, 1, 1),
+(34, 1, 1, 0, 0),
+(35, 1, 1, 0, 0),
+(36, 2, 1, 1, 0),
+(37, 1, 0, 1, 0),
+(38, 1, 0, 1, 0),
+(39, 1, 0, 1, 0),
+(40, 1, 1, 0, 0),
+(41, 1, 0, 1, 1),
+(42, 2, 1, 1, 0),
+(43, 1, 0, 1, 0),
+(44, 1, 0, 1, 0),
+(45, 1, 0, 1, 0),
+(46, 1, 0, 1, 1),
+(47, 1, 1, 0, 0),
+(48, 2, 1, 1, 0),
+(49, 1, 1, 0, 0),
+(50, 1, 0, 1, 0);
 
--- 插入库存日志数据（可选）
-INSERT INTO stock_log (coupon_id, order_id, quantity, operate_type, operate_id, stock_after, remark, create_time) VALUES
-                                                                                                                      (1, 1000000000000000001, -1, 2, 2, 999, '用户领取优惠券', NOW()),
-                                                                                                                      (2, 1000000000000000002, -1, 2, 3, 499, '用户领取优惠券', NOW());
-
--- 插入更多测试用户数据
-INSERT INTO user (username, password, phone, email, status, create_time, update_time) VALUES
-                                                                                          ('user001', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138101', 'user001@example.com', 1, NOW(), NOW()),
-                                                                                          ('user002', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138102', 'user002@example.com', 1, NOW(), NOW()),
-                                                                                          ('user003', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138103', 'user003@example.com', 1, NOW(), NOW()),
-                                                                                          ('user004', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138104', 'user004@example.com', 1, NOW(), NOW()),
-                                                                                          ('user005', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138105', 'user005@example.com', 1, NOW(), NOW()),
-                                                                                          ('user006', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138106', 'user006@example.com', 1, NOW(), NOW()),
-                                                                                          ('user007', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138107', 'user007@example.com', 1, NOW(), NOW()),
-                                                                                          ('user008', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138108', 'user008@example.com', 1, NOW(), NOW()),
-                                                                                          ('user009', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138109', 'user009@example.com', 1, NOW(), NOW()),
-                                                                                          ('user010', '$2a$10$wQ8vI4d4Q7S3k2h5Q7S3kujKzJ3Pv3z3H6j6P5j5H5n5H5n5H5n5.', '13800138110', 'user010@example.com', 1, NOW(), NOW());
-
--- 初始化更多用户优惠券统计表
-INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count, update_time, version) VALUES
-                                                                                                                           (5, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (6, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (7, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (8, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (9, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (10, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (11, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (12, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (13, 0, 0, 0, 0, NOW(), 0),
-                                                                                                                           (14, 0, 0, 0, 0, NOW(), 0);
-
--- 插入更多测试优惠券数据
-INSERT INTO coupon (name, description, type, face_value, min_spend, valid_days, per_user_limit, total_stock, seckill_total_stock, remaining_stock, seckill_remaining_stock, status, create_time, update_time) VALUES
-                                                                                                                                                                                                                  ('夏季清凉券', '夏季专属清凉优惠券', 1, 15.00, 50.00, 30, 1, 500, 0, 500, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('开学季优惠券', '开学季学习用品满减券', 1, 25.00, 100.00, 15, 1, 300, 0, 300, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('秒杀券A', '限时秒杀优惠券A', 2, 5.00, 30.00, 1, 1, 1000, 100, 1000, 100, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('秒杀券B', '限时秒杀优惠券B', 2, 10.00, 50.00, 1, 1, 500, 50, 500, 50, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('秒杀券C', '限时秒杀优惠券C', 2, 20.00, 100.00, 1, 1, 200, 20, 200, 20, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('会员专享券', 'VIP会员专享大额优惠券', 1, 50.00, 200.00, 7, 1, 100, 0, 100, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('新人首单券', '新用户首单专享券', 1, 10.00, 30.00, 3, 1, 1000, 0, 1000, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('周末狂欢券', '周末购物狂欢优惠券', 1, 30.00, 150.00, 2, 2, 200, 0, 200, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('节日特惠券A', '节日 special offer A', 1, 20.00, 80.00, 5, 1, 400, 0, 400, 0, 1, NOW(), NOW()),
-                                                                                                                                                                                                                  ('节日特惠券B', '节日 special offer B', 1, 40.00, 160.00, 5, 1, 200, 0, 200, 0, 1, NOW(), NOW());
-
--- 插入更多测试订单数据
--- 注意：订单表中有一些约束，需要确保user_id和coupon_id存在
-INSERT INTO `order` (id, user_id, coupon_id, status, get_time, expire_time, create_time, update_time, created_by_java, created_by_go, request_id, version) VALUES
-                                                                                                                                                               (1000000000000000003, 5, 3, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW(), 1, 0, 'REQ003', 0),
-                                                                                                                                                               (1000000000000000004, 6, 4, 1, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), NOW(), NOW(), 1, 0, 'REQ004', 0),
-                                                                                                                                                               (1000000000000000005, 7, 5, 2, NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL -2 DAY), DATE_ADD(NOW(), INTERVAL -1 DAY), 1, 0, 'REQ005', 0),
-                                                                                                                                                               (1000000000000000006, 8, 6, 1, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), NOW(), NOW(), 1, 0, 'REQ006', 0),
-                                                                                                                                                               (1000000000000000007, 9, 7, 1, NOW(), DATE_ADD(NOW(), INTERVAL 3 DAY), NOW(), NOW(), 1, 0, 'REQ007', 0),
-                                                                                                                                                               (1000000000000000008, 10, 8, 4, NOW(), DATE_ADD(NOW(), INTERVAL 2 DAY), DATE_ADD(NOW(), INTERVAL -3 DAY), DATE_ADD(NOW(), INTERVAL -2 DAY), 1, 0, 'REQ008', 0),
-                                                                                                                                                               (1000000000000000009, 11, 9, 1, NOW(), DATE_ADD(NOW(), INTERVAL 5 DAY), NOW(), NOW(), 1, 0, 'REQ009', 0),
-                                                                                                                                                               (1000000000000000010, 12, 10, 1, NOW(), DATE_ADD(NOW(), INTERVAL 5 DAY), NOW(), NOW(), 1, 0, 'REQ010', 0),
-                                                                                                                                                               (1000000000000000011, 13, 11, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW(), 1, 0, 'REQ011', 0),
-                                                                                                                                                               (1000000000000000012, 14, 12, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW(), 1, 0, 'REQ012', 0);
-
--- 插入更多库存日志数据
-INSERT INTO stock_log (coupon_id, order_id, quantity, operate_type, operate_id, stock_after, remark, create_time) VALUES
-                                                                                                                      (3, 1000000000000000003, -1, 2, 5, 999, '用户领取秒杀券A', NOW()),
-                                                                                                                      (4, 1000000000000000004, -1, 2, 6, 499, '用户领取秒杀券B', NOW()),
-                                                                                                                      (5, 1000000000000000005, -1, 2, 7, 199, '用户领取秒杀券C', NOW()),
-                                                                                                                      (6, 1000000000000000006, -1, 2, 8, 99, '用户领取会员专享券', NOW()),
-                                                                                                                      (7, 1000000000000000007, -1, 2, 9, 999, '用户领取新人首单券', NOW()),
-                                                                                                                      (8, 1000000000000000008, -1, 2, 10, 199, '用户领取周末狂欢券', NOW()),
-                                                                                                                      (9, 1000000000000000009, -1, 2, 11, 399, '用户领取节日特惠券A', NOW()),
-                                                                                                                      (10, 1000000000000000010, -1, 2, 12, 199, '用户领取节日特惠券B', NOW()),
-                                                                                                                      (11, 1000000000000000011, -1, 2, 13, 499, '用户领取开学季优惠券', NOW()),
-                                                                                                                      (12, 1000000000000000012, -1, 2, 14, 999, '用户领取夏季清凉券', NOW());
-
--- 更新部分用户的优惠券统计信息
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 5;
-UPDATE user_coupon_count SET total_count = 1, seckill_count = 1, update_time = NOW() WHERE user_id = 6;
-UPDATE user_coupon_count SET total_count = 2, seckill_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 7;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 8;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 9;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 10;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 11;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 12;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 13;
-UPDATE user_coupon_count SET total_count = 1, normal_count = 1, update_time = NOW() WHERE user_id = 14;
+-- 插入库存日志数据 (15条)
+INSERT INTO stock_log (coupon_id, order_id, activity_id, quantity, operate_type, operate_id, stock_after, remark) VALUES
+(3, 1000000000000000001, NULL, -1, 2, 1, 199, '用户秒杀领取'),
+(4, 1000000000000000002, NULL, -1, 2, 2, 149, '用户秒杀领取'),
+(5, 1000000000000000003, NULL, -1, 2, 3, 99, '用户秒杀领取'),
+(3, 1000000000000000005, NULL, -1, 2, 5, 198, '用户秒杀领取'),
+(4, 1000000000000000006, NULL, -1, 2, 6, 148, '用户秒杀领取'),
+(3, 1000000000000000007, NULL, -1, 2, 7, 197, '用户秒杀领取'),
+(4, 1000000000000000008, NULL, -1, 2, 8, 147, '用户秒杀领取'),
+(3, 1000000000000000010, NULL, -1, 2, 10, 196, '用户秒杀领取'),
+(9, 1000000000000000014, NULL, -1, 2, 14, 179, '用户秒杀领取'),
+(10, 1000000000000000015, NULL, -1, 2, 15, 119, '用户秒杀领取'),
+(15, 1000000000000000020, NULL, -1, 2, 20, 79, '用户秒杀领取'),
+(3, 1000000000000000021, NULL, -1, 2, 21, 195, '用户秒杀领取'),
+(5, 1000000000000000023, NULL, -1, 2, 23, 98, '用户秒杀领取'),
+(9, 1000000000000000027, NULL, -1, 2, 27, 178, '用户秒杀领取'),
+(10, 1000000000000000028, NULL, -1, 2, 28, 118, '用户秒杀领取');

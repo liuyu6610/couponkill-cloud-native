@@ -10,14 +10,27 @@ create table coupon
     valid_days              int            default 15                not null comment '有效期(天)',
     per_user_limit          int            default 1                 not null comment '每人限领数量（0表示无限制）',
     total_stock             int                                      not null comment '总库存',
-    seckill_total_stock     int            default 0                 not null comment '秒杀总库存（仅秒抢类型有效）',
-    remaining_stock         int                                      not null comment '剩余库存',
     seckill_remaining_stock int            default 0                 not null comment '秒杀剩余库存（仅秒抢类型有效）',
     status                  tinyint        default 0                 not null comment '状态(0-未上架,1-已上架,2-已下架)',
     create_time             datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
     update_time             datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
 )
-    comment '优惠券表';
+    comment '优惠券表' row_format = DYNAMIC;
+
+create index idx_coupon_create_time
+    on coupon (create_time);
+
+create index idx_coupon_remaining_stock
+    on coupon (total_stock);
+
+create index idx_coupon_seckill_remaining_stock
+    on coupon (seckill_remaining_stock);
+
+create index idx_coupon_status
+    on coupon (status);
+
+create index idx_coupon_type
+    on coupon (type);
 
 create table `order`
 (
@@ -34,36 +47,40 @@ create table `order`
     update_time     datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     created_by_java tinyint  default 0                 not null comment '是否Java端创建(1-是,0-否)',
     created_by_go   tinyint  default 0                 not null comment '是否Go端创建(1-是,0-否)',
-    request_id      varchar(64)                        not null comment '请求唯一标识(用于幂等性控制)',
+    request_id      varchar(64)                        null comment '请求唯一标识(用于幂等性控制)',
     version         int      default 0                 not null comment '版本号（乐观锁，用于并发控制）',
     constraint uk_request_id
-        unique (request_id) comment '通过请求ID保证幂等性',
+        unique (request_id),
     constraint uk_user_coupon
-        unique (user_id, coupon_id, status) comment '同一用户不能重复领取同一优惠券',
+        unique (user_id, coupon_id, status),
     constraint uk_user_coupon_source
-        unique (user_id, coupon_id, created_by_java, created_by_go) comment '同一用户对同一优惠券，两端均未领取时才能参与秒杀'
+        unique (user_id, coupon_id, created_by_java, created_by_go)
 )
-    comment '订单表';
+    comment '订单表' row_format = DYNAMIC;
 
 create index idx_coupon_id
     on `order` (coupon_id);
 
-create index idx_user_status
-    on `order` (user_id, status)
-    comment '按用户+状态查询订单';
+create index idx_order_coupon_id
+    on `order` (coupon_id);
 
-create table orders
-(
-    id         bigint auto_increment
-        primary key,
-    coupon_id  varchar(255) null,
-    created_at datetime(6)  null,
-    request_id varchar(255) null,
-    status     varchar(255) null,
-    user_id    varchar(255) null,
-    constraint UKtntc1qcum503inx2jy4nyalay
-        unique (request_id)
-);
+create index idx_order_create_time
+    on `order` (create_time);
+
+create index idx_order_expire_time
+    on `order` (expire_time);
+
+create index idx_order_status
+    on `order` (status);
+
+create index idx_order_user_id
+    on `order` (user_id);
+
+create index idx_user_coupon
+    on `order` (user_id, coupon_id);
+
+create index idx_user_status
+    on `order` (user_id, status);
 
 create table stock_log
 (
@@ -79,7 +96,7 @@ create table stock_log
     remark       varchar(500)                       null comment '备注',
     create_time  datetime default CURRENT_TIMESTAMP not null comment '创建时间'
 )
-    comment '库存日志表';
+    comment '库存日志表' row_format = DYNAMIC;
 
 create index idx_coupon_id
     on stock_log (coupon_id);
@@ -88,8 +105,23 @@ create index idx_create_time
     on stock_log (create_time);
 
 create index idx_related_id
-    on stock_log (order_id, activity_id)
-    comment '按订单/活动ID追踪库存变动';
+    on stock_log (order_id, activity_id);
+
+create table undo_log
+(
+    branch_id     bigint       not null comment '分支事务ID'
+        primary key,
+    xid           varchar(128) not null comment '全局事务ID',
+    context       varchar(128) not null comment '上下文信息',
+    rollback_info longblob     not null comment '回滚信息',
+    log_status    int          not null comment '日志状态：0-正常，1-已删除',
+    log_created   datetime     not null comment '创建时间',
+    log_modified  datetime     not null comment '修改时间'
+)
+    comment 'AT模式undo日志表' row_format = DYNAMIC;
+
+create index idx_xid
+    on undo_log (xid);
 
 create table user
 (
@@ -104,9 +136,9 @@ create table user
     update_time      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     last_active_time datetime                           null comment '最后活跃时间',
     constraint uk_username
-        unique (username) comment '用户名唯一'
+        unique (username)
 )
-    comment '用户表';
+    comment '用户表' row_format = DYNAMIC;
 
 create table user_coupon_count
 (
@@ -119,21 +151,5 @@ create table user_coupon_count
     update_time   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     version       int      default 0                 not null comment '版本号（乐观锁）'
 )
-    comment '用户优惠券数量限制表';
-CREATE TABLE IF NOT EXISTS `undo_log` (
-                                          `branch_id` BIGINT NOT NULL COMMENT '分支事务ID',
-                                          `xid` VARCHAR(128) NOT NULL COMMENT '全局事务ID',
-                                          `context` VARCHAR(128) NOT NULL COMMENT '上下文信息',
-                                          `rollback_info` LONGBLOB NOT NULL COMMENT '回滚信息',
-                                          `log_status` INT NOT NULL COMMENT '日志状态：0-正常，1-已删除',
-                                          `log_created` DATETIME NOT NULL COMMENT '创建时间',
-                                          `log_modified` DATETIME NOT NULL COMMENT '修改时间',
-                                          PRIMARY KEY (`branch_id`),
-                                          KEY `idx_xid` (`xid`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'AT模式undo日志表';
-ALTER TABLE `order`
-    MODIFY COLUMN request_id varchar(64) NULL COMMENT '请求唯一标识(用于幂等性控制)';
-
-ALTER TABLE `order`
-    MODIFY COLUMN version int DEFAULT 0 NOT NULL COMMENT '版本号（乐观锁，用于并发控制）';
+    comment '用户优惠券数量限制表' row_format = DYNAMIC;
 

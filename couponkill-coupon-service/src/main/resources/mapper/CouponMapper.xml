@@ -21,6 +21,7 @@
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
+
     <select id="selectAvailableCoupons" resultMap="CouponResultMap">
         SELECT * FROM coupon
         WHERE status = 1
@@ -52,11 +53,12 @@
 
     <update id="updateStock">
         UPDATE coupon
-        SET remaining_stock = remaining_stock + #{change},
+        SET ${fieldName} = ${fieldName} + #{change},
             update_time = NOW()
         WHERE id = #{couponId}
-        AND remaining_stock + #{change} >= 0
+          AND ${fieldName} + #{change} >= 0
     </update>
+
 
     <update id="updateRemainingStock">
         UPDATE coupon

@@ -9,6 +9,7 @@ import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,8 @@ public class CouponServiceImpl implements CouponService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     private static final String COUPON_DETAIL_KEY = "coupon:detail:";
     private static final String COUPON_STOCK_KEY = "coupon:stock:";
     private static final String COUPON_AVAILABLE_KEY = "coupon:available";
@@ -113,28 +115,38 @@ public class CouponServiceImpl implements CouponService {
     @Override
     @Transactional
     public boolean deductStock(Long couponId) {
-        // 先尝试扣减Redis库存
-        String stockKey = COUPON_STOCK_KEY + couponId;
-        Long remain = redisTemplate.opsForValue().decrement(stockKey);
+        try {
+            // 先获取优惠券信息，判断类型
+            Coupon coupon = getCouponById(couponId);
+            if (coupon == null) {
+                return false;
+            }
 
-        if (remain == null || remain < 0) {
-            // Redis扣减失败，回滚并查询数据库
-            if (remain != null) {
-                redisTemplate.opsForValue().increment(stockKey);
+            String updateSql;
+            if (coupon.getType() == 2) { // 秒杀类型
+                updateSql = "UPDATE coupon SET seckill_remaining_stock = seckill_remaining_stock - 1, update_time = NOW() " +
+                        "WHERE id = ? AND seckill_remaining_stock > 0 AND status = 1";
+            } else { // 普通类型
+                updateSql = "UPDATE coupon SET remaining_stock = remaining_stock - 1, update_time = NOW() " +
+                        "WHERE id = ? AND remaining_stock > 0 AND status = 1";
+            }
+
+            int rows = jdbcTemplate.update(updateSql, couponId);
+            if (rows > 0) {
+                // 更新成功，同步更新Redis缓存
+                String stockKey = COUPON_STOCK_KEY + couponId;
+                redisTemplate.opsForValue().decrement(stockKey);
+
+                // 更新优惠券详情缓存
+                Coupon updatedCoupon = couponMapper.selectById(couponId);
+                if (updatedCoupon != null) {
+                    redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon);
+                }
+                return true;
             }
             return false;
-        }
-
-        // 数据库扣减库存
-        int rows = couponMapper.updateStock(couponId, -1);
-        if (rows > 0) {
-            // 更新缓存中的优惠券信息
-            Coupon coupon = couponMapper.selectById(couponId);
-            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, coupon);
-            return true;
-        } else {
-            // 数据库扣减失败，回滚Redis
-            redisTemplate.opsForValue().increment(stockKey);
+        } catch (Exception e) {
+            log.error("扣减库存失败，couponId: {}", couponId, e);
             return false;
         }
     }
@@ -142,20 +154,31 @@ public class CouponServiceImpl implements CouponService {
     @Override
     @Transactional
     public boolean increaseStock(Long couponId) {
-        // 数据库增加库存
-        int rows = couponMapper.updateStock(couponId, 1);
+        Coupon coupon = getCouponById(couponId);
+        if (coupon == null) {
+            return false;
+        }
+
+        int rows;
+        if (coupon.getType() == 2) { // 秒杀类型
+            rows = couponMapper.updateStock(couponId, 1, "seckill_remaining_stock");
+        } else { // 普通类型
+            rows = couponMapper.updateStock(couponId, 1, "remaining_stock");
+        }
+
         if (rows > 0) {
             // 更新Redis库存
             String stockKey = COUPON_STOCK_KEY + couponId;
             redisTemplate.opsForValue().increment(stockKey);
 
             // 更新缓存中的优惠券信息
-            Coupon coupon = couponMapper.selectById(couponId);
-            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, coupon);
+            Coupon updatedCoupon = couponMapper.selectById(couponId);
+            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon);
             return true;
         }
         return false;
     }
+
 
     @Override
     @Transactional

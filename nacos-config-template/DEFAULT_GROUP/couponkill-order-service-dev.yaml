@@ -75,8 +75,8 @@ rocketmq:
   name-server: 116.62.178.91:9876
   producer:
     group: order-service-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
+    send-message-timeout: 50000
+    retry-times-when-send-failed: 3
   consumer:
     group:
       seckill-result: seckill-order-result-group

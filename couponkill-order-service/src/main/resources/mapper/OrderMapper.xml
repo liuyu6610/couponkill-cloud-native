@@ -52,11 +52,12 @@
         WHERE id = #{id}
     </select>
 
+    // 优化OrderMapper.xml中的查询语句，添加索引提示
     <select id="countByUserAndCoupon" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM `order`
+        SELECT COUNT(*) FROM `order` USE INDEX(idx_user_coupon)
         WHERE user_id = #{userId} AND coupon_id = #{couponId}
     </select>
+
 
     <select id="selectByUserId" resultMap="BaseResultMap">
         SELECT id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version

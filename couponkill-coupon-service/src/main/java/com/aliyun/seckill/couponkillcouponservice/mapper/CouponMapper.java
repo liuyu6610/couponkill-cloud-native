@@ -23,4 +23,7 @@ public interface CouponMapper {
     int updateRemainingStock(@Param("couponId") Long couponId,
                             @Param("remainingStock") Integer remainingStock,
                             @Param("updateTime") LocalDateTime updateTime);
+    // 修改 updateStock 方法，添加字段名参数
+    int updateStock(@Param("couponId") Long couponId, @Param("change") int change, @Param("fieldName") String fieldName);
+
 }

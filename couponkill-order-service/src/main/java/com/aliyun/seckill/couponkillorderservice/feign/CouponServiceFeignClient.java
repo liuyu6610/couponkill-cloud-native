@@ -2,23 +2,28 @@
 package com.aliyun.seckill.couponkillorderservice.feign;
 
 import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.config.FeignConfig;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.common.pojo.EnterSeckillResp;
 import com.aliyun.seckill.common.pojo.SeckillResultResp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 // 修复CouponServiceFeignClient.java
 @FeignClient(name = "couponkill-coupon-service",
+        configuration = FeignConfig.class,
         fallback = CouponServiceFeignClient.CouponServiceFallback.class
         )
 public interface CouponServiceFeignClient {
 
-    @GetMapping("/api/v1/coupon/{id}")
+    @GetMapping(value = "/api/v1/coupon/{id}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
     ApiResponse<Coupon> getCouponById(@PathVariable("id") Long id);
-
     @PostMapping("/api/v1/coupon/deduct/{id}")
     ApiResponse<Boolean> deductStock(@PathVariable("id") Long id);
 
@@ -55,6 +60,8 @@ public interface CouponServiceFeignClient {
 
     @PostMapping("/api/v1/coupon/release/{id}")
     ApiResponse<Boolean> releaseStock(@PathVariable("id") Long id);
+    @PostMapping("/api/v1/coupon/sync-stock/{id}")
+    ApiResponse<Boolean> syncStock(@PathVariable("id") Long id);
 
     @Component
     @Slf4j
@@ -123,6 +130,11 @@ public interface CouponServiceFeignClient {
         public ApiResponse<Boolean> releaseStock(Long id) {
             log.error("调用 releaseStock 失败，couponId: {}", id);
             return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<Boolean> syncStock(Long id) {
+            return null;
         }
     }
 }
