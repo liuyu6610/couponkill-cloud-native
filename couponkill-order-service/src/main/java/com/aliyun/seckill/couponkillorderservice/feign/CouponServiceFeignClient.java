@@ -13,11 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
-// 修复CouponServiceFeignClient.java
-@FeignClient(name = "couponkill-coupon-service",
+// 在CouponServiceFeignClient中优化配置
+@FeignClient(
+        name = "couponkill-coupon-service",
         configuration = FeignConfig.class,
         fallback = CouponServiceFeignClient.CouponServiceFallback.class
-        )
+)
 public interface CouponServiceFeignClient {
 
     @GetMapping(value = "/api/v1/coupon/{id}",

@@ -27,11 +27,11 @@ feign:
   client:
     config:
       coupon-service:
-        connectTimeout: 5000
-        readTimeout: 10000
+        connectTimeout: 1000
+        readTimeout: 3000
       default:
-        connectTimeout: 5000
-        readTimeout: 10000
+        connectTimeout: 1000
+        readTimeout: 3000
   compression:
     request:
       enabled: true
@@ -39,12 +39,8 @@ feign:
       enabled: true
   httpclient:
     enabled: true
-    max-connections: 200
-    max-connections-per-route: 50
-  # 启用熔断器
-  hystrix:
-    enabled: true
-
+    max-connections: 2000
+    max-connections-per-route: 1000
 # 负载均衡配置
 ribbon:
   ConnectTimeout: 3000
@@ -91,16 +87,3 @@ couponkill:
     cooldown-seconds: 2
     deduct-ttl-seconds: 300
     compensation-amount: 10.0
-
-logging:
-  level:
-    com:
-      aliyun:
-        seckill:
-          couponkillorderservice:
-            feign: DEBUG
-    org:
-      springframework:
-        cloud:
-          openfeign: DEBUG
-          loadbalancer: DEBUG

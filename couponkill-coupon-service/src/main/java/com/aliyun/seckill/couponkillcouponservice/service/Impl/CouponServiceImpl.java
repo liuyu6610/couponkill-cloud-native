@@ -8,13 +8,17 @@ import com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -123,12 +127,15 @@ public class CouponServiceImpl implements CouponService {
             }
 
             String updateSql;
+            String fieldName;
             if (coupon.getType() == 2) { // 秒杀类型
                 updateSql = "UPDATE coupon SET seckill_remaining_stock = seckill_remaining_stock - 1, update_time = NOW() " +
                         "WHERE id = ? AND seckill_remaining_stock > 0 AND status = 1";
+                fieldName = "seckill_remaining_stock";
             } else { // 普通类型
                 updateSql = "UPDATE coupon SET remaining_stock = remaining_stock - 1, update_time = NOW() " +
                         "WHERE id = ? AND remaining_stock > 0 AND status = 1";
+                fieldName = "remaining_stock";
             }
 
             int rows = jdbcTemplate.update(updateSql, couponId);
@@ -137,11 +144,18 @@ public class CouponServiceImpl implements CouponService {
                 String stockKey = COUPON_STOCK_KEY + couponId;
                 redisTemplate.opsForValue().decrement(stockKey);
 
-                // 更新优惠券详情缓存
-                Coupon updatedCoupon = couponMapper.selectById(couponId);
-                if (updatedCoupon != null) {
-                    redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon);
-                }
+                // 异步更新优惠券详情缓存，避免阻塞主流程
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        Coupon updatedCoupon = couponMapper.selectById(couponId);
+                        if (updatedCoupon != null) {
+                            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon,
+                                    30 + (int)(Math.random() * 10), TimeUnit.MINUTES);
+                        }
+                    } catch (Exception e) {
+                        log.warn("异步更新优惠券缓存失败，couponId: {}", couponId, e);
+                    }
+                });
                 return true;
             }
             return false;
@@ -150,6 +164,7 @@ public class CouponServiceImpl implements CouponService {
             return false;
         }
     }
+
 
     @Override
     @Transactional
@@ -202,6 +217,45 @@ public class CouponServiceImpl implements CouponService {
             redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId, newStock);
         }
     }
+    // 在 CouponServiceImpl.java 中添加预热方法
+    @PostConstruct
+    public void preheatStockToRedis() {
+        try {
+            List<Coupon> coupons = couponMapper.selectAll();
+            // 使用pipeline批量设置，提高性能
+            redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+                for (Coupon coupon : coupons) {
+                    String stockKey = COUPON_STOCK_KEY + coupon.getId();
+                    String detailKey = COUPON_DETAIL_KEY + coupon.getId();
+
+                    // 根据优惠券类型设置库存
+                    if (coupon.getType() == 2) { // 秒杀类型
+                        connection.set(stockKey.getBytes(),
+                                String.valueOf(coupon.getSeckillRemainingStock()).getBytes());
+                    } else { // 普通类型
+                        connection.set(stockKey.getBytes(),
+                                String.valueOf(coupon.getRemainingStock()).getBytes());
+                    }
+
+                    // 序列化优惠券对象并设置缓存
+                    try {
+                        byte[] couponBytes = new GenericJackson2JsonRedisSerializer().serialize(coupon);
+                        connection.setEx(detailKey.getBytes(),
+                                (int) (TimeUnit.MINUTES.toSeconds(30 + (int)(Math.random() * 10))),
+                                couponBytes);
+                    } catch (Exception e) {
+                        log.warn("序列化优惠券失败: {}", coupon.getId(), e);
+                    }
+                }
+                return null;
+            });
+            log.info("预热完成，共加载 {} 个优惠券", coupons.size());
+        } catch (Exception e) {
+            log.error("预热Redis缓存失败", e);
+        }
+    }
+
+
 
     @Override
     public boolean grantCoupons(List<Long> userIds) {

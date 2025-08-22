@@ -10,6 +10,8 @@ create table coupon
     valid_days              int            default 15                not null comment '有效期(天)',
     per_user_limit          int            default 1                 not null comment '每人限领数量（0表示无限制）',
     total_stock             int                                      not null comment '总库存',
+    seckill_total_stock     int            default 0                 not null comment '秒杀总库存（仅秒抢类型有效）',
+    remaining_stock         int            default 0                 not null comment '剩余库存',
     seckill_remaining_stock int            default 0                 not null comment '秒杀剩余库存（仅秒抢类型有效）',
     status                  tinyint        default 0                 not null comment '状态(0-未上架,1-已上架,2-已下架)',
     create_time             datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
