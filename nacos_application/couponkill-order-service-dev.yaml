@@ -1,46 +1,42 @@
 server:
   port: 8082
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
+    accept-count: 100
+    max-connections: 10000
 
 spring:
-  application:
-    name: couponkill-order-service
   cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-        namespace: 120
-        group: DEFAULT_GROUP
-      config:
-        server-addr: localhost:8848
-        namespace: 120
-        group: DEFAULT_GROUP
-        file-extension: yaml
     # 添加负载均衡配置
     loadbalancer:
       retry:
         enabled: true
         max-retries-on-next-service-instance: 2
         max-retries-on-same-service-instance: 1
-
+# Feign配置
 # Feign配置
 feign:
   client:
     config:
       coupon-service:
         connectTimeout: 1000
-        readTimeout: 3000
+        readTimeout: 2000
       default:
         connectTimeout: 1000
-        readTimeout: 3000
+        readTimeout: 2000
   compression:
     request:
       enabled: true
+      min-request-size: 2048
     response:
       enabled: true
   httpclient:
     enabled: true
     max-connections: 2000
     max-connections-per-route: 1000
+    connection-timeout: 2000
+    connection-timer-repeat: 3000
 # 负载均衡配置
 ribbon:
   ConnectTimeout: 3000
@@ -68,7 +64,7 @@ seata:
 
 # RocketMQ 配置
 rocketmq:
-  name-server: 116.62.178.91:9876
+  name-server: 114.55.117.16:9876
   producer:
     group: order-service-producer-group
     send-message-timeout: 50000
@@ -77,9 +73,9 @@ rocketmq:
     group:
       seckill-result: seckill-order-result-group
   topic:
-    seckill-order-result: seckill.order.result
-    seckill-order-create: seckill.order.create
-    seckill-compensation: seckill.compensation
+    seckill-order-result: seckill_order_result  # 修改为下划线
+    seckill-order-create: seckill_order_create  # 修改为下划线
+    seckill-compensation: seckill_compensation  # 修改为下划线
 
 # 秒杀相关配置
 couponkill:

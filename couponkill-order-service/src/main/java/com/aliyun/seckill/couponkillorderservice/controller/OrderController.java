@@ -122,7 +122,6 @@ public class OrderController {
             }
             return result;
         } else {
-            log.info("使用Java服务处理秒杀请求: userId={}, couponId={}", userId, couponId);
             // Java服务处理
             Order order = orderService.createOrder(userId, couponId);
             // 设置冷却时间

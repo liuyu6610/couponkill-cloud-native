@@ -18,11 +18,10 @@ import java.util.List;
 @Component
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
-    // 不需要认证的路径前缀
     private static final List<String> WHITE_LIST = List.of(
-            "/fallback/",              // 网关降级接口
-            "/api/v1/user/register",   // 用户注册接口
-            "/api/v1/user/login" ,// 用户登录接口
+            "/fallback/",
+            "/api/v1/user/register",
+            "/api/v1/user/login",
             "/api/v1/auth/token/mock"
     );
 
@@ -41,19 +40,38 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 对于需要认证的接口进行JWT验证
         String token = extractToken(request);
-        if (token == null || !jwtUtil.verifyToken(token)) {
+        if (token == null || token.isEmpty()) {
+            log.debug("请求缺少认证token: path={}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        // 将用户ID存入请求头
-        String userId = jwtUtil.getUserId(token);
-        ServerHttpRequest mutatedRequest = request.mutate()
-                .header("X-User-ID", userId)
-                .build();
-        ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
+        try {
+            if (!jwtUtil.verifyToken(token)) {
+                log.debug("Token验证失败: token={}", token);
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
 
-        return chain.filter(mutatedExchange);
+            // 将用户ID存入请求头
+            String userId = jwtUtil.getUserId(token);
+            if (userId == null || userId.isEmpty()) {
+                log.warn("Token中userId为空: token={}", token);
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
+
+            ServerHttpRequest mutatedRequest = request.mutate()
+                    .header("X-User-ID", userId)
+                    .build();
+            ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
+
+            return chain.filter(mutatedExchange);
+        } catch (Exception e) {
+            log.warn("认证过程出现异常: path={}, error={}", path, e.getMessage(), e);
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
     }
 
     private boolean isWhitelisted(String path) {
@@ -63,7 +81,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private String extractToken(ServerHttpRequest request) {
         String authHeader = request.getHeaders().getFirst("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            return authHeader.substring(7).trim();
         }
         return null;
     }
@@ -73,3 +91,4 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         return -100; // 确保在路由前执行
     }
 }
+

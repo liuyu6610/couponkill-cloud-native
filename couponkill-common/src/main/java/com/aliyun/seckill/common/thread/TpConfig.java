@@ -11,9 +11,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class TpConfig {
     // 核心线程池大小（CPU核心数*2）
-    private int corePoolSize = Runtime.getRuntime().availableProcessors() * 4;
+    private int corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
     // 最大可创建的线程数
-    private int maxPoolSize = corePoolSize * 8;
+    private int maxPoolSize = corePoolSize * 4;
     // 队列最大长度（根据内存调整）
     private int queueCapacity = 1000;
     // 线程池维护线程所允许的空闲时间

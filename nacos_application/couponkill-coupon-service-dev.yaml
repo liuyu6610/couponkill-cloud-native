@@ -1,9 +1,5 @@
 server:
   port: 8081
-
-spring:
-  application:
-    name: couponkill-coupon-service
   
 # 优惠券业务配置
 coupon:

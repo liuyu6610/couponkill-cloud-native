@@ -29,6 +29,8 @@ public class Coupon implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
+    // 添加版本号字段
+    private Integer version;
     // 新增字段
     private Long userId;
     private java.math.BigDecimal amount;

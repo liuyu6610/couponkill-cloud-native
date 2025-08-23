@@ -53,8 +53,8 @@
     </select>
 
     <select id="countByUserAndCoupon" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM `order` USE INDEX(idx_user_coupon)
-        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status != 4
+        SELECT COUNT(*) FROM `order` USE INDEX(uk_user_coupon)
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
     </select>
 
 

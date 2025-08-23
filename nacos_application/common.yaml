@@ -1,15 +1,29 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://116.62.178.91:3306/console?charset=utf8mb4&parseTime=True&loc=Local
-    username: root
-    password: 4321  # 使用环境变量注入密码
+    url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/console?charset=utf8mb4&parseTime=True&loc=Local
+    username: master0
+    password: Yu20040925@  # 使用环境变量注入密码
+    hikari:
+      maximum-pool-size: 300
+      minimum-idle: 10
+      connection-timeout: 5000
+      idle-timeout: 300000
+      max-lifetime: 600000
+      leak-detection-threshold: 60000
   # Redis配置（开发环境）
   data:
     redis:
-      host: 116.62.178.91  # 开发环境应使用本地或局域网地址
+      host: r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com  # 开发环境应使用本地或局域网地址
       port: 6379
-      password: 1234  # 使用环境变量注入密码
+      username: master0
+      password: Yu20040925@  # 使用环境变量注入密码
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+          max-wait: 2000ms
       # Sentinel配置（开发环境）
   cloud:
     sentinel:
@@ -29,10 +43,10 @@ spring:
 
 # RocketMQ 配置
 rocketmq:
-  name-server: 116.62.178.91:9876
+  name-server: 114.55.117.16:9876
   producer:
     group: common-producer-group
-    send-message-timeout: 3000
+    send-message-timeout: 50000
     retry-times-when-send-failed: 2
     # 添加事务生产者配置
     transaction-listener:

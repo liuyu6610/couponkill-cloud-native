@@ -6,18 +6,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url" // 正确导入 net/url 包
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-// LoginResponse 代表登录接口的响应结构
-type LoginResponse struct {
-	Code int                    `json:"code"`
-	Data map[string]interface{} `json:"data"`
-	Msg  string                 `json:"message"`
+// JavaTypeWrapper 用于处理带有类型信息的响应
+type JavaTypeWrapper []interface{}
+
+// ApiResponse 代表API响应结构
+type ApiResponse struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 func main() {
@@ -82,11 +86,11 @@ func main() {
 
 	fmt.Println("连接成功，开始批量生成Token...")
 
-	// 生成1001-1500的Token
+	// 生成1001-3000的Token
 	successCount := 0
 	failedCount := 0
 
-	for userId := 1001; userId <= 1500; userId++ {
+	for userId := 1001; userId <= 3000; userId++ {
 		username := fmt.Sprintf("testuser%d", userId)
 		// 使用统一密码
 		password := "123456"
@@ -120,10 +124,9 @@ func main() {
 }
 
 // loginAndGetToken 通过登录获取Token
-// 注意：这里将 url 参数重命名为 targetURL 以避免与 net/url 包名冲突
 func loginAndGetToken(client *http.Client, targetURL, username, password string) (string, float64, error) {
 	// 构造表单数据
-	formData := make(url.Values) // 使用 url.Values 创建表单数据
+	formData := make(url.Values)
 	formData.Set("username", username)
 	formData.Set("password", password)
 
@@ -152,26 +155,77 @@ func loginAndGetToken(client *http.Client, targetURL, username, password string)
 		return "", 0, fmt.Errorf("HTTP请求失败，状态码: %d", resp.StatusCode)
 	}
 
-	// 解析响应
-	var loginResp LoginResponse
-	if err := json.NewDecoder(resp.Body).Decode(&loginResp); err != nil {
+	// 读取响应体内容
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", 0, fmt.Errorf("读取响应体失败: %w", err)
+	}
+
+	// 解析带有类型信息的响应
+	var typeWrapper JavaTypeWrapper
+	if err := json.Unmarshal(body, &typeWrapper); err != nil {
 		return "", 0, fmt.Errorf("解析响应失败: %w", err)
 	}
 
-	// 检查业务状态码
-	if loginResp.Code != 0 { // 0表示成功
-		return "", 0, fmt.Errorf("登录失败，业务码: %d, 信息: %s", loginResp.Code, loginResp.Msg)
+	// 检查响应格式是否正确
+	if len(typeWrapper) < 2 {
+		return "", 0, fmt.Errorf("响应格式不正确")
 	}
 
-	// 获取Token和用户ID
-	token, ok := loginResp.Data["token"].(string)
+	// 提取实际的响应数据（第二个元素）
+	responseData, ok := typeWrapper[1].(map[string]interface{})
+	if !ok {
+		return "", 0, fmt.Errorf("无法提取响应数据")
+	}
+
+	// 解析code
+	code, ok := responseData["code"].(float64)
+	if !ok {
+		return "", 0, fmt.Errorf("无法获取响应码")
+	}
+
+	// 检查业务状态码
+	if code != 0 {
+		message, _ := responseData["message"].(string)
+		return "", 0, fmt.Errorf("登录失败，业务码: %d, 信息: %s", int(code), message)
+	}
+
+	// 提取data部分
+	dataWrapper, ok := responseData["data"].([]interface{})
+	if !ok || len(dataWrapper) < 2 {
+		return "", 0, fmt.Errorf("无法提取用户数据")
+	}
+
+	// 获取实际的用户数据（第二个元素）
+	userData, ok := dataWrapper[1].(map[string]interface{})
+	if !ok {
+		return "", 0, fmt.Errorf("无法解析用户数据")
+	}
+
+	// 提取token
+	token, ok := userData["token"].(string)
 	if !ok {
 		return "", 0, fmt.Errorf("响应中未找到token")
 	}
 
-	userID, ok := loginResp.Data["userId"].(float64)
-	if !ok {
-		return "", 0, fmt.Errorf("响应中未找到userId")
+	// 提取userId
+	var userID float64
+	switch id := userData["userId"].(type) {
+	case float64:
+		userID = id
+	case []interface{}:
+		// 如果userId是数组格式 ["java.lang.Long", 3]
+		if len(id) >= 2 {
+			if num, ok := id[1].(float64); ok {
+				userID = num
+			}
+		}
+	default:
+		return "", 0, fmt.Errorf("无法解析userId")
+	}
+
+	if userID == 0 {
+		return "", 0, fmt.Errorf("无法获取有效的userId")
 	}
 
 	return token, userID, nil

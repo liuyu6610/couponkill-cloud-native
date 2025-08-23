@@ -1,4 +1,4 @@
-// 文件路径: com/aliyun/seckill/couponkillorderservice/service/Impl/OrderServiceImpl.java
+// 文件: couponkill-order-service/src/main/java/com/aliyun/seckill/couponkillorderservice/service/Impl/OrderServiceImpl.java
 package com.aliyun.seckill.couponkillorderservice.service.Impl;
 
 import com.aliyun.seckill.common.api.ApiResponse;
@@ -20,20 +20,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -49,12 +46,15 @@ public class OrderServiceImpl implements OrderService {
     private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
+
     // 添加本地缓存
     private final Cache<String, Boolean> localCache = Caffeine.newBuilder()
             .maximumSize(10000)
             .expireAfterWrite(1, TimeUnit.MINUTES)
             .build();
 
+    // 自定义线程池用于异步处理
+    private final ExecutorService executorService = Executors.newFixedThreadPool(50);
 
     /**
      * 批量更新Redis缓存 - 创建订单时使用
@@ -102,8 +102,9 @@ public class OrderServiceImpl implements OrderService {
             return null;
         });
     }
+
     // 异步处理非关键业务逻辑
-    @Async("asyncExecutor")
+    @org.springframework.scheduling.annotation.Async("asyncExecutor")
     public void asyncSendMessage(OrderMessage message) {
         try {
             rocketMQTemplate.convertAndSend(seckillOrderCreateTopic, message);
@@ -111,7 +112,6 @@ public class OrderServiceImpl implements OrderService {
             log.error("异步发送消息失败", e);
         }
     }
-
 
     // 在OrderServiceImpl类中添加缺少的字段
     @Value("${couponkill.seckill.compensation-amount:10.0}")
@@ -131,7 +131,6 @@ public class OrderServiceImpl implements OrderService {
     private static final String USER_COUPON_COUNT_KEY = "user:coupon:count:";
     private static final String USER_RECEIVED_KEY = "user:received:";
 
-    // 在 OrderServiceImpl.java 中更新消息发送逻辑
     @Override
     @Transactional
     public Order createOrder(Long userId, Long couponId) {
@@ -151,41 +150,47 @@ public class OrderServiceImpl implements OrderService {
                             "   redis.call('EXPIRE', key, 3600) " +
                             "   return 1 " +  // 设置成功
                             "end";
-            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+            org.springframework.data.redis.core.script.DefaultRedisScript<Long> redisScript =
+                    new org.springframework.data.redis.core.script.DefaultRedisScript<>();
             redisScript.setScriptText(luaScript);
             redisScript.setResultType(Long.class);
 
             Long result = redisTemplate.execute(redisScript,
-                    Collections.singletonList(userReceivedKey));
+                    java.util.Collections.singletonList(userReceivedKey));
 
             if (result == 0) {
-                throw new BusinessException(ResultCode.REPEAT_SECKILL);
+                throw new com.aliyun.seckill.common.exception.BusinessException(
+                        com.aliyun.seckill.common.enums.ResultCode.REPEAT_SECKILL);
             }
 
             // 2. 检查用户限制
             Coupon coupon = getCouponById(couponId);
             if (coupon == null) {
                 redisTemplate.delete(userReceivedKey);
-                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
+                throw new com.aliyun.seckill.common.exception.BusinessException(
+                        com.aliyun.seckill.common.enums.ResultCode.COUPON_NOT_FOUND);
             }
 
             if (!checkCouponCountLimit(userId, coupon.getType())) {
                 redisTemplate.delete(userReceivedKey);
-                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
+                throw new com.aliyun.seckill.common.exception.BusinessException(
+                        com.aliyun.seckill.common.enums.ResultCode.COUPON_LIMIT_EXCEEDED);
             }
 
             // 3. 异步扣减库存（提高响应速度）
-            CompletableFuture<ApiResponse<Boolean>> deductFuture = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return couponServiceFeignClient.deductStock(couponId);
-                } catch (Exception e) {
-                    log.error("扣减库存失败", e);
-                    return ApiResponse.fail(500, "扣减库存失败");
-                }
-            });
+            CompletableFuture<ApiResponse<Boolean>> deductFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return couponServiceFeignClient.deductStock(couponId);
+                        } catch (Exception e) {
+                            log.error("扣减库存失败", e);
+                            return ApiResponse.fail(500, "扣减库存失败");
+                        }
+                    }, executorService);
 
             // 4. 设置超时时间，防止阻塞
-            ApiResponse<Boolean> deductResponse = deductFuture.get(500, TimeUnit.MILLISECONDS);
+            ApiResponse<Boolean> deductResponse =
+                    deductFuture.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
 
             boolean deductSuccess = deductResponse != null &&
                     deductResponse.getData() != null &&
@@ -194,7 +199,8 @@ public class OrderServiceImpl implements OrderService {
             if (!deductSuccess) {
                 // 清理Redis标记
                 redisTemplate.delete(userReceivedKey);
-                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+                throw new com.aliyun.seckill.common.exception.BusinessException(
+                        com.aliyun.seckill.common.enums.ResultCode.COUPON_OUT_OF_STOCK);
             }
 
             // 5. 创建订单 - 使用更轻量级的操作
@@ -203,11 +209,12 @@ public class OrderServiceImpl implements OrderService {
             order.setUserId(userId);
             order.setCouponId(couponId);
             order.setStatus(1); // 已创建
-            order.setGetTime(LocalDateTime.now());
-            order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
-            order.setCreateTime(LocalDateTime.now());
-            order.setUpdateTime(LocalDateTime.now());
-            order.setRequestId(UUID.randomUUID().toString());
+            order.setGetTime(java.time.LocalDateTime.now());
+            order.setExpireTime(java.time.LocalDateTime.now().plus(coupon.getValidDays(),
+                    java.time.temporal.ChronoUnit.DAYS));
+            order.setCreateTime(java.time.LocalDateTime.now());
+            order.setUpdateTime(java.time.LocalDateTime.now());
+            order.setRequestId(java.util.UUID.randomUUID().toString());
             order.setVersion(0);
 
             // 异步插入数据库，提升响应速度
@@ -227,7 +234,7 @@ public class OrderServiceImpl implements OrderService {
                         log.error("回滚操作失败", ex);
                     }
                 }
-            });
+            }, executorService);
 
             return order;
 
@@ -235,10 +242,11 @@ public class OrderServiceImpl implements OrderService {
             // 清理Redis缓存
             redisTemplate.delete(userReceivedKey);
 
-            if (e instanceof BusinessException) {
-                throw (BusinessException) e;
+            if (e instanceof com.aliyun.seckill.common.exception.BusinessException) {
+                throw (com.aliyun.seckill.common.exception.BusinessException) e;
             } else {
-                throw new BusinessException(ResultCode.SYSTEM_ERROR);
+                throw new com.aliyun.seckill.common.exception.BusinessException(
+                        com.aliyun.seckill.common.enums.ResultCode.SYSTEM_ERROR);
             }
         }
     }
@@ -262,13 +270,6 @@ public class OrderServiceImpl implements OrderService {
             log.error("处理订单创建后续操作失败", e);
         }
     }
-
-
-
-
-
-
-
 
     @Override
     @Transactional
@@ -317,8 +318,6 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
-
-
     @Override
     public boolean hasUserReceivedCoupon(Long userId, Long couponId) {
         String key = userId + ":" + couponId;
@@ -346,6 +345,7 @@ public class OrderServiceImpl implements OrderService {
 
         return dbResult;
     }
+
     @Override
     public boolean checkCouponCountLimit(Long userId, int couponType) {
         // 先查缓存
@@ -391,7 +391,6 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
-
     @Override
     public List<Order> getOrderByUserId(Long userId, Integer pageNum, Integer pageSize) {
         int offset = (pageNum - 1) * pageSize;
@@ -421,8 +420,6 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.insert(order);
         return order;
     }
-
-
 
     @Override
     @Transactional
@@ -459,9 +456,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-
-
-
     /**
      * 检查用户是否在冷却期
      */
@@ -479,9 +473,7 @@ public class OrderServiceImpl implements OrderService {
         String key = "seckill:cooldown:" + userId + ":" + couponId;
         redisTemplate.opsForValue().set(key, "1", Duration.ofSeconds(seconds));
     }
-    /**
-     * 处理秒杀失败补偿
-     */
+
     /**
      * 处理秒杀失败补偿
      */
@@ -543,42 +535,40 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-
+    @Override
+    public void updateOrderStatus(String orderId, int status) {
+        // 更新订单状态
+        orderMapper.updateStatus(orderId, status, LocalDateTime.now());
+    }
 
     @Override
-public void updateOrderStatus(String orderId, int status) {
-    // 更新订单状态
-    orderMapper.updateStatus(orderId, status, LocalDateTime.now());
-}
+    public Order createOrder(Order order) {
+        // 复用已有的保存订单方法
+        return saveOrder(order);
+    }
 
-@Override
-public Order createOrder(Order order) {
-    // 复用已有的保存订单方法
-    return saveOrder(order);
-}
+    @Override
+    public Order getOrderById(Long id) {
+        // 注意：由于订单ID是String类型，此方法可能需要调整
+        // 根据实际情况决定是否需要实现
+        return orderMapper.selectById(String.valueOf(id));
+    }
 
-@Override
-public Order getOrderById(Long id) {
-    // 注意：由于订单ID是String类型，此方法可能需要调整
-    // 根据实际情况决定是否需要实现
-    return orderMapper.selectById(String.valueOf(id));
-}
+    @Override
+    public boolean payOrder(Long orderId) {
+        // 更新订单状态为已支付
+        int result = orderMapper.updateStatus(String.valueOf(orderId), 3, LocalDateTime.now());
+        return result > 0;
+    }
 
-@Override
-public boolean payOrder(Long orderId) {
-    // 更新订单状态为已支付
-    int result = orderMapper.updateStatus(String.valueOf(orderId), 3, LocalDateTime.now());
-    return result > 0;
-}
     @Override
     public long count() {
         return 0;
     }
+
     public Coupon getCouponById(Long couponId) {
-        log.info("开始调用 coupon-service 获取优惠券信息，couponId: {}", couponId);
         try {
             ApiResponse<Coupon> response = couponServiceFeignClient.getCouponById(couponId);
-            log.info("从 coupon-service 获取到的响应: {}", response);
             if (response != null && response.getData() != null) {
                 log.info("从 coupon-service 获取到的优惠券对象: {}", response.getData());
                 return response.getData();
@@ -591,5 +581,4 @@ public boolean payOrder(Long orderId) {
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "获取优惠券信息失败");
         }
     }
-
 }

@@ -15,21 +15,19 @@ create table coupon
     seckill_remaining_stock int            default 0                 not null comment '秒杀剩余库存（仅秒抢类型有效）',
     status                  tinyint        default 0                 not null comment '状态(0-未上架,1-已上架,2-已下架)',
     create_time             datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time             datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
+    update_time             datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    version                 int            default 0                 not null
 )
     comment '优惠券表' row_format = DYNAMIC;
 
 create index idx_coupon_create_time
     on coupon (create_time);
 
-create index idx_coupon_remaining_stock
-    on coupon (total_stock);
-
 create index idx_coupon_seckill_remaining_stock
     on coupon (seckill_remaining_stock);
 
-create index idx_coupon_status
-    on coupon (status);
+create index idx_coupon_status_stock
+    on coupon (status, remaining_stock);
 
 create index idx_coupon_type
     on coupon (type);
@@ -60,29 +58,23 @@ create table `order`
 )
     comment '订单表' row_format = DYNAMIC;
 
-create index idx_coupon_id
-    on `order` (coupon_id);
-
-create index idx_order_coupon_id
-    on `order` (coupon_id);
-
-create index idx_order_create_time
+create index idx_create_time
     on `order` (create_time);
+
+create index idx_createtime_status
+    on `order` (create_time, status);
 
 create index idx_order_expire_time
     on `order` (expire_time);
 
+create index idx_order_request_id
+    on `order` (request_id);
+
 create index idx_order_status
     on `order` (status);
 
-create index idx_order_user_id
-    on `order` (user_id);
-
-create index idx_user_coupon
-    on `order` (user_id, coupon_id);
-
-create index idx_user_status
-    on `order` (user_id, status);
+create index idx_user_createtime
+    on `order` (user_id, create_time);
 
 create table stock_log
 (
@@ -100,14 +92,11 @@ create table stock_log
 )
     comment '库存日志表' row_format = DYNAMIC;
 
-create index idx_coupon_id
-    on stock_log (coupon_id);
-
-create index idx_create_time
-    on stock_log (create_time);
-
 create index idx_related_id
     on stock_log (order_id, activity_id);
+
+create index idx_stocklog_coupon_createtime
+    on stock_log (coupon_id, create_time);
 
 create table undo_log
 (
@@ -154,4 +143,7 @@ create table user_coupon_count
     version       int      default 0                 not null comment '版本号（乐观锁）'
 )
     comment '用户优惠券数量限制表' row_format = DYNAMIC;
+
+create index idx_user_coupon_count_user_id
+    on user_coupon_count (user_id);
 

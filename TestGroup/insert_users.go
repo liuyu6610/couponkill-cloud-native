@@ -39,8 +39,8 @@ func main() {
 
 	fmt.Println("数据库连接成功")
 
-	// 插入500个新用户到数据库
-	fmt.Println("正在插入500个新用户到数据库...")
+	// 插入2000个新用户到数据库
+	fmt.Println("正在插入2000个新用户到数据库...")
 	if err := insertUsers(db); err != nil {
 		fmt.Println("插入用户失败：", err)
 		return
@@ -71,10 +71,10 @@ func insertUsers(db *sql.DB) error {
 	}
 	defer countStmt.Close()
 
-	// 插入500个用户 (ID从1001到1500)
-	for i := 1001; i <= 1500; i++ {
+	// 插入2000个用户 (ID从1000到3000),由于之前我使用500先测试，所以自己更改
+	for i := 1501; i <= 3000; i++ {
 		username := fmt.Sprintf("testuser%d", i)
-		password := "$2a$10$u4m3J/40CC99e7KJJEcgM.R4B0n03sgRHZGH9bSziGeX9EWyBEu2m" // 默认密码
+		password := "$2a$10$u4m3J/40CC99e7KJJEcgM.R4B0n03sgRHZGH9bSziGeX9EWyBEu2m" // 默认密码123456
 		phone := fmt.Sprintf("1380013%04d", i)
 		email := fmt.Sprintf("test%d@example.com", i)
 		// 插入用户

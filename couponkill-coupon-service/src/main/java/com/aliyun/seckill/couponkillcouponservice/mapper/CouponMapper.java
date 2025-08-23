@@ -1,4 +1,3 @@
-// com/aliyun/seckill/couponkillcouponservice/mapper/CouponMapper.java
 package com.aliyun.seckill.couponkillcouponservice.mapper;
 
 import com.aliyun.seckill.common.pojo.Coupon;
@@ -16,14 +15,14 @@ public interface CouponMapper {
     int insertCoupon(Coupon coupon);
     int batchGrantCoupons(@Param("userIds") List<Long> userIds);
 
-    // 新增方法以支持库存更新
-    int updateStock(@Param("couponId") Long couponId, @Param("change") int change);
+    // 修改 updateStock 方法，添加版本号参数
+    int updateStock(@Param("couponId") Long couponId,
+                   @Param("change") int change,
+                   @Param("version") int version);
 
-    // 新增方法以直接更新剩余库存
+    // 修改 updateRemainingStock 方法，添加版本号参数
     int updateRemainingStock(@Param("couponId") Long couponId,
                             @Param("remainingStock") Integer remainingStock,
-                            @Param("updateTime") LocalDateTime updateTime);
-    // 修改 updateStock 方法，添加字段名参数
-    int updateStock(@Param("couponId") Long couponId, @Param("change") int change, @Param("fieldName") String fieldName);
-
+                            @Param("updateTime") LocalDateTime updateTime,
+                            @Param("version") int version);
 }

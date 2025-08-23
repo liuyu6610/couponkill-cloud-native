@@ -13,9 +13,9 @@ rocketmq:
   
   # 主题配置
   topic:
-    seckill-order-create: seckill.order.create    # 订单创建主题
-    seckill-order-result: seckill.order.result    # 订单结果主题
-    seckill-compensation: seckill.order.compensation  # 补偿消息主题
+    seckill-order-create: seckill_order_create    # 订单创建主题
+    seckill-order-result: seckill_order_result    # 订单结果主题
+    seckill-compensation: seckill_compensation    # 补偿消息主题
   
   # 重试配置
   retry:
