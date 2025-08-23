@@ -27,7 +27,115 @@ spring:
           - data-id: common.yaml
             group: DEFAULT_GROUP
             refresh: true
+
+    rules:
+      sharding:
+        tables:
+          user:
+            actual-data-nodes: user-db-$->{0..1}.user_$->{0..7}
+            table-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: user-inline
+            database-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: user-db-inline
+
+          user_coupon_count:
+            actual-data-nodes: user-db-$->{0..1}.user_coupon_count_$->{0..7}
+            table-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: user-coupon-count-inline
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: user-db-inline
+
+          coupon:
+            actual-data-nodes: coupon-db-$->{0..1}.coupon_$->{0..3}
+            table-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: coupon-inline
+            database-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: coupon-db-inline
+
+          stock_log:
+            actual-data-nodes: coupon-db-$->{0..1}.stock_log_$->{0..3}
+            table-strategy:
+              standard:
+                sharding-column: coupon_id
+                sharding-algorithm-name: stock-log-inline
+            database-strategy:
+              standard:
+                sharding-column: coupon_id
+                sharding-algorithm-name: coupon-db-inline
+
+          order:
+            actual-data-nodes: order-db-$->{0..1}.order_$->{202301..202412}
+            table-strategy:
+              standard:
+                sharding-column: create_time
+                sharding-algorithm-name: order-inline
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: order-db-inline
+
+        sharding-algorithms:
+          user-inline:
+            type: INLINE
+            props:
+              algorithm-expression: user_$->{id % 8}
+
+          user-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: user-db-$->{id % 2}
+
+          user-coupon-count-inline:
+            type: INLINE
+            props:
+              algorithm-expression: user_coupon_count_$->{user_id % 8}
+
+          coupon-inline:
+            type: INLINE
+            props:
+              algorithm-expression: coupon_$->{id % 4}
+
+          coupon-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: coupon-db-$->{id % 2}
+
+          stock-log-inline:
+            type: INLINE
+            props:
+              algorithm-expression: stock_log_$->{coupon_id % 4}
+
+          order-inline:
+            type: INLINE
+            props:
+              algorithm-expression: order_$->{create_time.toYYYYMM()}
+
+          order-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: order-db-$->{user_id % 2}
+
+        key-generators:
+          snowflake:
+            type: SNOWFLAKE
+            props:
+              worker-id: 123
+
+
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.aliyun.seckill.pojo
+
 

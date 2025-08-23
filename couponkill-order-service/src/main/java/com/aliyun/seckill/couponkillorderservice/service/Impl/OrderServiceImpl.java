@@ -15,11 +15,17 @@ import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,10 +42,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
-
     @Autowired
     private CouponServiceFeignClient couponServiceFeignClient;
-
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
@@ -79,7 +83,6 @@ public class OrderServiceImpl implements OrderService {
             return null;
         });
     }
-
     /**
      * 批量更新Redis缓存 - 取消订单时使用
      */
@@ -102,9 +105,8 @@ public class OrderServiceImpl implements OrderService {
             return null;
         });
     }
-
     // 异步处理非关键业务逻辑
-    @org.springframework.scheduling.annotation.Async("asyncExecutor")
+    @Async("asyncExecutor")
     public void asyncSendMessage(OrderMessage message) {
         try {
             rocketMQTemplate.convertAndSend(seckillOrderCreateTopic, message);
@@ -112,7 +114,6 @@ public class OrderServiceImpl implements OrderService {
             log.error("异步发送消息失败", e);
         }
     }
-
     // 在OrderServiceImpl类中添加缺少的字段
     @Value("${couponkill.seckill.compensation-amount:10.0}")
     private double compensationAmount;
@@ -134,8 +135,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order createOrder(Long userId, Long couponId) {
-        log.info("开始创建订单，userId: {}, couponId: {}", userId, couponId);
-
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
 
         try {
@@ -217,24 +216,11 @@ public class OrderServiceImpl implements OrderService {
             order.setRequestId(java.util.UUID.randomUUID().toString());
             order.setVersion(0);
 
-            // 异步插入数据库，提升响应速度
-            CompletableFuture.runAsync(() -> {
-                try {
-                    orderMapper.insert(order);
+            // 插入数据库
+            orderMapper.insert(order);
 
-                    // 异步处理后续操作
-                    handlePostOrderCreation(userId, couponId, coupon.getType(), order);
-                } catch (Exception e) {
-                    log.error("异步处理订单创建后续操作失败", e);
-                    // 回滚操作
-                    try {
-                        couponServiceFeignClient.increaseStock(couponId);
-                        redisTemplate.delete(userReceivedKey);
-                    } catch (Exception ex) {
-                        log.error("回滚操作失败", ex);
-                    }
-                }
-            }, executorService);
+            // 异步处理后续操作
+            handlePostOrderCreation(userId, couponId, coupon.getType(), order);
 
             return order;
 
@@ -251,15 +237,34 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    // 抽离后续处理逻辑
+    // 处理订单创建后的后续操作
     private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {
         try {
-            // 更新用户统计和缓存
-            updateUserCouponCount(userId, couponType, 1);
-            batchUpdateRedisOnCreate(userId, couponId, couponType);
+            // 并行执行互不依赖的任务
+            CompletableFuture<Void> updateUserCountFuture = CompletableFuture.runAsync(() ->
+                            updateUserCouponCount(userId, couponType, 1),
+                    executorService
+            );
+            CompletableFuture<Void> updateRedisFuture = CompletableFuture.runAsync(() ->
+                            batchUpdateRedisOnCreate(userId, couponId, couponType),
+                    executorService
+            );
+            // 等待并行任务完成后再发送消息
+            CompletableFuture.allOf(updateUserCountFuture, updateRedisFuture).join();
 
-            // 发送消息
-            OrderMessage orderMessage = new OrderMessage();
+            // 发送消息（独立异步操作）
+            sendOrderMessage(order, userId, couponId);
+        } catch (Exception e) {
+            log.error("处理订单后续操作失败", e);
+            // 增加失败重试机制
+            retryIfNecessary(userId, couponId, couponType, order, e);
+        }
+    }
+
+    private void sendOrderMessage(Order order, Long userId, Long couponId) {
+        OrderMessage orderMessage = null;
+        try {
+            orderMessage = messagePool.borrowObject();
             orderMessage.setOrderId(order.getId());
             orderMessage.setUserId(userId);
             orderMessage.setCouponId(couponId);
@@ -267,8 +272,28 @@ public class OrderServiceImpl implements OrderService {
             orderMessage.setStatus("PENDING");
             asyncSendMessage(orderMessage);
         } catch (Exception e) {
-            log.error("处理订单创建后续操作失败", e);
+            log.error("获取消息对象失败", e);
+        } finally {
+            if (orderMessage != null) {
+                try {
+                    // 重置对象状态后归还
+                    orderMessage.setOrderId(null);
+                    orderMessage.setUserId(null);
+                    orderMessage.setCouponId(null);
+                    orderMessage.setCreateTime(null);
+                    orderMessage.setStatus(null);
+                    messagePool.returnObject(orderMessage);
+                } catch (Exception e) {
+                    log.error("归还消息对象失败", e);
+                }
+            }
         }
+    }
+
+    // 简单的重试逻辑
+    private void retryIfNecessary(Long userId, Long couponId, int couponType, Order order, Exception e) {
+        // 这里可以实现更复杂的重试逻辑，比如使用Spring Retry
+        log.warn("处理订单后续操作失败，需要重试: userId={}, couponId={}", userId, couponId, e);
     }
 
     @Override
@@ -581,4 +606,34 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "获取优惠券信息失败");
         }
     }
+
+    // 在 OrderServiceImpl 类中添加对象池
+    private final GenericObjectPool<OrderMessage> messagePool = new GenericObjectPool<>(
+            new BasePooledObjectFactory<OrderMessage>() {
+                @Override
+                public OrderMessage create() {
+                    return new OrderMessage();
+                }
+
+                @Override
+                public PooledObject<OrderMessage> wrap(OrderMessage obj) {
+                    return new DefaultPooledObject<>(obj);
+                }
+
+                @Override
+                public void passivateObject(PooledObject<OrderMessage> p) throws Exception {
+                    // 重置对象状态
+                    OrderMessage msg = p.getObject();
+                    msg.setOrderId(null);
+                    msg.setUserId(null);
+                    msg.setCouponId(null);
+                    msg.setCreateTime(null);
+                    msg.setStatus(null);
+                }
+            },
+            new GenericObjectPoolConfig<OrderMessage>() {{
+                setMaxTotal(100);
+                setMinIdle(10);
+            }}
+    );
 }

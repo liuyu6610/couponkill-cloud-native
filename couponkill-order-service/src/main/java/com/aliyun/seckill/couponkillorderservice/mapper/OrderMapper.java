@@ -1,3 +1,4 @@
+// OrderMapper.java
 package com.aliyun.seckill.couponkillorderservice.mapper;
 
 import com.aliyun.seckill.common.pojo.Order;
@@ -36,4 +37,12 @@ public interface OrderMapper {
     int updateUserCouponCount(@Param("userId") Long userId,
                              @Param("totalCount") int totalCount,
                              @Param("seckillCount") int seckillCount);
+
+    // 新增方法：根据用户ID和虚拟ID查询订单
+    Order selectByUserIdAndVirtualId(@Param("userId") Long userId,
+                                    @Param("virtualId") String virtualId);
+
+    // 新增方法：查询用户指定优惠券的领取次数
+    int countUserCouponsByVirtualId(@Param("userId") Long userId,
+                                   @Param("couponId") Long couponId);
 }

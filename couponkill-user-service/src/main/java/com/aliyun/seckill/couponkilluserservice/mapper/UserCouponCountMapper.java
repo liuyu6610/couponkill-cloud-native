@@ -1,4 +1,4 @@
-// com.aliyun.seckill.couponkilluserservice.mapper.UserCouponCountMapper.java
+// UserCouponCountMapper.java
 package com.aliyun.seckill.couponkilluserservice.mapper;
 
 import com.aliyun.seckill.common.pojo.UserCouponCount;
@@ -28,4 +28,14 @@ public interface UserCouponCountMapper {
                @Param("normalCount") int normalCount,
                @Param("expiredCount") int expiredCount,
                @Param("version") int version); // 传入当前版本号，避免并发问题
+
+    // 新增或更新用户优惠券统计（使用ON DUPLICATE KEY UPDATE）
+    @Insert("INSERT INTO user_coupon_count(user_id, total_count, seckill_count, normal_count, expired_count, version) " +
+            "VALUES(#{count.userId}, #{count.totalCount}, #{count.seckillCount}, #{count.normalCount}, #{count.expiredCount}, 0) " +
+            "ON DUPLICATE KEY UPDATE " +
+            "total_count = total_count + #{count.totalCount}, " +
+            "seckill_count = seckill_count + #{count.seckillCount}, " +
+            "normal_count = normal_count + #{count.normalCount}, " +
+            "expired_count = expired_count + #{count.expiredCount}")
+    int insertOrUpdate(@Param("count") UserCouponCount count);
 }

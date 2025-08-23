@@ -7,6 +7,7 @@
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="coupon_id" property="couponId"/>
+        <result column="virtual_id" property="virtualId"/>
         <result column="status" property="status"/>
         <result column="get_time" property="getTime"/>
         <result column="use_time" property="useTime"/>
@@ -31,25 +32,31 @@
     </resultMap>
 
     <insert id="insert" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
-        VALUES (#{id}, #{userId}, #{couponId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
+        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
+        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
     </insert>
 
     <insert id="insertOrder" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
-        VALUES (#{id}, #{userId}, #{couponId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
+        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
+        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
     </insert>
 
     <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
+        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
         FROM `order`
         WHERE id = #{orderId}
     </select>
 
     <select id="selectOrderById" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
+        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
         FROM `order`
         WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserIdAndVirtualId" resultMap="BaseResultMap">
+        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
+        FROM `order`
+        WHERE user_id = #{userId} AND virtual_id = #{virtualId}
     </select>
 
     <select id="countByUserAndCoupon" resultType="java.lang.Long">
@@ -57,10 +64,13 @@
         WHERE user_id = #{userId} AND coupon_id = #{couponId}
     </select>
 
-
+    <select id="countUserCouponsByVirtualId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM `order`
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+    </select>
 
     <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
+        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
         FROM `order`
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
@@ -68,7 +78,7 @@
     </select>
 
     <select id="selectAllByCondition" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
+        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
         FROM `order`
         <where>
             <if test="startTime != null and startTime != ''">

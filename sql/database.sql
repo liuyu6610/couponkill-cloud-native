@@ -32,6 +32,9 @@ create index idx_coupon_status_stock
 create index idx_coupon_type
     on coupon (type);
 
+create index idx_coupon_type_status
+    on coupon (type, status);
+
 create table `order`
 (
     id              bigint                             not null comment '订单ID（雪花算法生成，Java/Go双端区分段）'
@@ -49,8 +52,6 @@ create table `order`
     created_by_go   tinyint  default 0                 not null comment '是否Go端创建(1-是,0-否)',
     request_id      varchar(64)                        null comment '请求唯一标识(用于幂等性控制)',
     version         int      default 0                 not null comment '版本号（乐观锁，用于并发控制）',
-    constraint uk_request_id
-        unique (request_id),
     constraint uk_user_coupon
         unique (user_id, coupon_id, status),
     constraint uk_user_coupon_source
@@ -61,17 +62,17 @@ create table `order`
 create index idx_create_time
     on `order` (create_time);
 
-create index idx_createtime_status
+create index idx_create_time_status
     on `order` (create_time, status);
 
-create index idx_order_expire_time
-    on `order` (expire_time);
+create index idx_createtime_status
+    on `order` (create_time, status);
 
 create index idx_order_request_id
     on `order` (request_id);
 
-create index idx_order_status
-    on `order` (status);
+create index idx_user_coupon_status
+    on `order` (user_id, coupon_id, status);
 
 create index idx_user_createtime
     on `order` (user_id, create_time);
@@ -143,6 +144,9 @@ create table user_coupon_count
     version       int      default 0                 not null comment '版本号（乐观锁）'
 )
     comment '用户优惠券数量限制表' row_format = DYNAMIC;
+
+create index idx_user_coupon_count_update_time
+    on user_coupon_count (update_time);
 
 create index idx_user_coupon_count_user_id
     on user_coupon_count (user_id);

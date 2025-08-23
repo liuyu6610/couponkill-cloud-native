@@ -1,3 +1,4 @@
+// UserMapper.java
 package com.aliyun.seckill.couponkilluserservice.mapper;
 
 import com.aliyun.seckill.common.pojo.User;
@@ -29,11 +30,10 @@ public interface UserMapper {
             "update_time as updateTime, last_active_time as lastActiveTime " +
             "FROM user WHERE username = #{username}")
     User selectByUsername(String username);
-    
-    // 删除或注释掉这个错误的方法
-    // @Insert("insert into user(username,password) values(#{username},#{password})")
-    // void insert(User user);
-    
     @Select("select * from user where id=#{userId}")
     Object selectById(Long userId);
+
+    // 更新用户最后活跃时间
+    @Update("UPDATE user SET last_active_time = NOW() WHERE id = #{id}")
+    int updateLastActiveTime(@Param("id") Long id);
 }

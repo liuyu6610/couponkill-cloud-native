@@ -1,4 +1,6 @@
+// 文件路径: couponkill-coupon-service/src/main/java/com/aliyun/seckill/couponkillcouponservice/service/Impl/CouponServiceImpl.java
 package com.aliyun.seckill.couponkillcouponservice.service.Impl;
+
 import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
@@ -31,6 +33,7 @@ public class CouponServiceImpl implements CouponService {
     private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
     private static final String COUPON_DETAIL_KEY = "coupon:detail:";
     private static final String COUPON_STOCK_KEY = "coupon:stock:";
     private static final String COUPON_AVAILABLE_KEY = "coupon:available";
@@ -160,6 +163,7 @@ public class CouponServiceImpl implements CouponService {
             return false;
         }
     }
+
 
     @Override
     @Transactional
