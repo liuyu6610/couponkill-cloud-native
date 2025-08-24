@@ -6,6 +6,7 @@ import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.JwtUtils;
+import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserMapper;
 import com.aliyun.seckill.couponkilluserservice.service.UserService;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -33,11 +35,37 @@ public class UserServiceImpl implements UserService {
     private JwtUtils jwtUtils;
     @Autowired
     private UserCouponCountMapper userCouponCountMapper;
-
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    private final SnowflakeIdGenerator idGenerator=new SnowflakeIdGenerator(1, 1);
+    // 使用Redis生成ID的键名
+    private static final String USER_ID_KEY = "user:id:sequence";
+
+    // 本地缓存ID段，减少Redis访问
+    private final AtomicLong currentId = new AtomicLong(0);
+    private final AtomicLong maxId = new AtomicLong(0);
+    private static final int ID_BATCH_SIZE = 100; // 每次从Redis获取的ID数量
 
     private static final String USER_LOGIN_KEY = "user:login:";
+    /**
+     * 生成用户ID
+     * 使用Redis实现分布式ID生成
+     */
+    private synchronized Long generateUserId() {
+        // 检查是否需要从Redis获取新的ID段
+        if (currentId.get() >= maxId.get()) {
+            // 从Redis获取一批ID
+            Long newMaxId = redisTemplate.opsForValue().increment(USER_ID_KEY, ID_BATCH_SIZE);
+            if (newMaxId != null) {
+                maxId.set(newMaxId);
+                currentId.set(newMaxId - ID_BATCH_SIZE);
+            } else {
+                // 如果Redis不可用，使用雪花算法作为备选方案
+                return idGenerator.nextId();
+            }
+        }
+        return currentId.incrementAndGet();
+    }
 
     @Override
     @Transactional
@@ -50,6 +78,7 @@ public class UserServiceImpl implements UserService {
 
         // 创建新用户
         User user = new User();
+        user.setId(generateUserId()); // 提前生成 ID
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setPhone(phone);
@@ -58,11 +87,13 @@ public class UserServiceImpl implements UserService {
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
 
-        // 插入用户并获取自增ID
+        // 插入用户（注意：去掉 useGeneratedKeys）
         int result = userMapper.insertUser(user);
         if (result <= 0 || user.getId() == null) {
             throw new BusinessException(ResultCode.SYSTEM_BUSY.getCode(), "用户注册失败");
         }
+
+        // 初始化用户优惠券统计
         UserCouponCount count = new UserCouponCount();
         count.setUserId(user.getId());
         count.setTotalCount(0);
@@ -70,8 +101,10 @@ public class UserServiceImpl implements UserService {
         count.setNormalCount(0);
         count.setExpiredCount(0);
         userCouponCountMapper.insert(count);
+
         return user;
     }
+
 
     @Override
     public Map<String, Object> login(String username, String password) {

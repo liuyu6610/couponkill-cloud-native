@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -149,31 +153,27 @@ public class OrderServiceImpl implements OrderService {
                             "   redis.call('EXPIRE', key, 3600) " +
                             "   return 1 " +  // 设置成功
                             "end";
-            org.springframework.data.redis.core.script.DefaultRedisScript<Long> redisScript =
-                    new org.springframework.data.redis.core.script.DefaultRedisScript<>();
+            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
             redisScript.setScriptText(luaScript);
             redisScript.setResultType(Long.class);
 
             Long result = redisTemplate.execute(redisScript,
-                    java.util.Collections.singletonList(userReceivedKey));
+                    Collections.singletonList(userReceivedKey));
 
             if (result == 0) {
-                throw new com.aliyun.seckill.common.exception.BusinessException(
-                        com.aliyun.seckill.common.enums.ResultCode.REPEAT_SECKILL);
+                throw new BusinessException(ResultCode.REPEAT_SECKILL);
             }
 
             // 2. 检查用户限制
             Coupon coupon = getCouponById(couponId);
             if (coupon == null) {
                 redisTemplate.delete(userReceivedKey);
-                throw new com.aliyun.seckill.common.exception.BusinessException(
-                        com.aliyun.seckill.common.enums.ResultCode.COUPON_NOT_FOUND);
+                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
             }
 
             if (!checkCouponCountLimit(userId, coupon.getType())) {
                 redisTemplate.delete(userReceivedKey);
-                throw new com.aliyun.seckill.common.exception.BusinessException(
-                        com.aliyun.seckill.common.enums.ResultCode.COUPON_LIMIT_EXCEEDED);
+                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
             }
 
             // 3. 异步扣减库存（提高响应速度）
@@ -189,7 +189,7 @@ public class OrderServiceImpl implements OrderService {
 
             // 4. 设置超时时间，防止阻塞
             ApiResponse<Boolean> deductResponse =
-                    deductFuture.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    deductFuture.get(200, TimeUnit.MILLISECONDS);
 
             boolean deductSuccess = deductResponse != null &&
                     deductResponse.getData() != null &&
@@ -198,8 +198,7 @@ public class OrderServiceImpl implements OrderService {
             if (!deductSuccess) {
                 // 清理Redis标记
                 redisTemplate.delete(userReceivedKey);
-                throw new com.aliyun.seckill.common.exception.BusinessException(
-                        com.aliyun.seckill.common.enums.ResultCode.COUPON_OUT_OF_STOCK);
+                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
             }
 
             // 5. 创建订单 - 使用更轻量级的操作
@@ -207,13 +206,17 @@ public class OrderServiceImpl implements OrderService {
             order.setId(String.valueOf(idGenerator.nextId()));
             order.setUserId(userId);
             order.setCouponId(couponId);
+
+            // 设置虚拟ID（从coupon服务获取）
+            // 这里需要通过Feign调用获取实际使用的虚拟分片
+            order.setVirtualId(generateOrderVirtualId(userId)); // 简化处理，实际应从coupon服务获取
+
             order.setStatus(1); // 已创建
-            order.setGetTime(java.time.LocalDateTime.now());
-            order.setExpireTime(java.time.LocalDateTime.now().plus(coupon.getValidDays(),
-                    java.time.temporal.ChronoUnit.DAYS));
-            order.setCreateTime(java.time.LocalDateTime.now());
-            order.setUpdateTime(java.time.LocalDateTime.now());
-            order.setRequestId(java.util.UUID.randomUUID().toString());
+            order.setGetTime(LocalDateTime.now());
+            order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
+            order.setCreateTime(LocalDateTime.now());
+            order.setUpdateTime(LocalDateTime.now());
+            order.setRequestId(UUID.randomUUID().toString());
             order.setVersion(0);
 
             // 插入数据库
@@ -228,14 +231,19 @@ public class OrderServiceImpl implements OrderService {
             // 清理Redis缓存
             redisTemplate.delete(userReceivedKey);
 
-            if (e instanceof com.aliyun.seckill.common.exception.BusinessException) {
-                throw (com.aliyun.seckill.common.exception.BusinessException) e;
+            if (e instanceof BusinessException) {
+                throw (BusinessException) e;
             } else {
-                throw new com.aliyun.seckill.common.exception.BusinessException(
-                        com.aliyun.seckill.common.enums.ResultCode.SYSTEM_ERROR);
+                throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
             }
         }
     }
+
+    // 生成订单虚拟ID（基于用户ID分片）
+    private String generateOrderVirtualId(Long userId) {
+        return "order_" + (userId % 16);
+    }
+
 
     // 处理订单创建后的后续操作
     private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {

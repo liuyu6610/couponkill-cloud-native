@@ -1,4 +1,3 @@
-<!-- CouponMapper.xml -->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -73,19 +72,6 @@
         </foreach>
     </insert>
 
-    <!-- 优化后的 updateStock 方法，使用固定字段和乐观锁 -->
-    <update id="updateStock">
-        UPDATE coupon
-        SET remaining_stock = remaining_stock + #{change},
-            seckill_remaining_stock = seckill_remaining_stock + #{change},
-            update_time = NOW(),
-            version = version + 1
-        WHERE id = #{couponId}
-          AND remaining_stock + #{change} >= 0
-          AND seckill_remaining_stock + #{change} >= 0
-          AND version = #{version}
-    </update>
-
     <!-- 按虚拟ID更新库存 -->
     <update id="updateStockByVirtualId">
         UPDATE coupon
@@ -99,16 +85,6 @@
           AND version = #{version}
     </update>
 
-    <update id="updateRemainingStock">
-        UPDATE coupon
-        SET remaining_stock = #{remainingStock},
-            update_time = #{updateTime},
-            version = version + 1
-        WHERE id = #{couponId}
-          AND version = #{version}
-    </update>
-
-    <!-- 按虚拟ID更新剩余库存 -->
     <update id="updateRemainingStockByVirtualId">
         UPDATE coupon
         SET remaining_stock = #{remainingStock},
@@ -120,7 +96,7 @@
 
     <!-- 查询指定优惠券的所有虚拟分片 -->
     <select id="selectByCouponId" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE id = #{couponId}
+        SELECT * FROM coupon WHERE virtual_id LIKE CONCAT(#{couponId}, '_%')
     </select>
 
     <insert id="batchGrantCoupons">

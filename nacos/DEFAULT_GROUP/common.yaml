@@ -1,0 +1,242 @@
+spring:
+  shardingsphere:
+    datasource:
+      names: user-db-0,user-db-1,coupon-db-0,coupon-db-1,coupon-db-2,coupon-db-3,order-db-0,order-db-1,order-db-2,order-db-3
+
+      # 用户库配置
+      user-db-0:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      user-db-1:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+
+      # 优惠券库配置
+      coupon-db-0:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      coupon-db-1:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      coupon-db-2:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      coupon-db-3:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+
+      # 订单库配置
+      order-db-0:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_0?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      order-db-1:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_1?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      order-db-2:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_2?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+      order-db-3:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_3?charset=utf8mb4&parseTime=True&loc=Local
+        username: master0
+        password: Yu20040925@
+        type: com.zaxxer.hikari.HikariDataSource
+    rules:
+      sharding:
+        tables:
+          # 用户表分片规则
+          user:
+            actual-data-nodes: user-db-$->{0..1}.user
+            database-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: user-db-inline
+
+          # 用户优惠券数量表分片规则
+          user_coupon_count:
+            actual-data-nodes: user-db-$->{0..1}.user_coupon_count
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: user-db-inline
+
+          # 优惠券表分片规则（按虚拟ID）
+          coupon:
+            actual-data-nodes: coupon-db-$->{0..3}.coupon_$->{0..15}
+            database-strategy:
+              standard:
+                sharding-column: virtual_id
+                sharding-algorithm-name: coupon-virtual-db-inline
+            table-strategy:
+              standard:
+                sharding-column: virtual_id
+                sharding-algorithm-name: coupon-virtual-table-inline
+
+          # 库存日志表分片规则
+          stock_log:
+            actual-data-nodes: coupon-db-$->{0..3}.stock_log_$->{0..15}
+            database-strategy:
+              standard:
+                sharding-column: virtual_id
+                sharding-algorithm-name: coupon-virtual-db-inline
+            table-strategy:
+              standard:
+                sharding-column: virtual_id
+                sharding-algorithm-name: coupon-virtual-table-inline
+
+          # 订单表分片规则
+          order:
+            actual-data-nodes: order-db-$->{0..3}.order_$->{0..15}
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: order-db-inline
+            table-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: order-table-inline
+
+        sharding-algorithms:
+          # 用户分库算法
+          user-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: user-db-$->{id % 2}
+
+          # 订单分库算法
+          order-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: order-db-$->{user_id % 4}
+
+          # 订单分表算法
+          order-table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: order_$->{user_id % 16}
+
+          # 优惠券虚拟分片分库算法
+          coupon-virtual-db-inline:
+            type: INLINE
+            props:
+              algorithm-expression: coupon-db-$->{virtual_id.substring(virtual_id.lastIndexOf('_') + 1) % 4}
+
+          # 优惠券虚拟分片分表算法
+          coupon-virtual-table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: coupon_$->{virtual_id.substring(virtual_id.lastIndexOf('_') + 1) % 16}
+
+        key-generators:
+          snowflake:
+            type: SNOWFLAKE
+            props:
+              worker-id: 1
+              data-center-id: 1
+
+    mode:
+      type: Standalone
+      repositories:
+        type: JDBC
+
+
+    props:
+      sql-show: true
+      query-with-cipher-column: false
+      sql-comment-parse-enabled: true
+
+  data:
+    redis:
+      host: r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com
+      port: 6379
+      username: master0
+      password: Yu20040925@
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+          max-wait: 2000ms
+
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080
+        port: 8719
+      eager: true
+      datasource:
+        ds1:
+          nacos:
+            server-addr: localhost:8848
+            namespace: 120
+            data-id: couponkill-gateway-sentine
+            data-type: json
+            group: SENTINEL_GROUP
+            rule-type: flow
+
+rocketmq:
+  name-server: 114.55.117.16:9876
+  producer:
+    group: common-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 1
+    max-message-size: 4096
+    transaction-listener:
+      enabled: true
+
+seata:
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: 120
+      group: DEFAULT_GROUP
+      application: seata-server
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: 120
+      group: DEFAULT_GROUP
+
+thread-pool:
+  async:
+    core-pool-size: 16
+    max-pool-size: 32
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS
+  order:
+    core-pool-size: 20
+    max-pool-size: 40
+    queue-capacity: 500
+    thread-name-prefix: "order-async-"
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS

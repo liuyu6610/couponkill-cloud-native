@@ -8,6 +8,7 @@ import com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import com.google.common.hash.BloomFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -48,15 +51,59 @@ public class CouponServiceImpl implements CouponService {
         return couponMapper.selectAll();
     }
 
+    // 创建优惠券时生成虚拟分片
     @Override
+    @Transactional
     public Coupon createCoupon(Coupon coupon) {
         coupon.setCreateTime(LocalDateTime.now());
         coupon.setUpdateTime(LocalDateTime.now());
-        coupon.setVersion(0); // 初始化版本号
-        couponMapper.insertCoupon(coupon);
+        coupon.setVersion(0);
+
+        // 为秒杀类型优惠券创建虚拟分片
+        if (coupon.getType() == 2) { // 秒抢类型
+            createVirtualShards(coupon);
+        } else {
+            // 普通优惠券直接插入
+            coupon.setVirtualId(coupon.getId() + "_0");
+            couponMapper.insertCoupon(coupon);
+        }
+
         return coupon;
     }
 
+    // 创建虚拟分片
+    private void createVirtualShards(Coupon originalCoupon) {
+        int shardCount = 16; // 虚拟分片数量
+        int totalStockPerShard = originalCoupon.getTotalStock() / shardCount;
+        int seckillStockPerShard = originalCoupon.getSeckillTotalStock() / shardCount;
+
+        List<Coupon> virtualCoupons = new ArrayList<>();
+
+        for (int i = 0; i < shardCount; i++) {
+            Coupon virtualCoupon = new Coupon();
+            // 复制原始优惠券属性
+            BeanUtils.copyProperties(originalCoupon, virtualCoupon);
+
+            // 设置虚拟ID
+            virtualCoupon.setVirtualId(Coupon.generateVirtualId(originalCoupon.getId(), i));
+
+            // 分配库存
+            virtualCoupon.setTotalStock(totalStockPerShard);
+            virtualCoupon.setSeckillTotalStock(seckillStockPerShard);
+            virtualCoupon.setRemainingStock(totalStockPerShard);
+            virtualCoupon.setSeckillRemainingStock(seckillStockPerShard);
+
+            // 重置时间和版本
+            virtualCoupon.setCreateTime(LocalDateTime.now());
+            virtualCoupon.setUpdateTime(LocalDateTime.now());
+            virtualCoupon.setVersion(0);
+
+            virtualCoupons.add(virtualCoupon);
+        }
+
+        // 批量插入虚拟分片
+        couponMapper.batchInsertVirtualCoupons(virtualCoupons);
+    }
     @Override
     public Coupon getCouponById(Long couponId) {
         String key = COUPON_DETAIL_KEY + couponId;
@@ -125,36 +172,41 @@ public class CouponServiceImpl implements CouponService {
         return coupon;
     }
 
+    // 扣减库存时使用虚拟分片
     @Override
     @Transactional
     public boolean deductStock(Long couponId) {
         try {
-            // 先获取优惠券信息，判断类型
-            Coupon coupon = getCouponById(couponId);
-            if (coupon == null) {
+            // 获取该优惠券的所有虚拟分片
+            List<Coupon> virtualCoupons = couponMapper.selectByCouponId(couponId);
+            if (virtualCoupons == null || virtualCoupons.isEmpty()) {
                 return false;
             }
 
+            // 随机选择一个有库存的虚拟分片
+            List<Coupon> availableCoupons = virtualCoupons.stream()
+                    .filter(c -> c.getSeckillRemainingStock() > 0)
+                    .collect(Collectors.toList());
+
+            if (availableCoupons.isEmpty()) {
+                return false;
+            }
+
+            // 随机选择一个分片
+            Random random = new Random();
+            Coupon selectedCoupon = availableCoupons.get(random.nextInt(availableCoupons.size()));
+
             // 使用乐观锁更新库存
-            int rows = couponMapper.updateStock(couponId, -1, coupon.getVersion());
+            int rows = couponMapper.updateStockByVirtualId(
+                    selectedCoupon.getVirtualId(),
+                    -1,
+                    selectedCoupon.getVersion()
+            );
+
             if (rows > 0) {
                 // 更新成功，同步更新Redis缓存
-                String stockKey = COUPON_STOCK_KEY + couponId;
+                String stockKey = COUPON_STOCK_KEY + selectedCoupon.getVirtualId();
                 redisTemplate.opsForValue().decrement(stockKey);
-
-                // 异步更新优惠券详情缓存，避免阻塞主流程
-                java.util.concurrent.CompletableFuture.runAsync(() -> {
-                    try {
-                        Coupon updatedCoupon = couponMapper.selectById(couponId);
-                        if (updatedCoupon != null) {
-                            int randomExpire = 30 + new java.util.Random().nextInt(10);
-                            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon,
-                                    randomExpire, java.util.concurrent.TimeUnit.MINUTES);
-                        }
-                    } catch (Exception e) {
-                        log.warn("异步更新优惠券缓存失败，couponId: {}", couponId, e);
-                    }
-                });
                 return true;
             }
             return false;
@@ -168,24 +220,35 @@ public class CouponServiceImpl implements CouponService {
     @Override
     @Transactional
     public boolean increaseStock(Long couponId) {
-        Coupon coupon = getCouponById(couponId);
-        if (coupon == null) {
+        try {
+            // 获取该优惠券的所有虚拟分片
+            List<Coupon> virtualCoupons = couponMapper.selectByCouponId(couponId);
+            if (virtualCoupons == null || virtualCoupons.isEmpty()) {
+                return false;
+            }
+
+            // 随机选择一个虚拟分片增加库存
+            Random random = new Random();
+            Coupon selectedCoupon = virtualCoupons.get(random.nextInt(virtualCoupons.size()));
+
+            // 使用乐观锁更新库存
+            int rows = couponMapper.updateStockByVirtualId(
+                    selectedCoupon.getVirtualId(),
+                    1,
+                    selectedCoupon.getVersion()
+            );
+
+            if (rows > 0) {
+                // 更新Redis库存
+                String stockKey = COUPON_STOCK_KEY + selectedCoupon.getVirtualId();
+                redisTemplate.opsForValue().increment(stockKey);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("增加库存失败，couponId: {}", couponId, e);
             return false;
         }
-
-        // 使用乐观锁更新库存
-        int rows = couponMapper.updateStock(couponId, 1, coupon.getVersion());
-        if (rows > 0) {
-            // 更新Redis库存
-            String stockKey = COUPON_STOCK_KEY + couponId;
-            redisTemplate.opsForValue().increment(stockKey);
-
-            // 更新缓存中的优惠券信息
-            Coupon updatedCoupon = couponMapper.selectById(couponId);
-            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, updatedCoupon);
-            return true;
-        }
-        return false;
     }
 
     @Override

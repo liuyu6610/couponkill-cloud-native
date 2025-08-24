@@ -15,7 +15,6 @@ spring:
         max-retries-on-next-service-instance: 2
         max-retries-on-same-service-instance: 1
 # Feign配置
-# Feign配置
 feign:
   client:
     config:
