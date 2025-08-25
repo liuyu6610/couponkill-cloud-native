@@ -27,7 +27,12 @@ spring:
           - data-id: common.yaml
             group: DEFAULT_GROUP
             refresh: true
+seata:
+  enable-auto-data-source-proxy: false
+shardingsphere:
+  namespace: 998
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.aliyun.seckill.pojo
+
 

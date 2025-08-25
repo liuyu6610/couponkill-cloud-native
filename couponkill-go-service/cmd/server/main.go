@@ -78,21 +78,22 @@ func main() {
 		}
 	}
 
-	log.Printf("配置加载成功: 端口=%d, Redis地址=%s, MySQL=%s",
-		cfg.Server.Port, cfg.Redis.Addr, cfg.Mysql.DSN)
+	log.Printf("配置加载成功: 端口=%d, Redis地址=%s", cfg.Server.Port, cfg.Redis.Addr)
 
 	// 3. 初始化客户端
-	mysqlCli := mysqlclient.NewMysqlClient(cfg.Mysql.DSN)
-	defer mysqlCli.Close()
+	multiDS, err := mysqlclient.NewMultiMysqlClient(cfg)
+	if err != nil {
+		log.Fatalf("初始化MySQL客户端失败: %v", err)
+	}
+	defer multiDS.Close()
 
 	redisCli := redisclient.NewRedisClient(cfg.Redis.Addr, cfg.Redis.UserName, cfg.Redis.Password, cfg.Redis.DB)
 	defer redisCli.Close()
 
-	// 4. 初始化依赖 - 使用从Nacos获取的Java服务地址
+	// 4. 初始化依赖
 	redisRepo := repository.NewRedisRepository(redisCli, cfg.Seckill.Redis.StockKeyPrefix, "user:received:")
-	mysqlRepo := repository.NewMysqlRepository(mysqlCli)
-	couponService := service.NewCouponService(cfg.Collaboration.JavaServiceUrl) // 从配置获取Java服务地址
-	seckillService := service.NewSeckillService(mysqlRepo, redisRepo, couponService)
+	mysqlRepo := repository.NewMysqlRepository(multiDS)
+	seckillService := service.NewSeckillService(mysqlRepo, redisRepo)
 	seckillHandler := handler.NewSeckillHandler(seckillService, cfg.Seckill.ValidDays)
 
 	// 5. 路由设置

@@ -1,0 +1,56 @@
+package com.aliyun.seckill.couponkilluserservice.config;
+
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
+import io.seata.rm.datasource.DataSourceProxy;
+import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Properties;
+
+@Configuration
+public class UserShardingSphereConfig {
+
+    @Value("${spring.cloud.nacos.config.server-addr:localhost:8848}")
+    private String nacosServerAddr;
+
+    @Value("${shardingsphere.namespace:shardingsphere-namespace-id}")
+    private String namespace;
+
+    @Value("${spring.cloud.nacos.config.group:DEFAULT_GROUP}")
+    private String group;
+
+    @Bean
+    public DataSource dataSource() throws SQLException, IOException, NacosException {
+        // 构建Nacos配置服务
+        Properties properties = new Properties();
+        properties.put("serverAddr", nacosServerAddr);
+        if (namespace != null && !namespace.isEmpty()) {
+            properties.put("namespace", namespace);
+        }
+
+        ConfigService configService = NacosFactory.createConfigService(properties);
+
+        // 从Nacos获取user-service的ShardingSphere配置
+        String dataId = "user-service-sharding.yaml";
+        String configContent = configService.getConfig(dataId, group, 3000);
+
+        if (configContent == null || configContent.isEmpty()) {
+            throw new IllegalStateException("未能从Nacos获取user-service的ShardingSphere配置，dataId: " + dataId);
+        }
+
+        // 使用从Nacos获取的配置创建数据源
+        DataSource shardingSphereDataSource = YamlShardingSphereDataSourceFactory.createDataSource(
+            configContent.getBytes()
+        );
+
+        // 使用Seata的DataSourceProxy包装ShardingSphere数据源
+        return new DataSourceProxy(shardingSphereDataSource);
+    }
+}

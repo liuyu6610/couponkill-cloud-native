@@ -1,5 +1,4 @@
 package com.aliyun.seckill.common.exception;
-
 import com.aliyun.seckill.common.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;

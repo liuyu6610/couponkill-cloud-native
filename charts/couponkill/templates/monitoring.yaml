@@ -1,0 +1,68 @@
+{{- if .Values.monitoring.enabled }}
+{{- if .Values.monitoring.prometheus.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.services.go.name }}
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-user-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: couponkill-user
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.services.user.name }}
+  endpoints:
+  - port: http
+    path: /actuator/prometheus
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-order-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: couponkill-order
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.services.order.name }}
+  endpoints:
+  - port: http
+    path: /actuator/prometheus
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-coupon-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: couponkill-coupon
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.services.coupon.name }}
+  endpoints:
+  - port: http
+    path: /actuator/prometheus
+    interval: 30s
+{{- end }}
+{{- end }}

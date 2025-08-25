@@ -1,4 +1,4 @@
-// 文件路径: com/aliyun/seckill/couponkillorderservice/service/Impl/OrderServiceImpl.java
+// 文件: couponkill-order-service/src/main/java/com/aliyun/seckill/couponkillorderservice/service/Impl/OrderServiceImpl.java
 package com.aliyun.seckill.couponkillorderservice.service.Impl;
 
 import com.aliyun.seckill.common.api.ApiResponse;
@@ -10,9 +10,17 @@ import com.aliyun.seckill.common.pojo.OrderMessage;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
+import com.aliyun.seckill.couponkillorderservice.feign.GoSeckillFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,34 +40,73 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
-
     @Autowired
     private CouponServiceFeignClient couponServiceFeignClient;
-
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
-    // 使用Pipeline批量操作Redis
-    private void batchUpdateRedisCache(Long userId, Long couponId, boolean isSeckill) {
+    @Autowired
+    private GoSeckillFeignClient goSeckillFeignClient;
+    // 添加本地缓存
+    private final Cache<String, Boolean> localCache = Caffeine.newBuilder()
+            .maximumSize(10000)
+            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .build();
+
+    // 自定义线程池用于异步处理
+    private final ExecutorService executorService = Executors.newFixedThreadPool(50);
+
+    /**
+     * 批量更新Redis缓存 - 创建订单时使用
+     */
+    private void batchUpdateRedisOnCreate(Long userId, Long couponId, int couponType) {
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
         String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
         String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
 
-        // 批量操作Redis
         redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            // 设置用户领取状态
             connection.set(userReceivedKey.getBytes(), "true".getBytes());
-            connection incr(userTotalCountKey.getBytes());
-            if (isSeckill) {
-                connection.incr(userSeckillCountKey.getBytes());
+            connection.expire(userReceivedKey.getBytes(), 3600); // 1小时过期
+
+            // 增加用户总优惠券计数
+            connection.stringCommands().incr(userTotalCountKey.getBytes());
+
+            // 如果是秒杀优惠券，增加秒杀优惠券计数
+            if (couponType == 2) {
+                connection.stringCommands().incr(userSeckillCountKey.getBytes());
+            }
+            return null;
+        });
+    }
+    /**
+     * 批量更新Redis缓存 - 取消订单时使用
+     */
+    private void batchUpdateRedisOnCancel(Long userId, Long couponId, int couponType) {
+        String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
+        String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
+        String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
+
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            // 删除用户领取状态
+            connection.del(userReceivedKey.getBytes());
+
+            // 减少用户总优惠券计数
+            connection.stringCommands().decr(userTotalCountKey.getBytes());
+
+            // 如果是秒杀优惠券，减少秒杀优惠券计数
+            if (couponType == 2) {
+                connection.stringCommands().decr(userSeckillCountKey.getBytes());
             }
             return null;
         });
@@ -73,8 +120,6 @@ public class OrderServiceImpl implements OrderService {
             log.error("异步发送消息失败", e);
         }
     }
-
-
     // 在OrderServiceImpl类中添加缺少的字段
     @Value("${couponkill.seckill.compensation-amount:10.0}")
     private double compensationAmount;
@@ -93,33 +138,23 @@ public class OrderServiceImpl implements OrderService {
     private static final String USER_COUPON_COUNT_KEY = "user:coupon:count:";
     private static final String USER_RECEIVED_KEY = "user:received:";
 
-    // 在 OrderServiceImpl.java 中更新消息发送逻辑
     @Override
     @Transactional
     public Order createOrder(Long userId, Long couponId) {
-        log.info("开始创建订单，userId: {}, couponId: {}", userId, couponId);
-
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
 
         try {
-            // 1. 先检查Redis缓存（快速失败）
-            Boolean userReceived = redisTemplate.hasKey(userReceivedKey);
-            if (Boolean.TRUE.equals(userReceived)) {
-                throw new BusinessException(ResultCode.REPEAT_SECKILL);
-            }
-
-            // 2. 使用Lua脚本原子性检查和设置
+            // 1. 使用Lua脚本原子性检查和设置（防止重复秒杀）
             String luaScript =
                     "local key = KEYS[1] " +
                             "local exists = redis.call('EXISTS', key) " +
                             "if exists == 1 then " +
-                            "   return 0 " +
+                            "   return 0 " +  // 已存在
                             "else " +
                             "   redis.call('SET', key, '1') " +
                             "   redis.call('EXPIRE', key, 3600) " +
-                            "   return 1 " +
+                            "   return 1 " +  // 设置成功
                             "end";
-
             DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
             redisScript.setScriptText(luaScript);
             redisScript.setResultType(Long.class);
@@ -131,52 +166,78 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ResultCode.REPEAT_SECKILL);
             }
 
-            // 3. 预检查库存（减少远程调用）
-            String stockKey = "coupon:stock:" + couponId;
-            String stockStr = (String) redisTemplate.opsForValue().get(stockKey);
-            if (stockStr != null) {
-                int stock = Integer.parseInt(stockStr);
-                if (stock <= 0) {
-                    throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
-                }
-            }
-
-            // 4. 扣减库存（使用异步+补偿机制）
-            CompletableFuture<Boolean> deductFuture = CompletableFuture.supplyAsync(() -> {
-                try {
-                    ApiResponse<Boolean> deductResponse = couponServiceFeignClient.deductStock(couponId);
-                    return deductResponse != null && deductResponse.getData() != null && deductResponse.getData();
-                } catch (Exception e) {
-                    log.error("扣减库存失败", e);
-                    return false;
-                }
-            });
-
-            // 5. 异步获取优惠券信息
-            CompletableFuture<ApiResponse<Coupon>> couponFuture = CompletableFuture.supplyAsync(() -> {
-                return couponServiceFeignClient.getCouponById(couponId);
-            });
-
-            // 等待关键操作完成
-            boolean deductSuccess = deductFuture.get(3, TimeUnit.SECONDS);
-            ApiResponse<Coupon> couponResponse = couponFuture.get(3, TimeUnit.SECONDS);
-
-            if (!deductSuccess) {
-                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
-            }
-
-            Coupon coupon = couponResponse != null && couponResponse.getData() != null ?
-                    couponResponse.getData() : null;
+            // 2. 检查用户限制
+            Coupon coupon = getCouponById(couponId);
             if (coupon == null) {
+                redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
             }
 
-            // 6. 创建订单（使用批量插入）
+            if (!checkCouponCountLimit(userId, coupon.getType())) {
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
+            }
+
+            // 3. 异步扣减库存（提高响应速度）
+            CompletableFuture<ApiResponse<Boolean>> deductFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return couponServiceFeignClient.deductStock(couponId);
+                        } catch (Exception e) {
+                            log.error("扣减库存失败", e);
+                            return ApiResponse.fail(500, "扣减库存失败");
+                        }
+                    }, executorService);
+
+            // 4. 设置超时时间，防止阻塞
+            ApiResponse<Boolean> deductResponse =
+                    deductFuture.get(200, TimeUnit.MILLISECONDS);
+
+            boolean deductSuccess = deductResponse != null &&
+                    deductResponse.getData() != null &&
+                    deductResponse.getData();
+
+            if (!deductSuccess) {
+                // 清理Redis标记
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+            }
+
+            // 5. 创建订单 - 使用更轻量级的操作
             Order order = new Order();
             order.setId(String.valueOf(idGenerator.nextId()));
             order.setUserId(userId);
             order.setCouponId(couponId);
-            order.setStatus(1);
+
+            // 设置虚拟ID（从coupon服务获取实际使用的虚拟分片）
+            // 调用coupon服务的deductStockWithVirtualId方法，该方法会扣减库存并返回使用的虚拟分片ID
+            CompletableFuture<ApiResponse<String>> deductWithVirtualIdFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return couponServiceFeignClient.deductStockWithVirtualId(couponId);
+                        } catch (Exception e) {
+                            log.error("扣减库存并获取虚拟分片ID失败", e);
+                            return ApiResponse.fail(500, "扣减库存并获取虚拟分片ID失败");
+                        }
+                    }, executorService);
+
+            // 设置超时时间，防止阻塞
+            ApiResponse<String> deductWithVirtualIdResponse =
+                    deductWithVirtualIdFuture.get(200, TimeUnit.MILLISECONDS);
+
+            String selectedVirtualId = deductWithVirtualIdResponse != null &&
+                    deductWithVirtualIdResponse.getData() != null ?
+                    deductWithVirtualIdResponse.getData() : null;
+
+            if (selectedVirtualId == null) {
+                // 清理Redis标记
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+            }
+
+            order.setVirtualId(selectedVirtualId);
+
+            order.setStatus(1); // 已创建
             order.setGetTime(LocalDateTime.now());
             order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
             order.setCreateTime(LocalDateTime.now());
@@ -184,40 +245,11 @@ public class OrderServiceImpl implements OrderService {
             order.setRequestId(UUID.randomUUID().toString());
             order.setVersion(0);
 
+            // 插入数据库
             orderMapper.insert(order);
 
-            // 7. 异步更新用户统计和缓存
-            CompletableFuture.runAsync(() -> {
-                try {
-                    updateUserCouponCount(userId, coupon.getType(), 1);
-
-                    // 更新Redis统计
-                    String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
-                    String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
-
-                    redisTemplate.opsForValue().increment(userTotalCountKey);
-                    if (coupon.getType() == 2) {
-                        redisTemplate.opsForValue().increment(userSeckillCountKey);
-                    }
-                } catch (Exception e) {
-                    log.error("异步更新统计失败", e);
-                }
-            });
-
-            // 8. 异步发送消息
-            CompletableFuture.runAsync(() -> {
-                try {
-                    OrderMessage orderMessage = new OrderMessage();
-                    orderMessage.setOrderId(order.getId());
-                    orderMessage.setUserId(userId);
-                    orderMessage.setCouponId(couponId);
-                    orderMessage.setCreateTime(new Date());
-                    orderMessage.setStatus("PENDING");
-                    asyncSendMessage(orderMessage);
-                } catch (Exception e) {
-                    log.error("异步发送消息失败", e);
-                }
-            });
+            // 异步处理后续操作
+            handlePostOrderCreation(userId, couponId, coupon.getType(), order);
 
             return order;
 
@@ -225,70 +257,71 @@ public class OrderServiceImpl implements OrderService {
             // 清理Redis缓存
             redisTemplate.delete(userReceivedKey);
 
-            // 异步回滚库存
-            CompletableFuture.runAsync(() -> {
-                try {
-                    couponServiceFeignClient.increaseStock(couponId);
-                } catch (Exception ex) {
-                    log.error("回滚库存失败", ex);
-                }
-            });
-
             if (e instanceof BusinessException) {
                 throw (BusinessException) e;
             } else {
-                throw new BusinessException(ResultCode.SYSTEM_ERROR);
+                throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
             }
         }
     }
-
-
-
-    // 异步发送消息的方法
-    private void sendMessageAsync(Order order, Long userId, Long couponId) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                OrderMessage orderMessage = new OrderMessage();
-                orderMessage.setOrderId(order.getId());
-                orderMessage.setUserId(userId);
-                orderMessage.setCouponId(couponId);
-                orderMessage.setCreateTime(new Date());
-                orderMessage.setStatus("PENDING");
-
-                rocketMQTemplate.convertAndSend(seckillOrderCreateTopic, orderMessage);
-                log.info("成功发送秒杀订单创建消息，订单ID: {}", order.getId());
-            } catch (Exception e) {
-                log.error("发送秒杀订单创建消息时发生异常，订单ID: {}", order.getId(), e);
-            }
-        });
-    }
-
-
-    /**
-     * 清理Redis数据
-     */
-    private void cleanupRedisData(Long userId, Long couponId, String userReceivedKey,
-                                  String userTotalCountKey, String userSeckillCountKey) {
+    // 处理订单创建后的后续操作
+    private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {
         try {
-            redisTemplate.delete(userReceivedKey);
-            redisTemplate.opsForValue().decrement(userTotalCountKey);
+            // 并行执行互不依赖的任务
+            CompletableFuture<Void> updateUserCountFuture = CompletableFuture.runAsync(() ->
+                            updateUserCouponCount(userId, couponType, 1),
+                    executorService
+            );
+            CompletableFuture<Void> updateRedisFuture = CompletableFuture.runAsync(() ->
+                            batchUpdateRedisOnCreate(userId, couponId, couponType),
+                    executorService
+            );
+            // 等待并行任务完成后再发送消息
+            CompletableFuture.allOf(updateUserCountFuture, updateRedisFuture).join();
 
-            // 获取优惠券信息以确定是否为秒杀优惠券
-            ApiResponse<Coupon> couponResponse = couponServiceFeignClient.getCouponById(couponId);
-            Coupon coupon = couponResponse != null && couponResponse.getData() != null ? couponResponse.getData() : null;
-            if (coupon != null && coupon.getType() == 2) {
-                redisTemplate.opsForValue().decrement(userSeckillCountKey);
-            }
-            log.info("清理Redis缓存数据完成: userId={}, couponId={}", userId, couponId);
+            // 发送消息（独立异步操作）
+            sendOrderMessage(order, userId, couponId);
         } catch (Exception e) {
-            log.error("清理Redis缓存数据失败: userId={}, couponId={}", userId, couponId, e);
+            log.error("处理订单后续操作失败", e);
+            // 增加失败重试机制
+            retryIfNecessary(userId, couponId, couponType, order, e);
         }
     }
 
+    private void sendOrderMessage(Order order, Long userId, Long couponId) {
+        OrderMessage orderMessage = null;
+        try {
+            orderMessage = messagePool.borrowObject();
+            orderMessage.setOrderId(order.getId());
+            orderMessage.setUserId(userId);
+            orderMessage.setCouponId(couponId);
+            orderMessage.setCreateTime(new Date());
+            orderMessage.setStatus("PENDING");
+            asyncSendMessage(orderMessage);
+        } catch (Exception e) {
+            log.error("获取消息对象失败", e);
+        } finally {
+            if (orderMessage != null) {
+                try {
+                    // 重置对象状态后归还
+                    orderMessage.setOrderId(null);
+                    orderMessage.setUserId(null);
+                    orderMessage.setCouponId(null);
+                    orderMessage.setCreateTime(null);
+                    orderMessage.setStatus(null);
+                    messagePool.returnObject(orderMessage);
+                } catch (Exception e) {
+                    log.error("归还消息对象失败", e);
+                }
+            }
+        }
+    }
 
-
-
-
+    // 简单的重试逻辑
+    private void retryIfNecessary(Long userId, Long couponId, int couponType, Order order, Exception e) {
+        // 这里可以实现更复杂的重试逻辑，比如使用Spring Retry
+        log.warn("处理订单后续操作失败，需要重试: userId={}, couponId={}", userId, couponId, e);
+    }
 
     @Override
     @Transactional
@@ -328,75 +361,43 @@ public class OrderServiceImpl implements OrderService {
         updateUserCouponCount(userId, coupon.getType(), -1);
 
         // 7. 更新Redis缓存
-        String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + order.getCouponId();
-        String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
-        String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
-
         try {
-            // 清理用户领取状态缓存
-            redisTemplate.delete(userReceivedKey);
-
-            // 减少用户优惠券计数
-            redisTemplate.opsForValue().decrement(userTotalCountKey);
-            if (coupon.getType() == 2) { // 秒杀优惠券
-                redisTemplate.opsForValue().decrement(userSeckillCountKey);
-            }
+            // 使用批量操作更新Redis缓存
+            batchUpdateRedisOnCancel(userId, order.getCouponId(), coupon.getType());
         } catch (Exception e) {
             log.warn("更新Redis缓存失败: userId={}, couponId={}", userId, order.getCouponId(), e);
         }
-
         return true;
     }
 
-
-
     @Override
     public boolean hasUserReceivedCoupon(Long userId, Long couponId) {
-        String key = USER_RECEIVED_KEY + userId + ":" + couponId;
-
-        try {
-            // 先检查Redis缓存
-            Object cachedObj = redisTemplate.opsForValue().get(key);
-            if (cachedObj != null) {
-                // 确保类型正确
-                if (cachedObj instanceof Boolean) {
-                    return (Boolean) cachedObj;
-                } else {
-                    // 类型不匹配，删除错误的键
-                    redisTemplate.delete(key);
-                }
-            }
-
-            // 缓存未命中或类型不匹配，查数据库
-            long count = orderMapper.countByUserAndCoupon(userId, couponId);
-            boolean result = count > 0;
-
-            // 更新缓存
-            try {
-                if (result) {
-                    redisTemplate.opsForValue().set(key, true);
-                } else {
-                    redisTemplate.opsForValue().set(key, false, Duration.ofMinutes(5)); // 短期缓存
-                }
-            } catch (Exception redisException) {
-                log.warn("更新Redis缓存时出错，userId={}, couponId={}", userId, couponId, redisException);
-                // Redis操作失败不影响主流程
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.warn("查询用户领取状态时出错，userId={}, couponId={}", userId, couponId, e);
-            // 出错时保守处理，查询数据库
-            try {
-                long count = orderMapper.countByUserAndCoupon(userId, couponId);
-                return count > 0;
-            } catch (Exception dbException) {
-                log.error("查询数据库时也出错，userId={}, couponId={}", userId, couponId, dbException);
-                // 数据库也出错时，默认返回false，避免重复领取
-                return true; // 保守处理，假设已领取
-            }
+        String key = userId + ":" + couponId;
+        // 先查本地缓存
+        Boolean cached = localCache.getIfPresent(key);
+        if (cached != null) {
+            return cached;
         }
+        // 再查Redis
+        String redisKey = USER_RECEIVED_KEY + key;
+        Boolean result = redisTemplate.hasKey(redisKey);
+        if (result != null && result) {
+            localCache.put(key, true);
+            return true;
+        }
+
+        // 最后查数据库
+        long count = orderMapper.countByUserAndCoupon(userId, couponId);
+        boolean dbResult = count > 0;
+
+        if (dbResult) {
+            localCache.put(key, true);
+            redisTemplate.opsForValue().set(redisKey, true, Duration.ofMinutes(30));
+        }
+
+        return dbResult;
     }
+
     @Override
     public boolean checkCouponCountLimit(Long userId, int couponType) {
         // 先查缓存
@@ -425,9 +426,9 @@ public class OrderServiceImpl implements OrderService {
                 seckillCount = count.getSeckillCount();
             }
 
-            // 更新缓存
-            redisTemplate.opsForValue().set(totalKey, totalCount);
-            redisTemplate.opsForValue().set(seckillKey, seckillCount);
+            // 更新缓存，设置较长的过期时间以减少数据库访问
+            redisTemplate.opsForValue().set(totalKey, totalCount, 300, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(seckillKey, seckillCount, 300, TimeUnit.SECONDS);
         }
 
         // 检查限制
@@ -441,7 +442,6 @@ public class OrderServiceImpl implements OrderService {
 
         return true;
     }
-
 
     @Override
     public List<Order> getOrderByUserId(Long userId, Integer pageNum, Integer pageSize) {
@@ -472,8 +472,6 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.insert(order);
         return order;
     }
-
-
 
     @Override
     @Transactional
@@ -510,9 +508,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-
-
-
     /**
      * 检查用户是否在冷却期
      */
@@ -530,9 +525,7 @@ public class OrderServiceImpl implements OrderService {
         String key = "seckill:cooldown:" + userId + ":" + couponId;
         redisTemplate.opsForValue().set(key, "1", Duration.ofSeconds(seconds));
     }
-    /**
-     * 处理秒杀失败补偿
-     */
+
     /**
      * 处理秒杀失败补偿
      */
@@ -594,42 +587,76 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-
+    @Override
+    public void updateOrderStatus(String orderId, int status) {
+        // 更新订单状态
+        orderMapper.updateStatus(orderId, status, LocalDateTime.now());
+    }
 
     @Override
-public void updateOrderStatus(String orderId, int status) {
-    // 更新订单状态
-    orderMapper.updateStatus(orderId, status, LocalDateTime.now());
-}
+    public Order createOrder(Order order) {
+        // 复用已有的保存订单方法
+        return saveOrder(order);
+    }
 
-@Override
-public Order createOrder(Order order) {
-    // 复用已有的保存订单方法
-    return saveOrder(order);
-}
+    @Override
+    public Order getOrderById(Long id) {
+        if (id == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+        }
+        try {
+            return orderMapper.selectOrderById(id);
+        } catch (Exception e) {
+            log.error("查询订单失败，订单ID: {}", id, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "查询订单失败");
+        }
+    }
 
-@Override
-public Order getOrderById(Long id) {
-    // 注意：由于订单ID是String类型，此方法可能需要调整
-    // 根据实际情况决定是否需要实现
-    return orderMapper.selectById(String.valueOf(id));
-}
+    @Override
+    @Transactional
+    public boolean payOrder(Long orderId) {
+        if (orderId == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+        }
 
-@Override
-public boolean payOrder(Long orderId) {
-    // 更新订单状态为已支付
-    int result = orderMapper.updateStatus(String.valueOf(orderId), 3, LocalDateTime.now());
-    return result > 0;
-}
+        try {
+            // 1. 查询订单是否存在
+            Order order = orderMapper.selectOrderById(orderId);
+            if (order == null) {
+                throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
+            }
+
+            // 2. 检查订单状态，只有已创建的订单才能支付
+            if (order.getStatus() != 1) {
+                log.warn("订单状态不正确，无法支付，订单ID: {}, 当前状态: {}", orderId, order.getStatus());
+                return false;
+            }
+
+            // 3. 更新订单状态为已支付
+            LocalDateTime now = LocalDateTime.now();
+            order.setStatus(2); // 已使用
+            order.setUseTime(now);
+            order.setUpdateTime(now);
+
+            int result = orderMapper.updateOrderStatus(orderId, 2); // 2表示已使用
+            return result > 0;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("支付订单失败，订单ID: {}", orderId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "支付订单失败");
+        }
+    }
+
+
     @Override
     public long count() {
         return 0;
     }
+
     public Coupon getCouponById(Long couponId) {
-        log.info("开始调用 coupon-service 获取优惠券信息，couponId: {}", couponId);
         try {
             ApiResponse<Coupon> response = couponServiceFeignClient.getCouponById(couponId);
-            log.info("从 coupon-service 获取到的响应: {}", response);
             if (response != null && response.getData() != null) {
                 log.info("从 coupon-service 获取到的优惠券对象: {}", response.getData());
                 return response.getData();
@@ -643,4 +670,33 @@ public boolean payOrder(Long orderId) {
         }
     }
 
+    // 在 OrderServiceImpl 类中添加对象池
+    private final GenericObjectPool<OrderMessage> messagePool = new GenericObjectPool<>(
+            new BasePooledObjectFactory<OrderMessage>() {
+                @Override
+                public OrderMessage create() {
+                    return new OrderMessage();
+                }
+
+                @Override
+                public PooledObject<OrderMessage> wrap(OrderMessage obj) {
+                    return new DefaultPooledObject<>(obj);
+                }
+
+                @Override
+                public void passivateObject(PooledObject<OrderMessage> p) throws Exception {
+                    // 重置对象状态
+                    OrderMessage msg = p.getObject();
+                    msg.setOrderId(null);
+                    msg.setUserId(null);
+                    msg.setCouponId(null);
+                    msg.setCreateTime(null);
+                    msg.setStatus(null);
+                }
+            },
+            new GenericObjectPoolConfig<OrderMessage>() {{
+                setMaxTotal(100);
+                setMinIdle(10);
+            }}
+    );
 }

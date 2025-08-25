@@ -1,0 +1,136 @@
+# config/samples/ops_v1_seckill.yaml
+apiVersion: ops.couponkill.io/v1
+kind: Seckill
+metadata:
+  name: couponkill-demo
+  namespace: default
+spec:
+  services:
+    goService:
+      enabled: true
+      image: "seckill-go:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8090
+          targetPort: 8090
+          protocol: TCP
+      env:
+        - name: REDIS_ADDR
+          value: "redis:6379"
+        - name: MYSQL_DSN
+          value: "user:password@tcp(mysql:3306)/couponkill"
+
+    couponService:
+      enabled: true
+      image: "couponkill-coupon-service:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8081
+          targetPort: 8081
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql:3306/couponkill"
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+
+    orderService:
+      enabled: true
+      image: "couponkill-order-service:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8082
+          targetPort: 8082
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql:3306/couponkill"
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+
+    userService:
+      enabled: true
+      image: "couponkill-user-service:latest"
+      replicas: 1
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8083
+          targetPort: 8083
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql:3306/couponkill"
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
+
+    gatewayService:
+      enabled: true
+      image: "couponkill-gateway:latest"
+      replicas: 1
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+          protocol: TCP
+
+  scaling:
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 50
+      targetCPUUtilizationPercentage: 70
+    keda:
+      enabled: true
+      kafkaScaler:
+        bootstrapServers: "broker:9092"
+        consumerGroup: "go-dispatcher"
+        topic: "seckill_order_create"
+        lagThreshold: "100"
+
+  monitoring:
+    enabled: true
+    prometheusEnabled: true
+    grafanaEnabled: true

@@ -24,7 +24,10 @@ type Config struct {
 		} `yaml:"redis"`
 	} `yaml:"seckill"`
 	Mysql struct {
+		// 单数据源配置（用于向后兼容）
 		DSN string `yaml:"dsn"`
+		// 多数据源配置
+		DataSources map[string]DataSourceConfig `yaml:"dataSources"`
 	} `yaml:"mysql"`
 	Redis struct {
 		Addr     string `yaml:"host"`
@@ -43,6 +46,16 @@ type Config struct {
 		GoEnabled        bool   `yaml:"go-enabled"`
 		FallbackToGo     bool   `yaml:"fallback-to-go"`
 	} `yaml:"collaboration"`
+}
+
+// DataSourceConfig 数据源配置
+type DataSourceConfig struct {
+	DSN      string `yaml:"dsn"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Database string `yaml:"database"`
 }
 
 // Load 加载配置：优先从Nacos读取，失败后尝试本地配置，最后使用默认值
@@ -136,8 +149,34 @@ func setDefaultValues(cfg *Config) {
 		cfg.Redis.Addr = "116.62.178.91:6379"
 	}
 
-	if cfg.Mysql.DSN == "" {
-		cfg.Mysql.DSN = "root:root@tcp(localhost:3306)/console?charset=utf8mb4&parseTime=True&loc=Local"
+	if cfg.Mysql.DSN == "" && len(cfg.Mysql.DataSources) == 0 {
+		// 设置默认的多数据源配置
+		cfg.Mysql.DataSources = map[string]DataSourceConfig{
+			"order-db-0": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_0?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"order-db-1": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_1?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"order-db-2": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_2?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"order-db-3": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_3?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"coupon-db-0": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"coupon-db-1": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"coupon-db-2": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+			"coupon-db-3": {
+				DSN: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local",
+			},
+		}
 	}
 
 	if cfg.Seckill.Redis.StockKeyPrefix == "" {

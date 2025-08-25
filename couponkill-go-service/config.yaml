@@ -1,0 +1,38 @@
+server:
+  port: 8090
+
+seckill:
+  max-concurrency: 2000
+  redis-key-prefix: "seckill:"
+  valid-days: 7
+  redis:
+    stock-key-prefix: "coupon:stock:"
+
+mysql:
+  dataSources:
+    order-db-0:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+    order-db-1:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+    order-db-2:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+    order-db-3:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_3?charset=utf8mb4&parseTime=True&loc=Local"
+    coupon-db-0:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+    coupon-db-1:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+    coupon-db-2:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+    coupon-db-3:
+      dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local"
+
+data.redis:
+  host: "r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com:6379"
+  username: "master0"
+  password: "Yu20040925@"
+  db: 0
+
+nacos:
+  server-addr: "localhost:8848"
+  namespace-id: "120"

@@ -25,8 +25,10 @@ WORKDIR /app
 # 从构建阶段复制打包好的jar包
 COPY --from=builder /app/couponkill-coupon-service/target/*.jar app.jar
 
+
 # 暴露端口
 EXPOSE 8081
+ENV JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication"
 
 # 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]

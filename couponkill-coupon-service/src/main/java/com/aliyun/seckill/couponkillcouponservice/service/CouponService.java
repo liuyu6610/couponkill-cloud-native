@@ -1,4 +1,4 @@
-// com/aliyun/seckill/couponkillcouponservice/service/CouponService.java
+// 文件路径: couponkill-coupon-service/src/main/java/com/aliyun/seckill/couponkillcouponservice/service/CouponService.java
 package com.aliyun.seckill.couponkillcouponservice.service;
 
 import com.aliyun.seckill.common.pojo.Coupon;
@@ -16,9 +16,19 @@ public interface CouponService {
     boolean increaseStock(Long couponId);
     void updateStock(Long couponId, int newStock);
     void handleExpiredCoupons();
-    // 在 CouponService.java 中添加
+
+    // TCC相关方法
     boolean lockStock(Long couponId);
     boolean confirmDeductStock(Long couponId);
     boolean releaseStock(Long couponId);
+
+    /**
+     * 扣减库存并返回使用的虚拟分片ID
+     * @param couponId 优惠券ID
+     * @return 使用的虚拟分片ID
+     */
+    String deductStockWithVirtualId(Long couponId);
+
+
 
 }

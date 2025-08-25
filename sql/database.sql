@@ -10,27 +10,30 @@ create table coupon
     valid_days              int            default 15                not null comment '有效期(天)',
     per_user_limit          int            default 1                 not null comment '每人限领数量（0表示无限制）',
     total_stock             int                                      not null comment '总库存',
+    seckill_total_stock     int            default 0                 not null comment '秒杀总库存（仅秒抢类型有效）',
+    remaining_stock         int            default 0                 not null comment '剩余库存',
     seckill_remaining_stock int            default 0                 not null comment '秒杀剩余库存（仅秒抢类型有效）',
     status                  tinyint        default 0                 not null comment '状态(0-未上架,1-已上架,2-已下架)',
     create_time             datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time             datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
+    update_time             datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    version                 int            default 0                 not null
 )
     comment '优惠券表' row_format = DYNAMIC;
 
 create index idx_coupon_create_time
     on coupon (create_time);
 
-create index idx_coupon_remaining_stock
-    on coupon (total_stock);
-
 create index idx_coupon_seckill_remaining_stock
     on coupon (seckill_remaining_stock);
 
-create index idx_coupon_status
-    on coupon (status);
+create index idx_coupon_status_stock
+    on coupon (status, remaining_stock);
 
 create index idx_coupon_type
     on coupon (type);
+
+create index idx_coupon_type_status
+    on coupon (type, status);
 
 create table `order`
 (
@@ -49,8 +52,6 @@ create table `order`
     created_by_go   tinyint  default 0                 not null comment '是否Go端创建(1-是,0-否)',
     request_id      varchar(64)                        null comment '请求唯一标识(用于幂等性控制)',
     version         int      default 0                 not null comment '版本号（乐观锁，用于并发控制）',
-    constraint uk_request_id
-        unique (request_id),
     constraint uk_user_coupon
         unique (user_id, coupon_id, status),
     constraint uk_user_coupon_source
@@ -58,29 +59,23 @@ create table `order`
 )
     comment '订单表' row_format = DYNAMIC;
 
-create index idx_coupon_id
-    on `order` (coupon_id);
-
-create index idx_order_coupon_id
-    on `order` (coupon_id);
-
-create index idx_order_create_time
+create index idx_create_time
     on `order` (create_time);
 
-create index idx_order_expire_time
-    on `order` (expire_time);
+create index idx_create_time_status
+    on `order` (create_time, status);
 
-create index idx_order_status
-    on `order` (status);
+create index idx_createtime_status
+    on `order` (create_time, status);
 
-create index idx_order_user_id
-    on `order` (user_id);
+create index idx_order_request_id
+    on `order` (request_id);
 
-create index idx_user_coupon
-    on `order` (user_id, coupon_id);
+create index idx_user_coupon_status
+    on `order` (user_id, coupon_id, status);
 
-create index idx_user_status
-    on `order` (user_id, status);
+create index idx_user_createtime
+    on `order` (user_id, create_time);
 
 create table stock_log
 (
@@ -98,14 +93,11 @@ create table stock_log
 )
     comment '库存日志表' row_format = DYNAMIC;
 
-create index idx_coupon_id
-    on stock_log (coupon_id);
-
-create index idx_create_time
-    on stock_log (create_time);
-
 create index idx_related_id
     on stock_log (order_id, activity_id);
+
+create index idx_stocklog_coupon_createtime
+    on stock_log (coupon_id, create_time);
 
 create table undo_log
 (
@@ -152,4 +144,10 @@ create table user_coupon_count
     version       int      default 0                 not null comment '版本号（乐观锁）'
 )
     comment '用户优惠券数量限制表' row_format = DYNAMIC;
+
+create index idx_user_coupon_count_update_time
+    on user_coupon_count (update_time);
+
+create index idx_user_coupon_count_user_id
+    on user_coupon_count (user_id);
 

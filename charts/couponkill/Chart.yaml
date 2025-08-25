@@ -2,7 +2,19 @@
 # 此配置文件定义了 CouponKill 应用的基本信息和配置参数
 apiVersion: v2
 name: couponkill
-version: 0.1.0
-description: CouponKill services
+version: 0.2.0
+description: CouponKill秒杀系统 - 云原生微服务架构
 type: application
+keywords:
+  - seckill
+  - coupon
+  - microservice
+  - cloud-native
+home: https://github.com/couponkill/couponkill-cloud-native
+sources:
+  - https://github.com/couponkill/couponkill-cloud-native
+maintainers:
+  - name: CouponKill Team
+    email: team@couponkill.io
 
+appVersion: "1.0.0"

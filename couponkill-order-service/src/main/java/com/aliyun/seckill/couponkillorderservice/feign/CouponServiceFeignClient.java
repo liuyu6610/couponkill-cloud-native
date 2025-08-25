@@ -13,11 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
-// 修复CouponServiceFeignClient.java
-@FeignClient(name = "couponkill-coupon-service",
+// 在CouponServiceFeignClient中优化配置
+@FeignClient(
+        name = "couponkill-coupon-service",
         configuration = FeignConfig.class,
         fallback = CouponServiceFeignClient.CouponServiceFallback.class
-        )
+)
 public interface CouponServiceFeignClient {
 
     @GetMapping(value = "/api/v1/coupon/{id}",
@@ -29,7 +30,8 @@ public interface CouponServiceFeignClient {
 
     @PostMapping("/api/v1/coupon/increase/{id}")
     ApiResponse<Boolean> increaseStock(@PathVariable("id") Long id);
-
+    @PostMapping("/api/v1/coupon/deduct-with-virtual-id/{id}")
+    ApiResponse<String> deductStockWithVirtualId(@PathVariable("id") Long id);
     // 添加秒杀相关接口
     @PostMapping("/api/v1/seckill/{couponId}/enter")
     ApiResponse<EnterSeckillResp> enter(@PathVariable("couponId") String couponId,
@@ -83,6 +85,11 @@ public interface CouponServiceFeignClient {
         public ApiResponse<Boolean> increaseStock(Long id) {
             log.error("调用 increaseStock 失败，couponId: {}", id);
             return ApiResponse.fail(500, "服务暂时不可用");
+        }
+
+        @Override
+        public ApiResponse<String> deductStockWithVirtualId(Long id) {
+            return null;
         }
 
         @Override

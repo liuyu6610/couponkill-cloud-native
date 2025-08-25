@@ -27,6 +27,7 @@ COPY --from=builder /app/couponkill-user-service/target/*.jar app.jar
 
 # 暴露端口
 EXPOSE 8083
+ENV JAVA_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication"
 
 # 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]

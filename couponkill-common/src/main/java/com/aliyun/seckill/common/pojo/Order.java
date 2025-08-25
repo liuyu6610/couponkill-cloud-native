@@ -1,22 +1,18 @@
-// com.aliyun.seckill.common.pojo.Order.java
+// com/aliyun/seckill/common/pojo/Order.java
 package com.aliyun.seckill.common.pojo;
 
-
 import lombok.Data;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String id;
-
     private Long userId;
-
     private Long couponId;
+    private String virtualId; // 添加虚拟ID字段
 
     /**
      * 状态(1-已创建,2-已使用,3-已过期,4-已取消)
@@ -36,5 +32,10 @@ public class Order implements Serializable {
 
     // 新增字段
     private String requestId;
-    private Integer version; // 固定为0（Java端创建不影响Go端标识）
+    private Integer version;
+
+    // 生成虚拟ID的方法
+    public static String generateVirtualId(Long couponId, int shardIndex) {
+        return couponId + "_" + shardIndex;
+    }
 }

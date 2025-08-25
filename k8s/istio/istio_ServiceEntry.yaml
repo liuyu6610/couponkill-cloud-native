@@ -1,0 +1,53 @@
+# ServiceEntry配置，支持外部服务访问
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-apis
+  namespace: couponkill
+spec:
+  hosts:
+  - "api.alibaba.com"
+  - "api.alicdn.com"
+  - "oss.aliyuncs.com"
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  - number: 80
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: DNS
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-databases
+  namespace: couponkill
+spec:
+  hosts:
+  - "rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com"
+  ports:
+  - number: 3306
+    name: tcp
+    protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: DNS
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-redis
+  namespace: couponkill
+spec:
+  hosts:
+  - "116.62.178.91"
+  ports:
+  - number: 6379
+    name: redis
+    protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: NONE
