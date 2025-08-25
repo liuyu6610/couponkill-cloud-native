@@ -3,13 +3,31 @@
 
 namespace: couponkill  # Kubernetes 命名空间名称
 
+# 全局配置
+global:
+  registry: registry.example.com/couponkill  # 默认镜像仓库地址
+  version: latest  # 默认镜像标签
+  domain: couponkill.example.com  # 默认域名
+
 # 镜像配置信息
 image:
-  registry: registry.example.com/couponkill  # 镜像仓库地址
-  tag: latest  # 镜像标签
+  registry: ""  # 镜像仓库地址，如果为空则使用global.registry
+  tag: ""  # 镜像标签，如果为空则使用global.version
 
 # 微服务配置列表
 services:
+  # Go秒杀服务配置
+  go:
+    name: seckill-go-svc  # 服务名称
+    port: 8090  # 服务端口
+    replicas: 2  # 初始副本数
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 3  # 最小副本数
+      maxReplicas: 50  # 最大副本数
+      cpu: 70  # CPU使用率触发阈值(百分比)
+
   # 优惠券服务配置
   coupon:
     name: couponkill-coupon-service  # 服务名称
@@ -51,7 +69,54 @@ istio:
   enabled: true  # 是否启用Istio
   # 网关配置
   gateway:
-    name: couponkill-gw  # 网关名称
-    host: couponkill.example.com  # 访问域名
+    name: couponkill-gateway  # 网关名称
+    host: "*"  # 访问域名
     port: 80  # 网关端口
     tls: false  # 是否启用TLS加密
+
+  # 目标规则配置
+  destinationRule:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+
+# KEDA 自动扩缩容配置
+keda:
+  enabled: true
+  # Kafka 配置
+  kafka:
+    bootstrapServers: "broker:9092"
+    # Go服务的扩缩容配置
+    go:
+      enabled: true
+      deploymentName: seckill-go-svc
+      minReplicaCount: 3
+      maxReplicaCount: 50
+      topic: "seckill_order_create"
+      consumerGroup: "go-dispatcher"
+      lagThreshold: "100"
+    # 订单服务的扩缩容配置
+    order:
+      enabled: true
+      deploymentName: couponkill-order-service
+      minReplicaCount: 2
+      maxReplicaCount: 30
+      topic: "seckill_order_create"
+      consumerGroup: "order-create"
+      lagThreshold: "100"
+
+# 监控配置
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true

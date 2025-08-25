@@ -25,7 +25,7 @@ WORKDIR /app
 # 从构建阶段复制打包好的jar包
 COPY --from=builder /app/couponkill-order-service/target/*.jar app.jar
 # JVM优化参数
-ENV JAVA_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication"
+ENV JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication"
 
 # 暴露端口
 EXPOSE 8082

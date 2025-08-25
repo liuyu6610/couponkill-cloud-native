@@ -32,14 +32,33 @@ public class SeckillTccServiceImpl implements SeckillTccService {
     @Transactional
     public boolean prepareSeckill(BusinessActionContext context, Long userId, Long couponId) {
         try {
-            // 1. 尝试锁定库存
-            ApiResponse<Boolean> lockResponse = couponServiceFeignClient.lockStock(couponId);
-            boolean lockSuccess = lockResponse != null && lockResponse.getData() != null && lockResponse.getData();
-            if (!lockSuccess) {
+            // 1. 参数校验
+            if (userId == null || couponId == null) {
+                log.warn("参数校验失败，userId: {}, couponId: {}", userId, couponId);
                 return false;
             }
 
-            // 2. 创建状态为"准备中"的订单
+            // 2. 检查用户是否在冷却期
+            if (orderService.checkUserInCooldown(userId, couponId)) {
+                log.warn("用户 {} 在冷却期，无法参与秒杀 couponId={}", userId, couponId);
+                return false;
+            }
+
+            // 3. 检查用户是否已领取该优惠券
+            if (orderService.hasUserReceivedCoupon(userId, couponId)) {
+                log.warn("用户 {} 已领取过优惠券 {}", userId, couponId);
+                return false;
+            }
+
+            // 4. 尝试锁定库存
+            ApiResponse<Boolean> lockResponse = couponServiceFeignClient.lockStock(couponId);
+            boolean lockSuccess = lockResponse != null && lockResponse.getData() != null && lockResponse.getData();
+            if (!lockSuccess) {
+                log.warn("锁定库存失败，couponId: {}", couponId);
+                return false;
+            }
+
+            // 5. 创建状态为"准备中"的订单
             Order order = new Order();
             order.setId(context.getXid()); // 使用Seata全局事务ID作为订单ID
             order.setUserId(userId);
@@ -57,6 +76,7 @@ public class SeckillTccServiceImpl implements SeckillTccService {
         }
     }
 
+
     @Override
     @Transactional
     public boolean commit(BusinessActionContext context) {
@@ -70,6 +90,13 @@ public class SeckillTccServiceImpl implements SeckillTccService {
             ApiResponse<Boolean> confirmResponse = couponServiceFeignClient.confirmDeductStock(couponId);
             // 可以根据需要处理返回结果
 
+            // 3. 更新用户优惠券计数
+            Long userId = Long.parseLong(context.getActionContext("userId").toString());
+            orderService.updateUserCouponCount(userId, 2, 1); // 假设是秒杀券，增加1个
+
+            // 4. 设置用户冷却期
+            orderService.setUserCooldown(userId, couponId, 2); // 设置2秒冷却期
+
             return true;
         } catch (Exception e) {
             log.error("commit 失败，context: {}", context, e);
@@ -77,7 +104,7 @@ public class SeckillTccServiceImpl implements SeckillTccService {
         }
     }
 
-    // 在 SeckillTccServiceImpl.java 中完善回滚逻辑
+
     // 在 SeckillTccServiceImpl.java 中完善回滚逻辑
     @Override
     @Transactional
@@ -104,6 +131,15 @@ public class SeckillTccServiceImpl implements SeckillTccService {
             return true;
         } catch (Exception e) {
             log.error("rollback 失败，context: {}", context, e);
+            // 即使回滚失败，也要尝试进行补偿
+            try {
+                String orderId = context.getXid();
+                Long userId = Long.parseLong(context.getActionContext("userId").toString());
+                Long couponId = Long.parseLong(context.getActionContext("couponId").toString());
+                orderService.handleSeckillFailure(orderId, userId, couponId);
+            } catch (Exception ex) {
+                log.error("补偿处理也失败了，context: {}", context, ex);
+            }
             return false;
         }
     }

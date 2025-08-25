@@ -10,6 +10,7 @@ import com.aliyun.seckill.common.pojo.OrderMessage;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
+import com.aliyun.seckill.couponkillorderservice.feign.GoSeckillFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -54,7 +55,8 @@ public class OrderServiceImpl implements OrderService {
     private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
-
+    @Autowired
+    private GoSeckillFeignClient goSeckillFeignClient;
     // 添加本地缓存
     private final Cache<String, Boolean> localCache = Caffeine.newBuilder()
             .maximumSize(10000)
@@ -207,9 +209,33 @@ public class OrderServiceImpl implements OrderService {
             order.setUserId(userId);
             order.setCouponId(couponId);
 
-            // 设置虚拟ID（从coupon服务获取）
-            // 这里需要通过Feign调用获取实际使用的虚拟分片
-            order.setVirtualId(generateOrderVirtualId(userId)); // 简化处理，实际应从coupon服务获取
+            // 设置虚拟ID（从coupon服务获取实际使用的虚拟分片）
+            // 调用coupon服务的deductStockWithVirtualId方法，该方法会扣减库存并返回使用的虚拟分片ID
+            CompletableFuture<ApiResponse<String>> deductWithVirtualIdFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return couponServiceFeignClient.deductStockWithVirtualId(couponId);
+                        } catch (Exception e) {
+                            log.error("扣减库存并获取虚拟分片ID失败", e);
+                            return ApiResponse.fail(500, "扣减库存并获取虚拟分片ID失败");
+                        }
+                    }, executorService);
+
+            // 设置超时时间，防止阻塞
+            ApiResponse<String> deductWithVirtualIdResponse =
+                    deductWithVirtualIdFuture.get(200, TimeUnit.MILLISECONDS);
+
+            String selectedVirtualId = deductWithVirtualIdResponse != null &&
+                    deductWithVirtualIdResponse.getData() != null ?
+                    deductWithVirtualIdResponse.getData() : null;
+
+            if (selectedVirtualId == null) {
+                // 清理Redis标记
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+            }
+
+            order.setVirtualId(selectedVirtualId);
 
             order.setStatus(1); // 已创建
             order.setGetTime(LocalDateTime.now());
@@ -238,13 +264,6 @@ public class OrderServiceImpl implements OrderService {
             }
         }
     }
-
-    // 生成订单虚拟ID（基于用户ID分片）
-    private String generateOrderVirtualId(Long userId) {
-        return "order_" + (userId % 16);
-    }
-
-
     // 处理订单创建后的后续操作
     private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {
         try {
@@ -407,9 +426,9 @@ public class OrderServiceImpl implements OrderService {
                 seckillCount = count.getSeckillCount();
             }
 
-            // 更新缓存
-            redisTemplate.opsForValue().set(totalKey, totalCount);
-            redisTemplate.opsForValue().set(seckillKey, seckillCount);
+            // 更新缓存，设置较长的过期时间以减少数据库访问
+            redisTemplate.opsForValue().set(totalKey, totalCount, 300, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(seckillKey, seckillCount, 300, TimeUnit.SECONDS);
         }
 
         // 检查限制
@@ -582,17 +601,53 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order getOrderById(Long id) {
-        // 注意：由于订单ID是String类型，此方法可能需要调整
-        // 根据实际情况决定是否需要实现
-        return orderMapper.selectById(String.valueOf(id));
+        if (id == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+        }
+        try {
+            return orderMapper.selectOrderById(id);
+        } catch (Exception e) {
+            log.error("查询订单失败，订单ID: {}", id, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "查询订单失败");
+        }
     }
 
     @Override
+    @Transactional
     public boolean payOrder(Long orderId) {
-        // 更新订单状态为已支付
-        int result = orderMapper.updateStatus(String.valueOf(orderId), 3, LocalDateTime.now());
-        return result > 0;
+        if (orderId == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+        }
+
+        try {
+            // 1. 查询订单是否存在
+            Order order = orderMapper.selectOrderById(orderId);
+            if (order == null) {
+                throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
+            }
+
+            // 2. 检查订单状态，只有已创建的订单才能支付
+            if (order.getStatus() != 1) {
+                log.warn("订单状态不正确，无法支付，订单ID: {}, 当前状态: {}", orderId, order.getStatus());
+                return false;
+            }
+
+            // 3. 更新订单状态为已支付
+            LocalDateTime now = LocalDateTime.now();
+            order.setStatus(2); // 已使用
+            order.setUseTime(now);
+            order.setUpdateTime(now);
+
+            int result = orderMapper.updateOrderStatus(orderId, 2); // 2表示已使用
+            return result > 0;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("支付订单失败，订单ID: {}", orderId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "支付订单失败");
+        }
     }
+
 
     @Override
     public long count() {

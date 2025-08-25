@@ -14,14 +14,16 @@ public class SnowflakeIdGenerator {
 
     private final long workerIdBits = 5L;
     private final long datacenterIdBits = 5L;
-    private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
-    private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
+    // 修复整数溢出问题
+    private final long maxWorkerId = ~(-1L << workerIdBits);
+    private final long maxDatacenterId = ~(-1L << datacenterIdBits);
     private final long sequenceBits = 12L;
 
     private final long workerIdShift = sequenceBits;
     private final long datacenterIdShift = sequenceBits + workerIdBits;
     private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
-    private final long sequenceMask = -1L ^ (-1L << sequenceBits);
+    // 修复整数溢出问题
+    private final long sequenceMask = ~(-1L << sequenceBits);
 
     private long lastTimestamp = -1L;
 

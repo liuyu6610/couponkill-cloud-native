@@ -1,0 +1,114 @@
+# AuthorizationPolicy配置，定义服务访问的授权策略
+---
+# 允许入口网关访问所有服务
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress
+  namespace: couponkill
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+
+---
+# 允许服务间相互访问
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-internal-services
+  namespace: couponkill
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        - "cluster.local/ns/couponkill/sa/couponkill-coupon-service"
+        - "cluster.local/ns/couponkill/sa/couponkill-user-service"
+        - "cluster.local/ns/couponkill/sa/seckill-go"
+        - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+
+---
+# 为Go服务设置特定的安全策略
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: seckill-go-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: seckill-go
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+    when:
+    - key: request.headers[x-api-key]
+      values: ["seckill-api-key"]
+
+---
+# 为订单服务设置特定的安全策略
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: order-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-order-service
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/couponkill/sa/couponkill-user-service"
+        - "cluster.local/ns/couponkill/sa/seckill-go"
+        - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+
+---
+# 为优惠券服务设置特定的安全策略
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: coupon-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-coupon-service
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        - "cluster.local/ns/couponkill/sa/seckill-go"
+        - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+
+---
+# 为用户服务设置特定的安全策略
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: user-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-user-service
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"

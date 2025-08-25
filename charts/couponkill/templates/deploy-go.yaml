@@ -1,0 +1,120 @@
+# charts/couponkill/templates/deploy-go.yaml
+
+# Deployment配置：定义Go秒杀服务的部署资源
+# 用于创建和管理Go秒杀服务的Pod副本
+# 参数说明：
+#   .Values.services.go.name        - 服务名称
+#   .Values.namespace               - 命名空间
+#   .Values.services.go.replicas    - 副本数量
+#   .Values.image.registry          - 镜像仓库地址
+#   .Values.image.tag               - 镜像标签
+#   .Values.services.go.port        - 容器端口
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.go.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.go.name }}
+    version: v1
+spec:
+  replicas: {{ .Values.services.go.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.go.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.go.name }}
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.services.go.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: app
+          image: "{{ if .Values.image.registry }}{{ .Values.image.registry }}{{ else }}{{ .Values.global.registry }}{{ end }}/seckill-go:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Values.global.version }}{{ end }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.services.go.port }}
+          # 就绪探针，检查服务是否可用
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.services.go.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          # 存活探针，检查服务是否正常运行
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.services.go.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: PORT
+              value: "{{ .Values.services.go.port }}"
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: MYSQL_DSN
+              value: "user:password@tcp(mysql:3306)/couponkill"
+---
+# Service配置：为Go秒杀服务提供稳定的网络访问入口
+# 参数说明：
+#   .Values.services.go.name        - 服务名称
+#   .Values.namespace               - 命名空间
+#   .Values.services.go.port        - 目标端口
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.go.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.go.name }}
+spec:
+  selector:
+    app: {{ .Values.services.go.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.services.go.port }}
+  type: ClusterIP
+
+---
+# HorizontalPodAutoscaler配置（可选）：根据CPU使用率自动调整Pod副本数
+# 条件启用：仅当 .Values.services.go.hpa.enabled 为 true 时生效
+# 参数说明：
+#   .Values.services.go.name              - 被扩缩容的目标Deployment名称
+#   .Values.namespace                     - 命名空间
+#   .Values.services.go.hpa.minReplicas   - 最小副本数
+#   .Values.services.go.hpa.maxReplicas   - 最大副本数
+#   .Values.services.go.hpa.cpu           - 触发扩缩容的CPU平均利用率阈值
+{{- if .Values.services.go.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.services.go.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.services.go.name }}
+  minReplicas: {{ .Values.services.go.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.go.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.go.hpa.cpu }}
+{{- end }}

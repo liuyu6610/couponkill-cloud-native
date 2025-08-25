@@ -2,10 +2,8 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"couponkill-go-service/internal/model"
@@ -17,66 +15,21 @@ import (
 
 // SeckillService 秒杀服务
 type SeckillService struct {
-	mysqlRepo     *repository.MysqlRepository
-	redisRepo     *repository.RedisRepository
-	couponService *CouponService // 添加couponService字段
+	mysqlRepo *repository.MysqlRepository
+	redisRepo *repository.RedisRepository
 }
 
-// CouponService 优惠券服务（对接Java的coupon-service）
-type CouponService struct {
-	javaCouponServiceURL string // Java服务的优惠券查询接口地址
-}
-
-// NewCouponService 初始化优惠券服务
-func NewCouponService(javaURL string) *CouponService {
-	return &CouponService{javaCouponServiceURL: javaURL}
-}
-
-// GetCouponByID 调用Java服务查询优惠券信息
-func (s *CouponService) GetCouponByID(ctx context.Context, couponID int64) (*model.Coupon, error) {
-	// 示例URL：http://coupon-service/coupon/{id}
-	url := s.javaCouponServiceURL + "/coupon/" + fmt.Sprintf("%d", couponID) // 修复类型转换
-
-	// 模拟HTTP请求（省略具体实现，实际需处理超时、重试等）
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, errors.New("查询优惠券失败：" + err.Error())
-	}
-	defer resp.Body.Close()
-
-	var coupon model.Coupon
-	if err := json.NewDecoder(resp.Body).Decode(&coupon); err != nil {
-		return nil, errors.New("解析优惠券数据失败：" + err.Error())
-	}
-
-	if coupon.ID == 0 {
-		return nil, errors.New("优惠券不存在")
-	}
-	return &coupon, nil
-}
-
-// 修改构造函数，添加couponService参数
-func NewSeckillService(mysqlRepo *repository.MysqlRepository, redisRepo *repository.RedisRepository, couponService *CouponService) *SeckillService {
+// NewSeckillService 初始化秒杀服务
+func NewSeckillService(mysqlRepo *repository.MysqlRepository, redisRepo *repository.RedisRepository) *SeckillService {
 	return &SeckillService{
-		mysqlRepo:     mysqlRepo,
-		redisRepo:     redisRepo,
-		couponService: couponService, // 初始化couponService
+		mysqlRepo: mysqlRepo,
+		redisRepo: redisRepo,
 	}
 }
 
-// ProcessSeckill 处理单个用户秒杀（Go端）
+// ProcessSeckill 处理单个用户秒杀（Go端独立处理完整流程）
 func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID int64, validDays int) (bool, error) {
-	// 1. 查询优惠券信息（获取类型、状态等）
-	coupon, err := s.couponService.GetCouponByID(ctx, couponID) // 修复：使用couponID而不是req.CouponID
-	if err != nil {
-		return false, err
-	}
-
-	// 2. 校验优惠券状态
-	if coupon.Type != 1 && coupon.Type != 2 { // 假设有效的Type值为1或2
-		return false, errors.New("优惠券类型无效")
-	}
-	// 3. 先查缓存：用户是否已领取
+	// 1. 先查缓存：用户是否已领取
 	cacheReceived, err := s.redisRepo.CheckUserReceivedCache(ctx, userID, couponID)
 	if err != nil {
 		return false, err
@@ -85,7 +38,7 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, errors.New("用户已领取")
 	}
 
-	// 4. 查DB确认：两端均未领取（双字段均为0）
+	// 2. 查DB确认：两端均未领取（双字段均为0）
 	dbReceived, err := s.mysqlRepo.CheckUserReceived(ctx, userID, couponID)
 	if err != nil {
 		return false, err
@@ -94,7 +47,7 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, errors.New("用户已领取")
 	}
 
-	// 5. 扣减库存（Redis原子操作）
+	// 3. 扣减库存（Redis原子操作）
 	stockDeduced, err := s.redisRepo.DeductStock(ctx, couponID)
 	if err != nil {
 		return false, fmt.Errorf("扣减库存失败: %w", err)
@@ -103,12 +56,13 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, errors.New("库存不足")
 	}
 
-	// 6. 创建订单（标记Go端来源）
+	// 4. 创建订单（标记Go端来源）
 	order := &model.Order{
-		ID:            idgenerator.GenerateGoOrderID(),
+		ID:            idgenerator.GenerateOrderID(), // 使用雪花算法生成唯一ID
 		UserID:        userID,
 		CouponID:      couponID,
-		Status:        1, // 已创建
+		VirtualID:     fmt.Sprintf("%d_%d", couponID, userID%16), // 生成虚拟ID，与Java端保持一致
+		Status:        1,                                         // 已创建
 		GetTime:       time.Now(),
 		ExpireTime:    time.Now().AddDate(0, 0, validDays),
 		CreatedByJava: 0, // 非Java端创建
@@ -117,14 +71,48 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		Version:       0,
 	}
 
-	// 7. 插入订单（依赖联合索引uk_user_coupon_source防止重复）
+	// 5. 插入订单（依赖联合索引uk_user_coupon_source防止重复）
 	if err := s.mysqlRepo.CreateOrder(ctx, order); err != nil {
 		// 插入失败回滚库存
 		s.redisRepo.IncrStock(ctx, couponID) // 简化处理
 		return false, err
 	}
 
-	// 8. 更新缓存
+	// 6. 更新用户优惠券数量统计
+	if err := s.mysqlRepo.UpdateUserCouponCount(ctx, userID, 1, 1); err != nil {
+		// 如果更新失败，需要回滚订单和库存
+		s.mysqlRepo.DeleteOrder(ctx, order.ID, userID)
+		s.redisRepo.IncrStock(ctx, couponID)
+		return false, fmt.Errorf("更新用户优惠券数量失败: %w", err)
+	}
+
+	// 7. 更新优惠券库存（在数据库中同步更新）
+	if err := s.mysqlRepo.UpdateCouponStock(ctx, couponID, -1); err != nil {
+		// 如果更新失败，需要回滚之前的更改
+		s.mysqlRepo.DeleteOrder(ctx, order.ID, userID)
+		s.mysqlRepo.UpdateUserCouponCount(ctx, userID, -1, -1)
+		s.redisRepo.IncrStock(ctx, couponID)
+		return false, fmt.Errorf("更新优惠券库存失败: %w", err)
+	}
+
+	// 8. 确保数据同步到ShardingSphere
+	if err := s.mysqlRepo.WaitForDataSync(ctx, order); err != nil {
+		// 如果同步失败，需要回滚之前的更改
+		s.mysqlRepo.DeleteOrder(ctx, order.ID, userID)
+		s.mysqlRepo.UpdateUserCouponCount(ctx, userID, -1, -1)
+		s.mysqlRepo.UpdateCouponStock(ctx, couponID, 1)
+		s.redisRepo.IncrStock(ctx, couponID)
+		return false, fmt.Errorf("数据同步失败: %w", err)
+	}
+
+	// 9. 更新缓存
 	s.redisRepo.SetUserReceivedCache(ctx, userID, couponID)
+
+	// 更新用户优惠券数量缓存
+	s.redisRepo.UpdateUserCouponCountCache(ctx, userID, 1, 1)
+
+	// 更新优惠券库存缓存
+	s.redisRepo.UpdateCouponStockCache(ctx, couponID, -1)
+
 	return true, nil
 }

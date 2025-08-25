@@ -5,42 +5,212 @@
 */}}
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
-metadata: {name: {{ .Values.istio.gateway.name }}, namespace: {{ .Values.namespace }}}
+metadata:
+  name: {{ .Values.istio.gateway.name }}
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     istio: ingressgateway
   servers:
-    - port: {number: {{ .Values.istio.gateway.port }}, name: http, protocol: HTTP}
-      hosts: ["{{ .Values.istio.gateway.host }}"]
+    - port:
+        number: {{ .Values.istio.gateway.port }}
+        name: http
+        protocol: HTTP
+      hosts:
+        - "{{ .Values.istio.gateway.host }}"
 ---
 {{/*
   创建 Istio VirtualService 资源，用于定义流量路由规则
   将不同路径的请求路由到对应的服务：
-  - /api/v1/seckill 路径路由到 coupon 服务
-  - /api/v1/auth 路径路由到 user 服务
-  - /api/v1 路径路由到 order 服务
+  - /seckill 路径路由到 go 服务
+  - /api/v1/user 路径路由到 user 服务
+  - /api/v1/order 路径路由到 order 服务
+  - /api/v1/coupon 路径路由到 coupon 服务
 */}}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
-metadata: {name: couponkill-vs, namespace: {{ .Values.namespace }}}
+metadata:
+  name: couponkill-vs
+  namespace: {{ .Values.namespace }}
 spec:
-  hosts: ["{{ .Values.istio.gateway.host }}"]
-  gateways: ["{{ .Values.istio.gateway.name }}"]
+  hosts:
+    - "{{ .Values.istio.gateway.host }}"
+  gateways:
+    - {{ .Values.istio.gateway.name }}
   http:
     {{/*
-      秒杀接口路由配置：将 /api/v1/seckill 开头的请求路由到 coupon 服务
+      Go秒杀服务路由配置：将 /seckill 开头的请求路由到 go 服务
     */}}
-    - match: [{uri: {prefix: "/api/v1/seckill"}}]
-      route: [{destination: {host: {{ .Values.services.coupon.name }}, port: {number: 80}}}]
-    {{/*
-      认证接口路由配置：将 /api/v1/auth 开头的请求路由到 user 服务
-    */}}
-    - match: [{uri: {prefix: "/api/v1/auth"}}]
-      route: [{destination: {host: {{ .Values.services.user.name }}, port: {number: 80}}}]
-    {{/*
-      订单接口路由配置：将 /api/v1 开头的请求路由到 order 服务
-    */}}
-    - match: [{uri: {prefix: "/api/v1"}}]
-      route: [{destination: {host: {{ .Values.services.order.name }}, port: {number: 80}}}]
-{{- end }}
+    - name: go-route
+      match:
+        - uri:
+            prefix: "/seckill"
+      route:
+        - destination:
+            host: {{ .Values.services.go.name }}.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+      timeout: 5s
 
+    {{/*
+      用户服务路由配置：将 /api/v1/user 开头的请求路由到 user 服务
+    */}}
+    - name: user-route
+      match:
+        - uri:
+            prefix: "/api/v1/user"
+      route:
+        - destination:
+            host: {{ .Values.services.user.name }}.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+      timeout: 10s
+
+    {{/*
+      订单服务路由配置：将 /api/v1/order 开头的请求路由到 order 服务
+    */}}
+    - name: order-route
+      match:
+        - uri:
+            prefix: "/api/v1/order"
+      route:
+        - destination:
+            host: {{ .Values.services.order.name }}.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+      timeout: 10s
+
+    {{/*
+      优惠券服务路由配置：将 /api/v1/coupon 开头的请求路由到 coupon 服务
+    */}}
+    - name: coupon-route
+      match:
+        - uri:
+            prefix: "/api/v1/coupon"
+      route:
+        - destination:
+            host: {{ .Values.services.coupon.name }}.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+      timeout: 15s
+---
+{{/*
+  为Go服务创建DestinationRule
+*/}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.services.go.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.services.go.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
+---
+{{/*
+  为用户服务创建DestinationRule
+*/}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.services.user.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.services.user.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
+---
+{{/*
+  为订单服务创建DestinationRule
+*/}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.services.order.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.services.order.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
+---
+{{/*
+  为优惠券服务创建DestinationRule
+*/}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.services.coupon.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.services.coupon.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
+{{- end }}

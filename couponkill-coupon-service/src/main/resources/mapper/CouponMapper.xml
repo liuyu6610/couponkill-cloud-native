@@ -55,13 +55,13 @@
         )
     </insert>
 
-    <insert id="batchInsertVirtualCoupons" parameterType="java.util.List">
+    <insert id="batchInsertVirtualCoupons">
         INSERT INTO coupon (
             id, virtual_id, name, description, type, face_value, min_spend, valid_days,
             per_user_limit, total_stock, seckill_total_stock, remaining_stock,
             seckill_remaining_stock, status, create_time, update_time, version
         ) VALUES
-        <foreach collection="coupons" item="coupon" separator=",">
+        <foreach collection="list" item="coupon" separator=",">
             (
                 #{coupon.id}, #{coupon.virtualId}, #{coupon.name}, #{coupon.description}, #{coupon.type},
                 #{coupon.faceValue}, #{coupon.minSpend}, #{coupon.validDays}, #{coupon.perUserLimit},
@@ -96,7 +96,7 @@
 
     <!-- 查询指定优惠券的所有虚拟分片 -->
     <select id="selectByCouponId" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE virtual_id LIKE CONCAT(#{couponId}, '_%')
+        SELECT * FROM coupon WHERE virtual_id LIKE CONCAT(#{couponId}, '\_%')
     </select>
 
     <insert id="batchGrantCoupons">
@@ -106,4 +106,32 @@
             (#{userId}, #{couponId}, NOW())
         </foreach>
     </insert>
+
+    <!-- 查询过期优惠券 -->
+    <select id="selectExpiredCoupons" resultMap="CouponResultMap">
+        SELECT * FROM coupon
+        WHERE status = 1
+        AND valid_days > 0
+        AND create_time < #{expireTime}
+    </select>
+
+    <!-- 更新优惠券状态 -->
+    <update id="updateCouponStatus">
+        UPDATE coupon
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{couponId}
+    </update>
+
+    <!-- 按ID更新库存 -->
+    <update id="updateStock">
+        UPDATE coupon
+        SET remaining_stock = remaining_stock + #{change},
+            seckill_remaining_stock = seckill_remaining_stock + #{change},
+            update_time = NOW(),
+            version = version + 1
+        WHERE id = #{couponId}
+          AND remaining_stock + #{change} >= 0
+          AND seckill_remaining_stock + #{change} >= 0
+          AND version = #{version}
+    </update>
 </mapper>

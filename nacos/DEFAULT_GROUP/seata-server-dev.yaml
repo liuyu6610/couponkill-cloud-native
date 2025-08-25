@@ -25,7 +25,6 @@ seata:
   service:
     vgroup-mapping:
       couponkill_tx_group: default  # 客户端的tx-service-group映射到Seata的默认集群
-      order-service-seata-service-group: default
       couponkill-user-service-tx-group: default
       couponkill-coupon-service-tx-group: default
       couponkill-order-service-tx-group: default

@@ -3,14 +3,15 @@ package model
 import (
 	"database/sql/driver"
 	"fmt"
-	time "time"
+	"time"
 )
 
 // Order 订单模型（适配双来源字段）
 type Order struct {
-	ID            string     `gorm:"column:id;primaryKey" json:"id"`
+	ID            int64      `gorm:"column:id;primaryKey" json:"id"`
 	UserID        int64      `gorm:"column:user_id" json:"user_id"`
 	CouponID      int64      `gorm:"column:coupon_id" json:"coupon_id"`
+	VirtualID     string     `gorm:"column:virtual_id" json:"virtual_id"`
 	Status        int        `gorm:"column:status" json:"status"` // 1-已创建,2-已使用,3-已过期,4-已取消
 	GetTime       time.Time  `gorm:"column:get_time" json:"get_time"`
 	ExpireTime    time.Time  `gorm:"column:expire_time" json:"expire_time"`
@@ -33,7 +34,6 @@ func (Order) TableName() string {
 func Value(t *time.Time) (driver.Value, error) {
 	if t == nil {
 		return nil, nil
-
 	}
 	return t, nil
 }

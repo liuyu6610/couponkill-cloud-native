@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 @Slf4j
 @Tag(name = "优惠券管理", description = "优惠券相关操作接口")
@@ -64,14 +65,12 @@ public ApiResponse<Coupon> createCoupon(
             @Parameter(description = "用户ID列表") @RequestBody List<Long> userIds) {
         return ApiResponse.success(couponService.grantCoupons(userIds));
     }
-    // 在 CouponController.java 中添加以下方法
     @Operation(summary = "锁定优惠券库存")
     @PostMapping("/lock/{id}")
     public ApiResponse<Boolean> lockStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
         // 实现库存锁定逻辑
         // 这里可以使用Redis分布式锁或其他机制来实现
         try {
-            // 示例实现，实际应根据业务需求调整
             boolean success = couponService.deductStock(id); // 或者使用其他锁定机制
             return ApiResponse.success(success);
         } catch (Exception e) {
@@ -84,9 +83,17 @@ public ApiResponse<Coupon> createCoupon(
     @PostMapping("/confirm/{id}")
     public ApiResponse<Boolean> confirmDeductStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
         // 实现确认扣减库存逻辑
-        // 这里通常是TCC事务的Confirm阶段，可以为空实现或者执行一些确认操作
-        return ApiResponse.success(true);
+        try {
+            // TCC Confirm阶段，通常为空实现或执行确认操作
+            // 这里可以添加一些确认逻辑，如记录日志等
+            log.info("确认扣减优惠券库存，couponId: {}", id);
+            return ApiResponse.success(true);
+        } catch (Exception e) {
+            log.error("确认扣减库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "确认扣减库存失败: " + e.getMessage());
+        }
     }
+
 
     @Operation(summary = "释放优惠券库存")
     @PostMapping("/release/{id}")
@@ -124,22 +131,65 @@ public ApiResponse<Coupon> createCoupon(
             return ApiResponse.fail(500, "增加库存失败: " + e.getMessage());
         }
     }
+    @Operation(summary = "扣减优惠券库存并返回使用的虚拟分片ID")
+    @PostMapping("/deduct-with-virtual-id/{id}")
+    public ApiResponse<String> deductStockWithVirtualId(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        try {
+            String virtualId = couponService.deductStockWithVirtualId(id);
+            if (virtualId != null) {
+                return ApiResponse.success(virtualId);
+            } else {
+                return ApiResponse.fail(500, "扣减库存失败");
+            }
+        } catch (Exception e) {
+            log.error("扣减库存并获取虚拟分片ID失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "扣减库存并获取虚拟分片ID失败: " + e.getMessage());
+        }
+    }
 
     @Operation(summary = "创建补偿优惠券")
     @PostMapping("/compensation")
     public ApiResponse<Void> createCompensationCoupon(@RequestBody Coupon compensationCoupon) {
         // 实现创建补偿优惠券的逻辑
-        // 这里可以根据实际业务需求进行实现
         try {
-            // 示例实现
+            if (compensationCoupon == null) {
+                return ApiResponse.fail(400, "请求参数不能为空");
+            }
+
+            // 设置默认值
             compensationCoupon.setType(1); // 常驻优惠券
             compensationCoupon.setStatus(1); // 有效状态
-            couponService.createCoupon(compensationCoupon);
-            return ApiResponse.success(null);
+            compensationCoupon.setCreateTime(LocalDateTime.now());
+            compensationCoupon.setUpdateTime(LocalDateTime.now());
+            compensationCoupon.setVersion(0);
+
+            // 如果没有设置有效期，默认设置为1天
+            if (compensationCoupon.getValidDays() == null) {
+                compensationCoupon.setValidDays(1);
+            }
+
+            // 如果没有设置面值，默认设置为10元
+            if (compensationCoupon.getFaceValue() == null) {
+                compensationCoupon.setFaceValue(BigDecimal.TEN);
+            }
+
+            // 如果没有设置最低消费，默认设置为0元
+            if (compensationCoupon.getMinSpend() == null) {
+                compensationCoupon.setMinSpend(BigDecimal.ZERO);
+            }
+
+            Coupon result = couponService.createCoupon(compensationCoupon);
+            if (result != null) {
+                log.info("创建补偿优惠券成功，couponId: {}", result.getId());
+                return ApiResponse.success(null);
+            } else {
+                return ApiResponse.fail(500, "创建补偿优惠券失败");
+            }
         } catch (Exception e) {
             log.error("创建补偿优惠券失败", e);
             return ApiResponse.fail(500, "创建补偿优惠券失败: " + e.getMessage());
         }
     }
+
 
 }

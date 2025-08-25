@@ -21,4 +21,14 @@ public interface CouponService {
     boolean lockStock(Long couponId);
     boolean confirmDeductStock(Long couponId);
     boolean releaseStock(Long couponId);
+
+    /**
+     * 扣减库存并返回使用的虚拟分片ID
+     * @param couponId 优惠券ID
+     * @return 使用的虚拟分片ID
+     */
+    String deductStockWithVirtualId(Long couponId);
+
+
+
 }

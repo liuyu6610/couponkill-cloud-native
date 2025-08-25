@@ -11,24 +11,72 @@
 #   .Values.services.user.port        - 容器端口
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: {{ .Values.services.user.name }}, namespace: {{ .Values.namespace }}}
+metadata:
+  name: {{ .Values.services.user.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.user.name }}
+    version: v1
 spec:
   replicas: {{ .Values.services.user.replicas }}
-  selector: {matchLabels: {app: {{ .Values.services.user.name }}}}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.user.name }}
   template:
-    metadata: {labels: {app: {{ .Values.services.user.name }}}}
+    metadata:
+      labels:
+        app: {{ .Values.services.user.name }}
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.services.user.port }}"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       containers:
         - name: app
-          image: "{{ .Values.image.registry }}/user:{{ .Values.image.tag }}"
-          ports: [{containerPort: {{ .Values.services.user.port }} }]
+          image: "{{ if .Values.image.registry }}{{ .Values.image.registry }}{{ else }}{{ .Values.global.registry }}{{ end }}/user:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Values.global.version }}{{ end }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.services.user.port }}
           # 就绪探针，检查服务是否可用
-          readinessProbe: {httpGet: {path: /actuator/health, port: {{ .Values.services.user.port }}}, initialDelaySeconds: 5, periodSeconds: 10}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.user.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          # 存活探针，检查服务是否正常运行
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.user.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
           env:
+            - name: SERVER_PORT
+              value: "{{ .Values.services.user.port }}"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql:3306/couponkill?useSSL=false&serverTimezone=UTC"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "password"
+            - name: SPRING_REDIS_HOST
+              value: "redis"
+            - name: SPRING_REDIS_PORT
+              value: "6379"
             - name: JWT_SECRET
               valueFrom:
-                secretKeyRef: {name: jwt-secret, key: secret}
-
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
 ---
 # Service配置：为用户服务提供稳定的网络访问入口
 # 参数说明：
@@ -37,10 +85,19 @@ spec:
 #   .Values.services.user.port        - 目标端口
 apiVersion: v1
 kind: Service
-metadata: {name: {{ .Values.services.user.name }}, namespace: {{ .Values.namespace }}}
+metadata:
+  name: {{ .Values.services.user.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.user.name }}
 spec:
-  selector: {app: {{ .Values.services.user.name }}}
-  ports: [{port: 80, targetPort: {{ .Values.services.user.port }} }]
+  selector:
+    app: {{ .Values.services.user.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.services.user.port }}
+  type: ClusterIP
 
 ---
 # HorizontalPodAutoscaler配置（可选）：根据CPU使用率自动调整Pod副本数
@@ -54,14 +111,21 @@ spec:
 {{- if .Values.services.user.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
-metadata: {name: {{ .Values.services.user.name }}, namespace: {{ .Values.namespace }}}
+metadata:
+  name: {{ .Values.services.user.name }}
+  namespace: {{ .Values.namespace }}
 spec:
-  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: {{ .Values.services.user.name }}}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.services.user.name }}
   minReplicas: {{ .Values.services.user.hpa.minReplicas }}
   maxReplicas: {{ .Values.services.user.hpa.maxReplicas }}
   metrics:
     - type: Resource
       resource:
         name: cpu
-        target: {type: Utilization, averageUtilization: {{ .Values.services.user.hpa.cpu }}}
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.user.hpa.cpu }}
 {{- end }}

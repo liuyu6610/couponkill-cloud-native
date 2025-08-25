@@ -10,6 +10,7 @@ import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserMapper;
 import com.aliyun.seckill.couponkilluserservice.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,10 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -141,6 +143,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void handleInactiveUsers() {
-        // 实现处理失效用户的逻辑
+        try {
+            // 实现处理失效用户的逻辑
+            // 例如：查找超过一定时间未活跃的用户，并进行相应处理
+            LocalDateTime inactiveThreshold = LocalDateTime.now().minusMonths(6); // 6个月未活跃
+            List<User> inactiveUsers = userMapper.selectInactiveUsers(inactiveThreshold);
+
+            if (inactiveUsers != null && !inactiveUsers.isEmpty()) {
+                for (User user : inactiveUsers) {
+                    // 可以根据业务需求进行处理，例如：
+                    // 1. 发送提醒邮件/短信
+                    // 2. 降低用户等级
+                    // 3. 冻结账户等
+
+                    log.info("发现失效用户，userId: {}, lastActiveTime: {}",
+                            user.getId(), user.getLastActiveTime());
+
+                    // 更新用户最后活跃时间（示例）
+                    user.setLastActiveTime(LocalDateTime.now());
+                    user.setUpdateTime(LocalDateTime.now());
+                    userMapper.updateUserLastActiveTime(user.getId(), user.getLastActiveTime());
+                }
+            }
+        } catch (Exception e) {
+            log.error("处理失效用户失败", e);
+        }
     }
+
 }
