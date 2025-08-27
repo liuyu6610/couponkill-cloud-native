@@ -5,15 +5,18 @@ namespace: couponkill  # Kubernetes 命名空间名称
 
 # 全局配置
 global:
-  registry: registry.example.com/couponkill  # 默认镜像仓库地址
-  version: latest  # 默认镜像标签
+  registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker  # 默认镜像仓库地址
   domain: couponkill.example.com  # 默认域名
 
 # 镜像配置信息
 image:
   registry: ""  # 镜像仓库地址，如果为空则使用global.registry
   tag: ""  # 镜像标签，如果为空则使用global.version
-
+servicesImages:
+  go: "go-latest"
+  user: "user-latest"
+  order: "order-latest"
+  coupon: "coupon-latest"
 # 微服务配置列表
 services:
   # Go秒杀服务配置
@@ -24,8 +27,8 @@ services:
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 3  # 最小副本数
-      maxReplicas: 50  # 最大副本数
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 5  # 最大副本数
       cpu: 70  # CPU使用率触发阈值(百分比)
 
   # 优惠券服务配置
@@ -37,7 +40,7 @@ services:
     hpa:
       enabled: true  # 是否启用HPA
       minReplicas: 2  # 最小副本数
-      maxReplicas: 20  # 最大副本数
+      maxReplicas: 4  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
 
   # 订单服务配置
@@ -49,7 +52,7 @@ services:
     hpa:
       enabled: true  # 是否启用HPA
       minReplicas: 2  # 最小副本数
-      maxReplicas: 20  # 最大副本数
+      maxReplicas: 4  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
 
   # 用户服务配置
@@ -61,7 +64,7 @@ services:
     hpa:
       enabled: true  # 是否启用HPA
       minReplicas: 1  # 最小副本数
-      maxReplicas: 10  # 最大副本数
+      maxReplicas: 3  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
 
 # Istio 服务网格配置
@@ -98,8 +101,8 @@ keda:
     go:
       enabled: true
       deploymentName: seckill-go-svc
-      minReplicaCount: 3
-      maxReplicaCount: 50
+      minReplicaCount: 1
+      maxReplicaCount: 5
       topic: "seckill_order_create"
       consumerGroup: "go-dispatcher"
       lagThreshold: "100"
@@ -108,7 +111,7 @@ keda:
       enabled: true
       deploymentName: couponkill-order-service
       minReplicaCount: 2
-      maxReplicaCount: 30
+      maxReplicaCount: 4
       topic: "seckill_order_create"
       consumerGroup: "order-create"
       lagThreshold: "100"
