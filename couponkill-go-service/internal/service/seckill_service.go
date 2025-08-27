@@ -58,17 +58,19 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 
 	// 4. 创建订单（标记Go端来源）
 	order := &model.Order{
-		ID:            idgenerator.GenerateOrderID(), // 使用雪花算法生成唯一ID
+		ID:            idgenerator.GenerateGoOrderID(), // 使用Go端雪花算法生成唯一ID
 		UserID:        userID,
 		CouponID:      couponID,
-		VirtualID:     fmt.Sprintf("%d_%d", couponID, userID%16), // 生成虚拟ID，与Java端保持一致
-		Status:        1,                                         // 已创建
+		VirtualID:     fmt.Sprintf("%d_%d", couponID, couponID%16), // 生成虚拟ID，与Java端保持一致
+		Status:        1,                                           // 已创建
 		GetTime:       time.Now(),
 		ExpireTime:    time.Now().AddDate(0, 0, validDays),
 		CreatedByJava: 0, // 非Java端创建
 		CreatedByGo:   1, // 标记为Go端创建
 		RequestID:     uuid.New().String(),
 		Version:       0,
+		CreateTime:    time.Now(),
+		UpdateTime:    time.Now(),
 	}
 
 	// 5. 插入订单（依赖联合索引uk_user_coupon_source防止重复）
@@ -95,17 +97,7 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, fmt.Errorf("更新优惠券库存失败: %w", err)
 	}
 
-	// 8. 确保数据同步到ShardingSphere
-	if err := s.mysqlRepo.WaitForDataSync(ctx, order); err != nil {
-		// 如果同步失败，需要回滚之前的更改
-		s.mysqlRepo.DeleteOrder(ctx, order.ID, userID)
-		s.mysqlRepo.UpdateUserCouponCount(ctx, userID, -1, -1)
-		s.mysqlRepo.UpdateCouponStock(ctx, couponID, 1)
-		s.redisRepo.IncrStock(ctx, couponID)
-		return false, fmt.Errorf("数据同步失败: %w", err)
-	}
-
-	// 9. 更新缓存
+	// 8. 更新缓存
 	s.redisRepo.SetUserReceivedCache(ctx, userID, couponID)
 
 	// 更新用户优惠券数量缓存

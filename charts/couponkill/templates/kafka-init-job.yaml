@@ -1,0 +1,44 @@
+{{- if .Values.kafka.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.kafka.init.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.kafka.init.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kafka.init.name }}
+    spec:
+      containers:
+        - name: kafka-client
+          image: "{{ .Values.kafka.init.image.repository }}:{{ .Values.kafka.init.image.tag }}"
+          imagePullPolicy: {{ .Values.kafka.init.image.pullPolicy }}
+          env:
+            - name: KAFKA_BROKER
+              value: "{{ .Values.kafka.broker }}"
+            - name: KAFKA_TOPICS
+              value: "{{ .Values.kafka.topics }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Kafka to be ready..."
+              until kafka-topics --bootstrap-server $KAFKA_BROKER --list; do
+                sleep 2
+              done
+              
+              echo "Creating Kafka topics..."
+              IFS=',' read -ra TOPICS <<< "$KAFKA_TOPICS"
+              for topic in "${TOPICS[@]}"; do
+                kafka-topics --bootstrap-server $KAFKA_BROKER --create --if-not-exists --topic "$topic" --partitions 6 --replication-factor 1
+              done
+              
+              echo "Kafka initialization completed."
+      restartPolicy: OnFailure
+{{- end }}

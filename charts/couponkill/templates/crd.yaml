@@ -1,0 +1,115 @@
+{{- if .Values.crd.install }}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: seckills.ops.couponkill.io
+spec:
+  group: ops.couponkill.io
+  names:
+    kind: Seckill
+    listKind: SeckillList
+    plural: seckills
+    singular: seckill
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Seckill is the Schema for the seckills API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SeckillSpec defines the desired state of Seckill
+            properties:
+              couponId:
+                description: Coupon ID for the seckill event
+                type: integer
+                format: int64
+              startTime:
+                description: Start time of the seckill event
+                type: string
+                format: date-time
+              endTime:
+                description: End time of the seckill event
+                type: string
+                format: date-time
+              totalStock:
+                description: Total stock for the seckill event
+                type: integer
+                format: int32
+              concurrencyLimit:
+                description: Maximum concurrent requests allowed
+                type: integer
+                format: int32
+              rateLimit:
+                description: Rate limit for requests per second
+                type: integer
+                format: int32
+            required:
+            - couponId
+            - startTime
+            - endTime
+            - totalStock
+            type: object
+          status:
+            description: SeckillStatus defines the observed state of Seckill
+            properties:
+              phase:
+                description: Current phase of the seckill event
+                type: string
+              currentStock:
+                description: Current remaining stock
+                type: integer
+                format: int32
+              participants:
+                description: Number of participants in the seckill event
+                type: integer
+                format: int32
+              conditions:
+                description: Conditions represent the latest available observations
+                  of a seckill's current state.
+                items:
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Human-readable message indicating details about
+                        last transition.
+                      type: string
+                    reason:
+                      description: Unique, one-word, CamelCase reason for the condition's
+                        last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+{{- end }}

@@ -1,0 +1,62 @@
+{{- if .Values.nacos.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.nacos.name }}-init
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nacos.name }}-init
+    spec:
+      containers:
+        - name: nacos-client
+          image: "{{ .Values.nacos.image.repository }}:{{ .Values.nacos.image.tag }}"
+          imagePullPolicy: {{ .Values.nacos.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Nacos to be ready..."
+              until curl -s http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/console/health; do
+                sleep 2
+              done
+              
+              echo "Initializing Nacos configurations..."
+              
+              # 创建common.yaml配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId={{ .Values.nacos.config.common.dataId }}" \
+                -d "group={{ .Values.nacos.config.common.group }}" \
+                -d "content={{ .Values.nacos.config.common.content | quote }}"
+              
+              # 创建用户服务分库分表配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId={{ .Values.nacos.config.sharding.user.dataId }}" \
+                -d "group={{ .Values.nacos.config.sharding.user.group }}" \
+                -d "content={{ .Values.nacos.config.sharding.user.content | quote }}"
+              
+              # 创建订单服务分库分表配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId={{ .Values.nacos.config.sharding.order.dataId }}" \
+                -d "group={{ .Values.nacos.config.sharding.order.group }}" \
+                -d "content={{ .Values.nacos.config.sharding.order.content | quote }}"
+              
+              # 创建优惠券服务分库分表配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId={{ .Values.nacos.config.sharding.coupon.dataId }}" \
+                -d "group={{ .Values.nacos.config.sharding.coupon.group }}" \
+                -d "content={{ .Values.nacos.config.sharding.coupon.content | quote }}"
+              
+              echo "Nacos initialization completed."
+          env:
+            - name: NACOS_ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+      restartPolicy: OnFailure
+{{- end }}

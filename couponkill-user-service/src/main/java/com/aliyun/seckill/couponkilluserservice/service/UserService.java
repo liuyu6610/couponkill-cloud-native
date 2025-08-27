@@ -2,6 +2,7 @@
 package com.aliyun.seckill.couponkilluserservice.service;
 
 import com.aliyun.seckill.common.pojo.User;
+import com.aliyun.seckill.common.pojo.UserCouponCount;
 
 import java.util.Map;
 
@@ -25,4 +26,25 @@ public interface UserService {
      * 定时任务，处理失效用户
      */
     void handleInactiveUsers();
+    
+    /**
+     * 获取用户优惠券统计信息
+     * @param userId 用户ID
+     * @return 用户优惠券统计信息
+     */
+    UserCouponCount getUserCouponCount(Long userId);
+    
+    /**
+     * 更新用户秒杀优惠券数量
+     * @param userId 用户ID
+     * @param count 变化数量（正数表示增加，负数表示减少）
+     */
+    void updateSeckillCouponCount(Long userId, int count);
+    
+    /**
+     * 更新用户普通优惠券数量
+     * @param userId 用户ID
+     * @param count 变化数量（正数表示增加，负数表示减少）
+     */
+    void updateNormalCouponCount(Long userId, int count);
 }

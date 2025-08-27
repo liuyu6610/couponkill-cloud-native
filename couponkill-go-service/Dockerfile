@@ -43,5 +43,9 @@ USER seckill
 # 暴露端口
 EXPOSE 8090
 
+# 设置Go运行时优化参数
+ENV GOGC=20
+ENV GOMAXPROCS=4
+
 # 启动应用
 ENTRYPOINT ["./seckill-go"]

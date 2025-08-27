@@ -3,8 +3,9 @@ pipeline {
     agent any
     
     environment {
-        REGISTRY = "registry.example.com/couponkill"
+        REGISTRY = "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"
         NAMESPACE = "couponkill"
+        HELM_CHART_PATH = "./charts/couponkill"
     }
     
     stages {
@@ -20,11 +21,21 @@ pipeline {
                         sh 'cd couponkill-go-service && go build -o seckill-go ./cmd/server'
                     }
                 }
+                stage('Build Operator') {
+                    steps {
+                        sh 'cd couponkill-operator && make generate && make manifests'
+                    }
+                }
             }
         }
         
         stage('Build Docker Images') {
             parallel {
+                stage('Gateway Service') {
+                    steps {
+                        sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} -f couponkill-gateway/Dockerfile .'
+                    }
+                }
                 stage('Coupon Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/coupon:${BUILD_NUMBER} -f couponkill-coupon-service/Dockerfile .'
@@ -47,7 +58,7 @@ pipeline {
                 }
                 stage('Operator') {
                     steps {
-                        sh 'docker build -t ${REGISTRY}/pod-monitor-operator:${BUILD_NUMBER} -f operator/Dockerfile .'
+                        sh 'docker build -t ${REGISTRY}/operator:${BUILD_NUMBER} -f couponkill-operator/Dockerfile .'
                     }
                 }
             }
@@ -57,11 +68,12 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-registry', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh 'echo ${DOCKER_PASSWORD} | docker login ${REGISTRY} -u ${DOCKER_USERNAME} --password-stdin'
+                    sh 'docker push ${REGISTRY}/gateway:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/coupon:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/order:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/user:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/seckill-go:${BUILD_NUMBER}'
-                    sh 'docker push ${REGISTRY}/pod-monitor-operator:${BUILD_NUMBER}'
+                    sh 'docker push ${REGISTRY}/operator:${BUILD_NUMBER}'
                 }
             }
         }
@@ -69,8 +81,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh 'helm upgrade --install couponkill ./charts/couponkill --namespace ${NAMESPACE} --create-namespace --set image.tag=${BUILD_NUMBER}'
-                    sh 'kubectl apply -f k8s/operator-deployment.yaml'
+                    sh 'helm upgrade --install couponkill ${HELM_CHART_PATH} --namespace ${NAMESPACE} --create-namespace --set image.tag=${BUILD_NUMBER}'
                 }
             }
         }

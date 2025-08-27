@@ -6,9 +6,7 @@ namespace: couponkill
 # 镜像配置部分，定义了服务使用的镜像仓库地址和标签
 image:
   # 镜像仓库地址
-  registry: registry.example.com/couponkill
-  # 镜像标签，默认使用 latest
-  tag: latest
+  registry: crpi-n5rumpjwbqinoz4c-vpc.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev
 
 # 金丝雀发布配置部分，定义了各个服务的金丝雀发布策略
 # 每个服务的权重总和应为 100，用于控制稳定版本和金丝雀版本之间的流量分配

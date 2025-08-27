@@ -1,0 +1,130 @@
+# Gateway服务部署配置
+# 包含Deployment、Service和HorizontalPodAutoscaler资源定义
+---
+# Gateway服务Deployment配置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.gateway.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.gateway.name }}
+    version: v1
+spec:
+  replicas: {{ .Values.services.gateway.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.gateway.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.gateway.name }}
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.services.gateway.port }}"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.registry }}/{{ .Values.services.gateway.image.name }}:{{ .Values.services.gateway.image.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.services.gateway.port }}
+          # 就绪探针，检查服务是否可用
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.gateway.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          # 存活探针，检查服务是否正常运行
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.gateway.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.services.gateway.port }}"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            {{- if .Values.nacos.enabled }}
+            - name: NACOS_SERVER_ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            - name: NACOS_NAMESPACE
+              value: "public"
+            {{- end }}
+            {{- if .Values.redis.enabled }}
+            - name: SPRING_REDIS_HOST
+              value: "{{ .Values.redis.host }}"
+            - name: SPRING_REDIS_PORT
+              value: "{{ .Values.redis.port }}"
+            {{- end }}
+            {{- if .Values.sentinel.enabled }}
+            - name: SENTINEL_DASHBOARD
+              value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
+            {{- end }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+            # JVM优化参数
+            {{- if .Values.services.gateway.jvmOpts }}
+            - name: JAVA_OPTS
+              value: "{{ .Values.services.gateway.jvmOpts }}"
+            {{- end }}
+            {{- if .Values.services.gateway.threadPoolOpts }}
+            - name: THREAD_POOL_OPTS
+              value: "{{ .Values.services.gateway.threadPoolOpts }}"
+            {{- end }}
+---
+# Gateway服务Service配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.gateway.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.gateway.name }}
+spec:
+  selector:
+    app: {{ .Values.services.gateway.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.services.gateway.port }}
+  type: ClusterIP
+
+---
+# Gateway服务HorizontalPodAutoscaler配置
+{{- if .Values.services.gateway.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.services.gateway.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.services.gateway.name }}
+  minReplicas: {{ .Values.services.gateway.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.gateway.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.gateway.hpa.cpu }}
+{{- end }}

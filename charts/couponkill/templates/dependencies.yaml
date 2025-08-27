@@ -1,0 +1,94 @@
+{{- if .Values.dependencies.enabled }}
+---
+# MySQL Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None
+---
+# Redis Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  clusterIP: None
+---
+# Kafka Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 9092
+      targetPort: 9092
+  clusterIP: None
+{{- end }}
+---
+# RocketMQ Name Server Service definition
+{{- if .Values.rocketmq.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.nameServer.service.port }}
+      targetPort: 9876
+  clusterIP: None
+---
+# RocketMQ Broker Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
+      targetPort: 10911
+    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
+      targetPort: 10912
+  clusterIP: None
+{{- end }}
+---
+# Nacos Service definition
+{{- if .Values.nacos.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nacos.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.nacos.service.port }}
+      targetPort: 8848
+  clusterIP: None
+{{- end }}
+---
+# Sentinel Dashboard Service definition
+{{- if .Values.sentinel.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.sentinel.name }}-dashboard
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.sentinel.dashboard.service.port }}
+      targetPort: 8080
+  clusterIP: None
+{{- end }}

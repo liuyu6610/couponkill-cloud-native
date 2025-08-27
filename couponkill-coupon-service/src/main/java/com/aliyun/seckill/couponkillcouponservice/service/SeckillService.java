@@ -3,6 +3,7 @@ package com.aliyun.seckill.couponkillcouponservice.service;
 import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.pojo.SeckillOrderCommand;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -14,9 +15,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SeckillService {
     private final StringRedisTemplate redis;
     private final RocketMQTemplate rocketMQTemplate;
@@ -48,9 +51,18 @@ public class SeckillService {
         if (r == 1L) {
             // 写请求状态为PENDING
             redis.opsForValue().set(kReq(reqId), "PENDING", Duration.ofMinutes(5));
-            // 投递下游
-            var cmd = new SeckillOrderCommand(reqId, couponId, userId, System.currentTimeMillis());
-            rocketMQTemplate.send("seckill_order_create", MessageBuilder.withPayload(cmd).setHeader("reqId", reqId).build()); // 修改主题名称
+            // 异步投递下游消息，提高响应速度
+            CompletableFuture.runAsync(() -> {
+                try {
+                    // 投递下游
+                    var cmd = new SeckillOrderCommand(reqId, couponId, userId, System.currentTimeMillis());
+                    rocketMQTemplate.send("seckill_order_create", MessageBuilder.withPayload(cmd).setHeader("reqId", reqId).build()); // 修改主题名称
+                } catch (Exception e) {
+                    log.error("异步发送秒杀订单创建消息失败: reqId={}, couponId={}, userId={}", reqId, couponId, userId, e);
+                    // 失败补偿
+                    compensateFail(reqId, couponId, userId);
+                }
+            });
             return new EnterResult(reqId, "QUEUED", 0);
         }
         if (r == 0L) return new EnterResult(reqId, "REJECTED", ErrorCodes.OUT_OF_STOCK);

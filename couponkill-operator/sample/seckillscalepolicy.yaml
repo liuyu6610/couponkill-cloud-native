@@ -7,9 +7,9 @@ spec:
   # Go服务的名称，用于标识需要进行自动扩缩容的主服务
   goServiceName: couponkill-go-service
   # Go服务的最小副本数，确保在低负载时至少运行的实例数量
-  goMinReplicas: 3
+  goMinReplicas: 2
   # Go服务的最大副本数，限制在高负载时最多可以扩展的实例数量
-  goMaxReplicas: 50
+  goMaxReplicas: 5
   # CPU使用率目标阈值，当CPU使用率超过此值时触发扩容，低于此值时触发缩容
   cpuTarget: 60
   # 其他相关服务的扩缩容配置列表
@@ -19,11 +19,16 @@ spec:
       # 优惠券服务的最小副本数
       minReplicas: 2
       # 优惠券服务的最大副本数
-      maxReplicas: 20
+      maxReplicas: 4
     # 订单服务的扩缩容配置
     - name: couponkill-order-service
       # 订单服务的最小副本数
       minReplicas: 2
       # 订单服务的最大副本数
-      maxReplicas: 20
+      maxReplicas: 5
+    - name: couponkill-user-service
+      # 用户服务的最小副本数
+      minReplicas: 2
+      # 用户服务的最大副本数
+      maxReplicas: 3
 

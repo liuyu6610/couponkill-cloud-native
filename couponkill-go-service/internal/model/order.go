@@ -1,14 +1,12 @@
 package model
 
 import (
-	"database/sql/driver"
-	"fmt"
 	"time"
 )
 
 // Order 订单模型（适配双来源字段）
 type Order struct {
-	ID            int64      `gorm:"column:id;primaryKey" json:"id"`
+	ID            string     `gorm:"column:id;primaryKey" json:"id"`
 	UserID        int64      `gorm:"column:user_id" json:"user_id"`
 	CouponID      int64      `gorm:"column:coupon_id" json:"coupon_id"`
 	VirtualID     string     `gorm:"column:virtual_id" json:"virtual_id"`
@@ -28,26 +26,4 @@ type Order struct {
 // TableName 数据库表名
 func (Order) TableName() string {
 	return "order"
-}
-
-// Value 实现driver.Valuer接口
-func Value(t *time.Time) (driver.Value, error) {
-	if t == nil {
-		return nil, nil
-	}
-	return t, nil
-}
-
-// Scan 实现sql.Scanner接口
-func Scan(t *time.Time, value interface{}) error {
-	if value == nil {
-		return nil
-	}
-	switch v := value.(type) {
-	case time.Time:
-		*t = v
-		return nil
-	default:
-		return fmt.Errorf("cannot scan %T into time.Time", value)
-	}
 }

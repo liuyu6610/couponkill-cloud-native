@@ -1,0 +1,150 @@
+{{- if .Values.rocketmq.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-namesrv
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.nameServer.service.port }}
+      targetPort: 9876
+      protocol: TCP
+      name: namesrv
+  selector:
+    app: {{ .Values.rocketmq.name }}-namesrv
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
+      targetPort: 10911
+      protocol: TCP
+      name: broker-port
+    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
+      targetPort: 10912
+      protocol: TCP
+      name: broker-ha-port
+  selector:
+    app: {{ .Values.rocketmq.name }}-broker
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-namesrv
+spec:
+  replicas: {{ .Values.rocketmq.nameServer.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-namesrv
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-namesrv
+    spec:
+      containers:
+        - name: namesrv
+          image: "{{ .Values.rocketmq.image.repository }}:{{ .Values.rocketmq.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9876
+          env:
+            - name: JAVA_OPT
+              value: "-server -Xms512m -Xmx512m -Xmn256m"
+          command: ["sh", "mqnamesrv"]
+          volumeMounts:
+            - name: data
+              mountPath: /home/rocketmq/store
+      volumes:
+        - name: data
+          emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker
+spec:
+  replicas: {{ .Values.rocketmq.broker.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-broker
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-broker
+    spec:
+      containers:
+        - name: broker
+          image: "{{ .Values.rocketmq.image.repository }}:{{ .Values.rocketmq.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+          ports:
+            - containerPort: 10911
+            - containerPort: 10912
+          env:
+            - name: NAMESRV_ADDR
+              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+            - name: JAVA_OPT
+              value: "-server -Xms1g -Xmx1g -Xmn512m"
+          command: ["sh", "mqbroker", "-n", "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"]
+          volumeMounts:
+            - name: data
+              mountPath: /home/rocketmq/store
+            - name: config
+              mountPath: /home/rocketmq/rocketmq-4.9.4/conf/broker.conf
+              subPath: broker.conf
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ .Values.rocketmq.name }}-broker-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker-config
+  namespace: {{ .Values.namespace }}
+data:
+  broker.conf: |
+    brokerClusterName = DefaultCluster
+    brokerName = broker-a
+    brokerId = 0
+    deleteWhen = 04
+    fileReservedTime = 48
+    brokerRole = ASYNC_MASTER
+    flushDiskType = ASYNC_FLUSH
+    namesrvAddr = {{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}
+{{- end }}

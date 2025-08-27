@@ -1,3 +1,0 @@
-Label,# Samples,Average,Min,Max,Std. Dev.,Error %,Throughput,Received KB/sec,Sent KB/sec,Avg. Bytes
-秒杀测试,11445,3005,0,17362,3387.46,2.630%,1.29676,0.38,0.46,296.3
-TOTAL,11445,3005,0,17362,3387.46,2.630%,1.29676,0.38,0.46,296.3

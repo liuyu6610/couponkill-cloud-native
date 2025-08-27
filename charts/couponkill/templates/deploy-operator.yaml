@@ -1,0 +1,219 @@
+# Deployment 配置定义了 operator 服务的部署信息
+# 用于在 Kubernetes 集群中创建和管理 operator 服务的 Pod 副本
+# 包含容器镜像、端口配置、健康检查等设置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.operator.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    control-plane: controller-manager
+    app: {{ .Values.services.operator.name }}
+spec:
+  replicas: {{ .Values.services.operator.replicas }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      app: {{ .Values.services.operator.name }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+        app: {{ .Values.services.operator.name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - command:
+            - /manager
+          args:
+            - --leader-elect
+            - --health-probe-bind-address=:{{ .Values.services.operator.port }}
+          image: "{{ .Values.image.registry }}/{{ .Values.services.operator.image.name }}:{{ .Values.services.operator.image.tag }}"
+          name: manager
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.services.operator.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.services.operator.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          env:
+            - name: METRICS_PORT
+              value: "{{ .Values.services.operator.port }}"
+            # Go运行时优化参数
+            {{- if .Values.services.operator.goOpts }}
+            - name: GOGC
+              value: "{{ .Values.services.operator.goOpts.gc | default 20 }}"
+            - name: GOMAXPROCS
+              value: "{{ .Values.services.operator.goOpts.maxProcs | default 4 }}"
+            {{- end }}
+      serviceAccountName: {{ .Values.services.operator.name }}
+      terminationGracePeriodSeconds: 10
+---
+# Service 配置为 operator 服务提供稳定的网络访问入口
+# 将内部 Pod 端口映射到集群内的固定端口上
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.operator.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    control-plane: controller-manager
+    app: {{ .Values.services.operator.name }}
+spec:
+  selector:
+    control-plane: controller-manager
+    app: {{ .Values.services.operator.name }}
+  ports:
+    - name: http
+      port: {{ .Values.services.operator.port }}
+      targetPort: {{ .Values.services.operator.port }}
+  type: ClusterIP
+---
+# ServiceAccount 为 operator 提供必要的权限
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.services.operator.name }}
+  namespace: {{ .Values.namespace }}
+---
+# Role 定义 operator 所需的权限
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.services.operator.name }}-leader-election-role
+  namespace: {{ .Values.namespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+# RoleBinding 将 Role 绑定到 ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.services.operator.name }}-leader-election-rolebinding
+  namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.services.operator.name }}-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.services.operator.name }}
+    namespace: {{ .Values.namespace }}
+---
+# ClusterRole 定义 operator 所需的集群级别权限
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.services.operator.name }}-manager-role
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ops.couponkill.io
+    resources:
+      - seckills
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ops.couponkill.io
+    resources:
+      - seckills/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - ops.couponkill.io
+    resources:
+      - seckills/status
+    verbs:
+      - get
+      - patch
+      - update
+---
+# ClusterRoleBinding 将 ClusterRole 绑定到 ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.services.operator.name }}-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.services.operator.name }}-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.services.operator.name }}
+    namespace: {{ .Values.namespace }}

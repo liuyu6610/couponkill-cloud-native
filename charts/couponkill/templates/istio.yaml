@@ -26,6 +26,8 @@ spec:
   - /api/v1/user 路径路由到 user 服务
   - /api/v1/order 路径路由到 order 服务
   - /api/v1/coupon 路径路由到 coupon 服务
+  - /nacos 路径路由到 nacos 服务
+  - /sentinel 路径路由到 sentinel 服务
 */}}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -105,6 +107,64 @@ spec:
         attempts: 2
         perTryTimeout: 3s
       timeout: 15s
+
+    {{/*
+      Nacos服务路由配置：将 /nacos 开头的请求路由到 nacos 服务
+    */}}
+    {{- if .Values.nacos.enabled }}
+    - name: nacos-route
+      match:
+        - uri:
+            prefix: "/nacos"
+      route:
+        - destination:
+            host: {{ .Values.nacos.name }}.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: {{ .Values.nacos.service.port }}
+    {{- end }}
+
+    {{/*
+      Sentinel服务路由配置：将 /sentinel 开头的请求路由到 sentinel dashboard 服务
+    */}}
+    {{- if .Values.sentinel.enabled }}
+    - name: sentinel-route
+      match:
+        - uri:
+            prefix: "/sentinel"
+      route:
+        - destination:
+            host: {{ .Values.sentinel.name }}-dashboard.{{ .Values.namespace }}.svc.cluster.local
+            port:
+              number: {{ .Values.sentinel.dashboard.service.port }}
+    {{- end }}
+
+---
+{{/*
+  为Gateway服务创建DestinationRule
+*/}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.services.gateway.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.services.gateway.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
 ---
 {{/*
   为Go服务创建DestinationRule
@@ -213,4 +273,85 @@ spec:
       mode: ISTIO_MUTUAL
     loadBalancer:
       simple: LEAST_REQUEST
+---
+{{/*
+  为RocketMQ Name Server创建DestinationRule
+*/}}
+{{- if .Values.rocketmq.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.rocketmq.name }}-namesrv.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+{{- end }}
+---
+{{/*
+  为Nacos创建DestinationRule
+*/}}
+{{- if .Values.nacos.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.nacos.name }}-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.nacos.name }}.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+{{- end }}
+---
+{{/*
+  为Sentinel Dashboard创建DestinationRule
+*/}}
+{{- if .Values.sentinel.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.sentinel.name }}-dashboard-dr
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.sentinel.name }}-dashboard.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
+      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+{{- end }}
 {{- end }}

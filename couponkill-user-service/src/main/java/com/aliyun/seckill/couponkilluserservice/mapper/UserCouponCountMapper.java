@@ -38,4 +38,16 @@ public interface UserCouponCountMapper {
             "normal_count = normal_count + #{count.normalCount}, " +
             "expired_count = expired_count + #{count.expiredCount}")
     int insertOrUpdate(@Param("count") UserCouponCount count);
+    
+    // 根据用户ID更新秒杀优惠券数量
+    @Update("UPDATE `user_coupon_count` SET seckill_count = seckill_count + #{count}, " +
+            "total_count = total_count + #{count}, update_time = NOW() " +
+            "WHERE user_id = #{userId}")
+    int updateSeckillCount(@Param("userId") Long userId, @Param("count") int count);
+    
+    // 根据用户ID更新普通优惠券数量
+    @Update("UPDATE `user_coupon_count` SET normal_count = normal_count + #{count}, " +
+            "total_count = total_count + #{count}, update_time = NOW() " +
+            "WHERE user_id = #{userId}")
+    int updateNormalCount(@Param("userId") Long userId, @Param("count") int count);
 }

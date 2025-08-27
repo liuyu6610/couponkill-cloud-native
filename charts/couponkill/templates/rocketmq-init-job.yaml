@@ -1,0 +1,45 @@
+{{- if and .Values.rocketmq.enabled .Values.rocketmq.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.rocketmq.init.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.init.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.init.name }}
+    spec:
+      containers:
+        - name: rocketmq-client
+          image: "{{ .Values.rocketmq.init.image.repository }}:{{ .Values.rocketmq.init.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.init.image.pullPolicy }}
+          env:
+            - name: NAMESRV_ADDR
+              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+            - name: ROCKETMQ_TOPICS
+              value: "{{ .Values.rocketmq.topics }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for RocketMQ Name Server to be ready..."
+              until curl -s http://{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}; do
+                sleep 2
+              done
+              
+              echo "Creating RocketMQ topics..."
+              IFS=',' read -ra TOPICS <<< "$ROCKETMQ_TOPICS"
+              for topic in "${TOPICS[@]}"; do
+                echo "Creating topic: $topic"
+                sh mqadmin updateTopic -n {{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }} -t "$topic" -c DefaultCluster
+              done
+              
+              echo "RocketMQ initialization completed."
+      restartPolicy: OnFailure
+{{- end }}

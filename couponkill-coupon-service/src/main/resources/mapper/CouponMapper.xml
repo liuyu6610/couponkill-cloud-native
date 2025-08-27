@@ -52,7 +52,7 @@
 
     <!-- 根据优惠券ID查询所有分片 -->
     <select id="selectByCouponId" resultMap="CouponMap">
-        SELECT * FROM coupon WHERE id = #{couponId}
+        SELECT * FROM coupon WHERE id = #{couponId} ORDER BY shard_index
     </select>
 
     <!-- 查询所有优惠券的主分片（shard_index=0）用于预热 -->

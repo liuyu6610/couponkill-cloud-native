@@ -1,0 +1,104 @@
+{{- if .Values.nacos.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nacos.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}
+spec:
+  ports:
+    - port: {{ .Values.nacos.service.port }}
+      targetPort: 8848
+      protocol: TCP
+      name: nacos-port
+  selector:
+    app: {{ .Values.nacos.name }}
+  type: ClusterIP
+
+---
+{{- if .Values.nacos.service.external.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nacos.name }}-external
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}
+spec:
+  ports:
+    - port: {{ .Values.nacos.service.external.port }}
+      targetPort: 8848
+      protocol: TCP
+      name: nacos-external-port
+  selector:
+    app: {{ .Values.nacos.name }}
+  type: {{ .Values.nacos.service.external.type }}
+{{- end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nacos.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}
+spec:
+  replicas: {{ .Values.nacos.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.nacos.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nacos.name }}
+    spec:
+      containers:
+        - name: nacos
+          image: "{{ .Values.nacos.image.repository }}:{{ .Values.nacos.image.tag }}"
+          imagePullPolicy: {{ .Values.nacos.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+          ports:
+            - containerPort: 8848
+          env:
+            - name: MODE
+              value: "standalone"
+            - name: PREFER_HOST_MODE
+              value: "hostname"
+            - name: NACOS_SERVER_PORT
+              value: "{{ .Values.nacos.service.port }}"
+            {{- if eq .Values.nacos.storage.type "mysql" }}
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: "mysql"
+            - name: MYSQL_SERVICE_HOST
+              value: "{{ .Values.nacos.storage.mysql.host }}"
+            - name: MYSQL_SERVICE_PORT
+              value: "{{ .Values.nacos.storage.mysql.port }}"
+            - name: MYSQL_SERVICE_USER
+              value: "{{ .Values.nacos.storage.mysql.user }}"
+            - name: MYSQL_SERVICE_PASSWORD
+              value: "{{ .Values.nacos.storage.mysql.password }}"
+            - name: MYSQL_SERVICE_DB_NAME
+              value: "{{ .Values.nacos.storage.mysql.database }}"
+            - name: NACOS_REPLICAS
+              value: "{{ .Values.nacos.replicas }}"
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /home/nacos/data
+            - name: logs
+              mountPath: /home/nacos/logs
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+{{- end }}

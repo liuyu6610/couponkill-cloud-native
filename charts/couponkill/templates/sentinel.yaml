@@ -1,0 +1,105 @@
+{{- if .Values.sentinel.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.sentinel.name }}-dashboard
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.sentinel.name }}-dashboard
+spec:
+  ports:
+    - port: {{ .Values.sentinel.dashboard.service.port }}
+      targetPort: 8080
+      protocol: TCP
+      name: dashboard-port
+  selector:
+    app: {{ .Values.sentinel.name }}-dashboard
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.sentinel.name }}-dashboard
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.sentinel.name }}-dashboard
+spec:
+  replicas: {{ .Values.sentinel.dashboard.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.sentinel.name }}-dashboard
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.sentinel.name }}-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: "{{ .Values.sentinel.dashboard.image.repository }}:{{ .Values.sentinel.dashboard.image.tag }}"
+          imagePullPolicy: {{ .Values.sentinel.dashboard.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JAVA_OPTS
+              value: "-Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard"
+{{- if .Values.sentinel.tokenServer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.sentinel.name }}-token-server
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.sentinel.name }}-token-server
+spec:
+  ports:
+    - port: 12345  # Token server默认端口
+      targetPort: 12345
+      protocol: TCP
+      name: token-server-port
+  selector:
+    app: {{ .Values.sentinel.name }}-token-server
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.sentinel.name }}-token-server
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.sentinel.name }}-token-server
+spec:
+  replicas: {{ .Values.sentinel.tokenServer.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.sentinel.name }}-token-server
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.sentinel.name }}-token-server
+    spec:
+      containers:
+        - name: token-server
+          image: "{{ .Values.sentinel.tokenServer.image.repository }}:{{ .Values.sentinel.tokenServer.image.tag }}"
+          imagePullPolicy: {{ .Values.sentinel.tokenServer.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 12345
+{{- end }}
+{{- end }}

@@ -18,6 +18,8 @@ import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -118,7 +120,7 @@ public class CouponServiceImpl implements CouponService {
             try {
                 // 设置缓存，添加随机过期时间防止缓存雪崩
                 int randomExpire = 30 + new Random().nextInt(10); // 30-40分钟过期
-                redisTemplate.opsForValue().set(key, coupon, randomExpire, java.util.concurrent.TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set(key, coupon, randomExpire, TimeUnit.MINUTES);
                 // 缓存库存
                 redisTemplate.opsForValue().set(COUPON_STOCK_KEY + couponId,
                         coupon.getType() == 2 ? coupon.getSeckillRemainingStock() : coupon.getRemainingStock());
@@ -128,7 +130,7 @@ public class CouponServiceImpl implements CouponService {
         } else {
             try {
                 // 缓存空对象，解决缓存穿透，设置较短过期时间
-                redisTemplate.opsForValue().set(key, new Coupon(), 5, java.util.concurrent.TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set(key, new Coupon(), 5, TimeUnit.MINUTES);
             } catch (Exception e) {
                 log.error("设置空优惠券缓存失败，couponId: {}", couponId, e);
             }
@@ -255,9 +257,18 @@ public class CouponServiceImpl implements CouponService {
             );
 
             if (rows > 0) {
-                // 更新成功，同步更新Redis缓存
-                String stockKey = COUPON_STOCK_KEY + selectedShard.getId();
-                redisTemplate.opsForValue().decrement(stockKey);
+                // 异步更新Redis缓存，避免阻塞主流程
+                final Long couponIdFinal = couponId; // 将变量设为final
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        String stockKey = COUPON_STOCK_KEY + couponIdFinal;
+                        redisTemplate.opsForValue().decrement(stockKey);
+                        log.info("异步更新Redis库存成功: key={}", stockKey);
+                    } catch (Exception e) {
+                        log.error("异步更新Redis库存失败: couponId={}", couponIdFinal, e);
+                    }
+                });
+
                 // 返回选中的分片索引
                 log.info("成功扣减优惠券分片 {} 的库存", selectedShard.getShardIndex());
                 return selectedShard.getShardIndex();
@@ -278,6 +289,31 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public List<Coupon> getCouponShards(Long id) {
         return couponMapper.selectByCouponId(id);
+    }
+
+    /**
+     * 随机获取一个有库存的优惠券分片
+     * @param couponId 优惠券ID
+     * @return 有库存的优惠券分片，如果没有则返回null
+     */
+    public Coupon getRandomAvailableShard(Long couponId) {
+        List<Coupon> shards = couponMapper.selectByCouponId(couponId);
+        if (shards == null || shards.isEmpty()) {
+            return null;
+        }
+
+        // 筛选出有库存的分片
+        List<Coupon> availableShards = shards.stream()
+                .filter(c -> c.getSeckillRemainingStock() != null && c.getSeckillRemainingStock() > 0)
+                .collect(Collectors.toList());
+
+        if (availableShards.isEmpty()) {
+            return null;
+        }
+
+        // 随机选择一个分片
+        Random random = new Random();
+        return availableShards.get(random.nextInt(availableShards.size()));
     }
 
     @Override
@@ -307,6 +343,12 @@ public class CouponServiceImpl implements CouponService {
 
     @PostConstruct
     public void preheatStockToRedis() {
+        // 异步预热缓存，避免阻塞应用启动
+        CompletableFuture.runAsync(this::asyncPreheatStockToRedis, 
+                Executors.newFixedThreadPool(10));
+    }
+    
+    public void asyncPreheatStockToRedis() {
         try {
             // 查询所有主分片用于预热缓存
             List<Coupon> coupons = couponMapper.selectMainShardsForCache();

@@ -8,7 +8,7 @@ spec:
   services:
     goService:
       enabled: true
-      image: "seckill-go:latest"
+      image: "go:latest"
       replicas: 2
       resources:
         requests:
@@ -30,14 +30,14 @@ spec:
 
     couponService:
       enabled: true
-      image: "couponkill-coupon-service:latest"
+      image: "coupon:latest"
       replicas: 2
       resources:
         requests:
-          memory: "512Mi"
+          memory: "1Gi"
           cpu: "250m"
         limits:
-          memory: "1Gi"
+          memory: "2Gi"
           cpu: "500m"
       ports:
         - name: http
@@ -52,14 +52,14 @@ spec:
 
     orderService:
       enabled: true
-      image: "couponkill-order-service:latest"
+      image: "order:latest"
       replicas: 2
       resources:
         requests:
-          memory: "512Mi"
+          memory: "1Gi"
           cpu: "250m"
         limits:
-          memory: "1Gi"
+          memory: "2Gi"
           cpu: "500m"
       ports:
         - name: http
@@ -74,7 +74,7 @@ spec:
 
     userService:
       enabled: true
-      image: "couponkill-user-service:latest"
+      image: "user:latest"
       replicas: 1
       resources:
         requests:
@@ -101,7 +101,7 @@ spec:
 
     gatewayService:
       enabled: true
-      image: "couponkill-gateway:latest"
+      image: "gateway:latest"
       replicas: 1
       resources:
         requests:

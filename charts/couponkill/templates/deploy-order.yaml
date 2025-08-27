@@ -15,7 +15,7 @@ spec:
       containers:
         - name: app
           # 定义容器使用的镜像，包含注册表地址和标签
-          image: "{{ .Values.image.registry }}/order:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.services.order.image.name }}:{{ .Values.services.order.image.tag }}"
           # 指定容器暴露的端口号
           ports: [{containerPort: {{ .Values.services.order.port }} }]
           # 配置就绪探针，用于检测应用是否准备好接收流量
@@ -26,8 +26,30 @@ spec:
               value: "root"
             - name: DB_PASS
               value: "password"
+            {{- if .Values.rocketmq.enabled }}
+            - name: ROCKET_MQ
+              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+            {{- else }}
             - name: KAFKA
               value: "broker:9092"
+            {{- end }}
+            {{- if .Values.nacos.enabled }}
+            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- end }}
+            {{- if .Values.sentinel.enabled }}
+            - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
+              value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
+            {{- end }}
+            # JVM优化参数
+            {{- if .Values.services.order.jvmOpts }}
+            - name: JAVA_OPTS
+              value: "{{ .Values.services.order.jvmOpts }}"
+            {{- end }}
+            {{- if .Values.services.order.threadPoolOpts }}
+            - name: THREAD_POOL_OPTS
+              value: "{{ .Values.services.order.threadPoolOpts }}"
+            {{- end }}
 ---
 # Service 配置为 order 服务提供稳定的网络访问入口
 # 将内部 Pod 端口映射到集群内的固定端口上

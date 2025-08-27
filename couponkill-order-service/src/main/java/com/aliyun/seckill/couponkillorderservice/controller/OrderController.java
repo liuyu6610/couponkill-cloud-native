@@ -42,14 +42,15 @@ public class OrderController {
     @Value("${couponkill.seckill.deduct-ttl-seconds:300}")
     int deductTtlSeconds;
 
+    @Value("${couponkill.seckill.java.threshold:500}")
+    int javaServiceThreshold;
+
     // 自定义线程池用于异步处理
     private final ExecutorService executorService = Executors.newFixedThreadPool(50);
 
     // 用于统计当前处理请求数量
     private final AtomicInteger currentRequestCount = new AtomicInteger(0);
 
-    // Java服务处理阈值
-    private static final int JAVA_SERVICE_THRESHOLD = 500;
 
     @Operation(summary = "创建普通订单")
     @PostMapping("/create")
@@ -99,8 +100,9 @@ public class OrderController {
 
     /**
      * 秒杀接口 - 根据负载情况自动路由到Java或Go服务
+     * 在秒杀过程中会从优惠券的所有分片中选择一个有库存的分片，以提高系统QPS
      */
-    @Operation(summary = "执行优惠券秒杀", description = "执行指定优惠券的秒杀操作")
+    @Operation(summary = "执行优惠券秒杀", description = "执行指定优惠券的秒杀操作，系统会自动选择一个有库存的分片")
     @PostMapping("/seckill")
     @SentinelResource(
             value = "couponSeckill",
@@ -123,8 +125,19 @@ public class OrderController {
                 return Result.fail(ResultCode.COOLING_DOWN, "请在" + cooldownSeconds + "秒后再试");
             }
 
-            // 如果当前请求数量未超过阈值，由Java服务处理
-            if (currentCount <= JAVA_SERVICE_THRESHOLD) {
+            // 使用RateLimiter进行更精确的流量控制
+            if (servicegoConfig.shouldRouteToGo()) {
+                // 超过阈值或需要分流，由Go服务处理
+                log.info("路由到Go服务处理秒杀请求: userId={}, couponId={}, currentCount={}", userId, couponId, currentCount);
+
+                // 路由到Go服务处理完整逻辑
+                GoSeckillFeignClient.SeckillRequest request = new GoSeckillFeignClient.SeckillRequest(userId, couponId);
+                Result<?> result = goSeckillFeignClient.seckill(request);
+                // 无论Go服务处理成功与否，都设置冷却时间
+                orderService.setUserCooldown(userId, couponId, cooldownSeconds);
+                return result;
+            } else {
+                // Java服务处理核心逻辑
                 log.info("Java服务处理秒杀请求: userId={}, couponId={}, currentCount={}", userId, couponId, currentCount);
                 boolean result = orderService.processSeckill(userId, couponId);
                 if (result) {
@@ -134,16 +147,6 @@ public class OrderController {
                 } else {
                     return Result.fail(500, "秒杀失败");
                 }
-            } else {
-                // 超过阈值，由Go服务处理
-                log.info("超过阈值，路由到Go服务处理秒杀请求: userId={}, couponId={}, currentCount={}", userId, couponId, currentCount);
-
-                // 路由到Go服务处理完整逻辑
-                GoSeckillFeignClient.SeckillRequest request = new GoSeckillFeignClient.SeckillRequest(userId, couponId);
-                Result<?> result = goSeckillFeignClient.seckill(request);
-                // 无论Go服务处理成功与否，都设置冷却时间
-                orderService.setUserCooldown(userId, couponId, cooldownSeconds);
-                return result;
             }
         } finally {
             // 减少当前请求数量计数

@@ -1,0 +1,42 @@
+{{- if .Values.redis.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.redis.init.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.redis.init.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.redis.init.name }}
+    spec:
+      containers:
+        - name: redis-client
+          image: "{{ .Values.redis.init.image.repository }}:{{ .Values.redis.init.image.tag }}"
+          imagePullPolicy: {{ .Values.redis.init.image.pullPolicy }}
+          env:
+            - name: REDIS_HOST
+              value: "{{ .Values.redis.host }}"
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.port }}"
+            - name: REDIS_PASSWORD
+              value: "{{ .Values.redis.password }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Redis to be ready..."
+              until redis-cli -h $REDIS_HOST -p $REDIS_PORT ping; do
+                sleep 2
+              done
+              
+              echo "Initializing Redis..."
+              # Add any Redis initialization commands here
+              echo "Redis initialization completed."
+      restartPolicy: OnFailure
+{{- end }}

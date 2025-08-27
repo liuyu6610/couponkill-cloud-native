@@ -169,5 +169,46 @@ public class UserServiceImpl implements UserService {
             log.error("处理失效用户失败", e);
         }
     }
-
+    
+    @Override
+    public UserCouponCount getUserCouponCount(Long userId) {
+        try {
+            return userCouponCountMapper.selectByUserId(userId);
+        } catch (Exception e) {
+            log.error("获取用户优惠券统计信息失败: userId={}", userId, e);
+            return null;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void updateSeckillCouponCount(Long userId, int count) {
+        try {
+            int result = userCouponCountMapper.updateSeckillCount(userId, count);
+            if (result <= 0) {
+                log.warn("更新用户秒杀优惠券数量失败: userId={}, count={}", userId, count);
+            } else {
+                log.debug("成功更新用户秒杀优惠券数量: userId={}, count={}", userId, count);
+            }
+        } catch (Exception e) {
+            log.error("更新用户秒杀优惠券数量异常: userId={}, count={}", userId, count, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券数量失败");
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void updateNormalCouponCount(Long userId, int count) {
+        try {
+            int result = userCouponCountMapper.updateNormalCount(userId, count);
+            if (result <= 0) {
+                log.warn("更新用户普通优惠券数量失败: userId={}, count={}", userId, count);
+            } else {
+                log.debug("成功更新用户普通优惠券数量: userId={}, count={}", userId, count);
+            }
+        } catch (Exception e) {
+            log.error("更新用户普通优惠券数量异常: userId={}, count={}", userId, count, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券数量失败");
+        }
+    }
 }

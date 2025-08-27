@@ -24,11 +24,13 @@ WORKDIR /app
 
 # 从构建阶段复制打包好的jar包
 COPY --from=builder /app/couponkill-order-service/target/*.jar app.jar
-# JVM优化参数
-ENV JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication"
+
+# JVM优化参数 - 为高并发场景优化
+ENV JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+ENV THREAD_POOL_OPTS="-Dserver.tomcat.max-threads=400 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=300 -Dserver.tomcat.max-connections=10000"
 
 # 暴露端口
 EXPOSE 8082
 
 # 启动命令
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS $THREAD_POOL_OPTS -jar app.jar"]

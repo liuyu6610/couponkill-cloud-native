@@ -1,7 +1,7 @@
-# couponkill 项目配置文件
-# 定义了微服务架构中各个服务的配置信息，包括镜像、服务部署参数、自动扩缩容配置以及服务网格配置
+# 生产环境配置文件
+# 为每个服务指定特定的镜像标签
 
-namespace: couponkill  # Kubernetes 命名空间名称
+namespace: couponkill
 
 # CRD安装选项
 crd:
@@ -64,11 +64,11 @@ rocketmq:
     tag: 4.9.4
     pullPolicy: IfNotPresent
   nameServer:
-    replicas: 1
+    replicas: 3
     service:
       port: 9876
   broker:
-    replicas: 1
+    replicas: 3
     service:
       ports:
         listenPort: 10911
@@ -90,7 +90,7 @@ nacos:
     repository: nacos/nacos-server
     tag: v2.1.1
     pullPolicy: IfNotPresent
-  replicas: 1
+  replicas: 3
   service:
     port: 8848
     # 外部访问配置
@@ -99,7 +99,7 @@ nacos:
       type: LoadBalancer
       port: 8848
   storage:
-    type: embedded
+    type: mysql
     mysql:
       host: mysql
       port: 3306
@@ -358,41 +358,37 @@ sentinel:
       repository: bladex/sentinel-dashboard
       tag: 1.8.5
       pullPolicy: IfNotPresent
-    replicas: 1
+    replicas: 2
     service:
       port: 8080
   tokenServer:
-    enabled: false
+    enabled: true
     image:
       repository: sentinel-group/sentinel-token-server
       tag: 1.8.5
       pullPolicy: IfNotPresent
-    replicas: 1
-
-# 全局配置
-global:
-  registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker  # 默认镜像仓库地址
-  domain: couponkill.example.com  # 默认域名
+    replicas: 2
 
 # 镜像配置信息
 image:
-  registry: "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"  # 镜像仓库地址
-  tag: "latest"  # 默认镜像标签
+  registry: "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"
+  tag: "v1.0.0"
+
 # 微服务配置列表
 services:
   # Gateway服务配置
   gateway:
     name: couponkill-gateway  # 服务名称
     port: 8080  # 服务端口
-    replicas: 1  # 初始副本数
+    replicas: 2  # 初始副本数
     image:
       name: "gateway"
-      tag: "latest"
+      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 1  # 最小副本数
-      maxReplicas: 3  # 最大副本数
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 5  # 最大副本数
       cpu: 70  # CPU使用率触发阈值(百分比)
     # JVM优化参数
     jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
@@ -400,17 +396,17 @@ services:
 
   # Go秒杀服务配置
   go:
-    name: seckill-go-svc  # 服务名称
-    port: 8090  # 服务端口
-    replicas: 2  # 初始副本数
+    name: seckill-go-svc
+    port: 8090
+    replicas: 3
     image: 
       name: "seckill-go"
-      tag: "latest"
+      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 1  # 最小副本数
-      maxReplicas: 5  # 最大副本数
+      minReplicas: 3  # 最小副本数
+      maxReplicas: 10  # 最大副本数
       cpu: 70  # CPU使用率触发阈值(百分比)
     # Go运行时优化参数
     goOpts:
@@ -419,17 +415,17 @@ services:
 
   # 优惠券服务配置
   coupon:
-    name: couponkill-coupon-service  # 服务名称
-    port: 8081  # 服务端口
-    replicas: 2  # 初始副本数
+    name: couponkill-coupon-service
+    port: 8081
+    replicas: 3
     image:
       name: "coupon"
-      tag: "latest"
+      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 2  # 最小副本数
-      maxReplicas: 4  # 最大副本数
+      minReplicas: 3  # 最小副本数
+      maxReplicas: 10  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
     # JVM优化参数
     jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
@@ -437,17 +433,17 @@ services:
 
   # 订单服务配置
   order:
-    name: couponkill-order-service  # 服务名称
-    port: 8082  # 服务端口
-    replicas: 2  # 初始副本数
+    name: couponkill-order-service
+    port: 8082
+    replicas: 3
     image:
       name: "order"
-      tag: "latest"
+      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 2  # 最小副本数
-      maxReplicas: 4  # 最大副本数
+      minReplicas: 3  # 最小副本数
+      maxReplicas: 10  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
     # JVM优化参数
     jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
@@ -455,30 +451,30 @@ services:
 
   # 用户服务配置
   user:
-    name: couponkill-user-service  # 服务名称
-    port: 8083  # 服务端口
-    replicas: 1  # 初始副本数
+    name: couponkill-user-service
+    port: 8083
+    replicas: 2
     image:
       name: "user"
-      tag: "latest"
+      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
-      minReplicas: 1  # 最小副本数
-      maxReplicas: 3  # 最大副本数
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 5  # 最大副本数
       cpu: 60  # CPU使用率触发阈值(百分比)
     # JVM优化参数
     jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
     threadPoolOpts: "-Dserver.tomcat.max-threads=200 -Dserver.tomcat.min-spare-threads=20 -Dserver.tomcat.accept-count=100 -Dserver.tomcat.max-connections=5000"
-    
+
   # operator配置
   operator:
     name: couponkill-operator
-    port: 8084  # 服务端口
-    replicas: 1  # 初始副本数
+    port: 8084
+    replicas: 1
     image:
       name: "operator"
-      tag: "latest"
+      tag: "v1.0.0"
     # Go运行时优化参数
     goOpts:
       gc: 20
@@ -486,15 +482,13 @@ services:
 
 # Istio 服务网格配置
 istio:
-  enabled: true  # 是否启用Istio
-  # 网关配置
+  enabled: true
   gateway:
-    name: couponkill-gateway  # 网关名称
-    host: "*"  # 访问域名
-    port: 80  # 网关端口
-    tls: false  # 是否启用TLS加密
+    name: couponkill-gateway
+    host: "couponkill.example.com"
+    port: 80
+    tls: false
 
-  # 目标规则配置
   destinationRule:
     connectionPool:
       tcp:
@@ -511,15 +505,14 @@ istio:
 # KEDA 自动扩缩容配置
 keda:
   enabled: true
-  # Kafka 配置
   kafka:
     bootstrapServers: "broker:9092"
     # Go服务的扩缩容配置
     go:
       enabled: true
       deploymentName: seckill-go-svc
-      minReplicaCount: 1
-      maxReplicaCount: 5
+      minReplicaCount: 3
+      maxReplicaCount: 10
       topic: "seckill_order_create"
       consumerGroup: "go-dispatcher"
       lagThreshold: "100"
@@ -527,8 +520,8 @@ keda:
     order:
       enabled: true
       deploymentName: couponkill-order-service
-      minReplicaCount: 2
-      maxReplicaCount: 4
+      minReplicaCount: 3
+      maxReplicaCount: 10
       topic: "seckill_order_create"
       consumerGroup: "order-create"
       lagThreshold: "100"

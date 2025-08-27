@@ -7,7 +7,8 @@
 #   .Values.namespace                 - 命名空间
 #   .Values.services.user.replicas    - 副本数量
 #   .Values.image.registry            - 镜像仓库地址
-#   .Values.image.tag                 - 镜像标签
+#   .Values.services.user.image.name  - 镜像名称
+#   .Values.services.user.image.tag   - 镜像标签
 #   .Values.services.user.port        - 容器端口
 apiVersion: apps/v1
 kind: Deployment
@@ -34,7 +35,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: "{{ if .Values.image.registry }}{{ .Values.image.registry }}{{ else }}{{ .Values.global.registry }}{{ end }}/user:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Values.global.version }}{{ end }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.services.user.image.name }}:{{ .Values.services.user.image.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.services.user.port }}
@@ -72,11 +73,28 @@ spec:
               value: "redis"
             - name: SPRING_REDIS_PORT
               value: "6379"
+            {{- if .Values.nacos.enabled }}
+            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- end }}
+            {{- if .Values.sentinel.enabled }}
+            - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
+              value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
+            {{- end }}
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
+            # JVM优化参数
+            {{- if .Values.services.user.jvmOpts }}
+            - name: JAVA_OPTS
+              value: "{{ .Values.services.user.jvmOpts }}"
+            {{- end }}
+            {{- if .Values.services.user.threadPoolOpts }}
+            - name: THREAD_POOL_OPTS
+              value: "{{ .Values.services.user.threadPoolOpts }}"
+            {{- end }}
 ---
 # Service配置：为用户服务提供稳定的网络访问入口
 # 参数说明：

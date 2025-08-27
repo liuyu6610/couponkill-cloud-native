@@ -7,7 +7,8 @@
 #   .Values.namespace               - 命名空间
 #   .Values.services.go.replicas    - 副本数量
 #   .Values.image.registry          - 镜像仓库地址
-#   .Values.image.tag               - 镜像标签
+#   .Values.services.go.image.name  - 镜像名称
+#   .Values.services.go.image.tag   - 镜像标签
 #   .Values.services.go.port        - 容器端口
 apiVersion: apps/v1
 kind: Deployment
@@ -34,7 +35,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: "{{ if .Values.image.registry }}{{ .Values.image.registry }}{{ else }}{{ .Values.global.registry }}{{ end }}/seckill-go:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Values.global.version }}{{ end }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.services.go.image.name }}:{{ .Values.services.go.image.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.services.go.port }}
@@ -66,6 +67,28 @@ spec:
               value: "redis:6379"
             - name: MYSQL_DSN
               value: "user:password@tcp(mysql:3306)/couponkill"
+            {{- if .Values.rocketmq.enabled }}
+            - name: ROCKET_MQ
+              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+            {{- else }}
+            - name: KAFKA
+              value: "broker:9092"
+            {{- end }}
+            {{- if .Values.nacos.enabled }}
+            - name: NACOS_ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- end }}
+            {{- if .Values.sentinel.enabled }}
+            - name: SENTINEL_DASHBOARD
+              value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
+            {{- end }}
+            # Go运行时优化参数
+            {{- if .Values.services.go.goOpts }}
+            - name: GOGC
+              value: "{{ .Values.services.go.goOpts.gc | default 20 }}"
+            - name: GOMAXPROCS
+              value: "{{ .Values.services.go.goOpts.maxProcs | default 4 }}"
+            {{- end }}
 ---
 # Service配置：为Go秒杀服务提供稳定的网络访问入口
 # 参数说明：

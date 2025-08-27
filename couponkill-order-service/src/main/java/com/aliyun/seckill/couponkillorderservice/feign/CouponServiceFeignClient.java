@@ -89,7 +89,8 @@ public interface CouponServiceFeignClient {
 
         @Override
         public ApiResponse<String> deductStockWithVirtualId(Long id) {
-            return null;
+            log.error("调用 deductStockWithVirtualId 失败，couponId: {}", id);
+            return ApiResponse.fail(500, "服务暂时不可用");
         }
 
         @Override

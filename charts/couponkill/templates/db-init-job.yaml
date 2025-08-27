@@ -1,0 +1,68 @@
+{{- if .Values.db.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.db.init.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.db.init.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.db.init.name }}
+    spec:
+      containers:
+        - name: mysql-client
+          image: "{{ .Values.db.init.image.repository }}:{{ .Values.db.init.image.tag }}"
+          imagePullPolicy: {{ .Values.db.init.image.pullPolicy }}
+          env:
+            - name: MYSQL_HOST
+              value: "{{ .Values.db.host }}"
+            - name: MYSQL_PORT
+              value: "{{ .Values.db.port }}"
+            - name: MYSQL_USER
+              value: "{{ .Values.db.user }}"
+            - name: MYSQL_PASSWORD
+              value: "{{ .Values.db.password }}"
+            - name: MYSQL_DATABASE
+              value: "{{ .Values.db.database }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for MySQL to be ready..."
+              until mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1"; do
+                sleep 2
+              done
+              
+              echo "Creating database if not exists..."
+              mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;"
+              
+              echo "Initializing database schema..."
+              mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE < /scripts/init.sql
+              
+              echo "Database initialization completed."
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /scripts
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: {{ .Values.db.init.name }}-scripts
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.db.init.name }}-scripts
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.db.init.name }}
+data:
+  init.sql: |
+    {{- .Files.Get "scripts/init.sql" | nindent 4 }}
+{{- end }}

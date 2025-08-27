@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Tag(name = "优惠券管理", description = "优惠券相关操作接口")
@@ -80,19 +81,32 @@ public class CouponController {
         return ApiResponse.success(couponService.getCouponById(id));
     }
 
-    @Operation(summary = "查询所有优惠券", description = "获取所有优惠券")
-    @GetMapping("/list")
-    public ApiResponse<List<Coupon>> list() {
-        log.info("查询所有优惠券");
-        return ApiResponse.success(couponService.list());
-    }
-
     @Operation(summary = "获取优惠券的所有分片", description = "获取指定优惠券的所有分片信息")
     @GetMapping("/{id}/shards")
     public ApiResponse<List<Coupon>> getCouponShards(
             @Parameter(description = "优惠券ID") @PathVariable Long id) {
         log.info("获取优惠券的所有分片: id={}", id);
         return ApiResponse.success(couponService.getCouponShards(id));
+    }
+
+    @Operation(summary = "随机获取一个有库存的优惠券分片", description = "随机获取指定优惠券中一个有库存的分片")
+    @GetMapping("/{id}/random-shard")
+    public ApiResponse<Coupon> getRandomAvailableShard(
+            @Parameter(description = "优惠券ID") @PathVariable Long id) {
+        log.info("随机获取一个有库存的优惠券分片: id={}", id);
+        Coupon shard = couponService.getRandomAvailableShard(id);
+        if (shard != null) {
+            return ApiResponse.success(shard);
+        } else {
+            return ApiResponse.fail(404, "未找到有库存的分片");
+        }
+    }
+
+    @Operation(summary = "查询所有优惠券", description = "获取所有优惠券")
+    @GetMapping("/list")
+    public ApiResponse<List<Coupon>> list() {
+        log.info("查询所有优惠券");
+        return ApiResponse.success(couponService.list());
     }
 
     @Operation(summary = "后台管理接口：批量发放优惠券", description = "向指定用户列表批量发放优惠券")
@@ -144,6 +158,31 @@ public class CouponController {
             log.error("扣减库存并获取分片ID失败，couponId: {}", id, e);
             return ApiResponse.fail(500, "扣减库存并获取分片ID失败: " + e.getMessage());
         }
+    }
+    
+    @Operation(summary = "异步扣减优惠券库存并返回使用的分片ID")
+    @PostMapping("/async-deduct-with-shard-id/{id}")
+    public ApiResponse<String> asyncDeductStockWithShardId(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        log.info("异步扣减优惠券库存并返回使用的分片ID: id={}", id);
+        
+        // 异步处理，立即返回结果
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return couponService.deductStockWithShardId(id);
+            } catch (Exception e) {
+                log.error("异步扣减库存并获取分片ID失败，couponId: {}", id, e);
+                return null;
+            }
+        }).thenAccept(result -> {
+            if (result == null) {
+                log.warn("异步扣减库存失败，未获取到分片ID: couponId={}", id);
+            } else {
+                log.info("异步扣减库存成功，分片ID: {}, couponId={}", result, id);
+            }
+        });
+        
+        // 立即返回成功，实际结果通过其他方式通知
+        return ApiResponse.success("REQUEST_ACCEPTED");
     }
 
     @Operation(summary = "创建补偿优惠券")

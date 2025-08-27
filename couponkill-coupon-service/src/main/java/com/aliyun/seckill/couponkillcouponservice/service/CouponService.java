@@ -64,4 +64,14 @@ public interface CouponService {
      * 获取优惠券的所有分片
      */
     List<Coupon> getCouponShards(Long id);
+    
+    /**
+     * 随机获取一个有库存的优惠券分片
+     */
+    Coupon getRandomAvailableShard(Long couponId);
+    
+    /**
+     * 异步预热库存到Redis
+     */
+    void asyncPreheatStockToRedis();
 }
