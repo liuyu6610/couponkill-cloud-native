@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class SeckillService {
@@ -63,7 +64,7 @@ public class SeckillService {
     // 失败补偿：库存+1 & 发放常驻券标记（实际发券可交给另一个服务）
     public void compensateFail(String requestId, String couponId, String userId){
         redis.opsForValue().increment(kStock(couponId));
-        // 可选：记录一张“常驻补偿券”的发放资格：coupon:comp:{userId} -> expire 1d
+        // 可选：记录一张"常驻补偿券"的发放资格：coupon:comp:{userId} -> expire 1d
         redis.opsForValue().set("coupon:comp:"+userId, "1", Duration.ofDays(1));
         redis.opsForValue().set(kReq(requestId), "FAIL", Duration.ofMinutes(5));
     }

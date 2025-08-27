@@ -33,22 +33,25 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
+        log.debug("收到请求: path={}", path);
+
         // 检查是否在白名单中
         if (isWhitelisted(path)) {
+            log.debug("路径在白名单中，跳过认证: path={}", path);
             return chain.filter(exchange);
         }
 
         // 对于需要认证的接口进行JWT验证
         String token = extractToken(request);
         if (token == null || token.isEmpty()) {
-            log.debug("请求缺少认证token: path={}", path);
+            log.warn("请求缺少认证token: path={}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
         try {
             if (!jwtUtil.verifyToken(token)) {
-                log.debug("Token验证失败: token={}", token);
+                log.warn("Token验证失败: token={}, path={}", token, path);
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
@@ -56,10 +59,12 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             // 将用户ID存入请求头
             String userId = jwtUtil.getUserId(token);
             if (userId == null || userId.isEmpty()) {
-                log.warn("Token中userId为空: token={}", token);
+                log.warn("Token中userId为空: token={}, path={}", token, path);
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
+
+            log.debug("Token验证成功，userId={}", userId);
 
             ServerHttpRequest mutatedRequest = request.mutate()
                     .header("X-User-ID", userId)
@@ -68,7 +73,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
             return chain.filter(mutatedExchange);
         } catch (Exception e) {
-            log.warn("认证过程出现异常: path={}, error={}", path, e.getMessage(), e);
+            log.error("认证过程出现异常: path={}, error={}", path, e.getMessage(), e);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }

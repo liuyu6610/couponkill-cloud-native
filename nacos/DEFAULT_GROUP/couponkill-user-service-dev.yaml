@@ -10,17 +10,6 @@ user:
 jwt:
   secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
   expiration: 86400000 # 24小时，单位毫秒
-seata:
-  enabled: true
-  application-id: couponkill-user-service
-  tx-service-group: couponkill-user-service-tx-group
-  registry:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: 120
-      group: DEFAULT_GROUP
-      application: seata-server
   config:
     type: nacos
     nacos:

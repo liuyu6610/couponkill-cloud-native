@@ -3,7 +3,6 @@ package com.aliyun.seckill.couponkillorderservice.config;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
-import io.seata.rm.datasource.DataSourceProxy;
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -45,12 +44,7 @@ public class OrderShardingSphereConfig {
             throw new IllegalStateException("未能从Nacos获取order-service的ShardingSphere配置，dataId: " + dataId);
         }
 
-        // 使用从Nacos获取的配置创建数据源
-        DataSource shardingSphereDataSource = YamlShardingSphereDataSourceFactory.createDataSource(
-            configContent.getBytes()
-        );
-
-        // 使用Seata的DataSourceProxy包装ShardingSphere数据源
-        return new DataSourceProxy(shardingSphereDataSource);
+        // 使用从Nacos获取的配置创建数据源（不使用Seata代理）
+        return YamlShardingSphereDataSourceFactory.createDataSource(configContent.getBytes());
     }
 }

@@ -29,7 +29,7 @@ spring:
           predicates:
             - Path=/api/v1/user/**
           filters:
-            - StripPrefix=0  # 修改这里，从0改为1
+            - StripPrefix=0
             - name: Sentinel
               args:
                 resourceName: user-service
@@ -40,7 +40,7 @@ spring:
           predicates:
             - Path=/api/v1/coupon/**
           filters:
-            - StripPrefix=0  # 修改这里，从0改为1
+            - StripPrefix=0
             - name: Sentinel
               args:
                 resourceName: coupon-service

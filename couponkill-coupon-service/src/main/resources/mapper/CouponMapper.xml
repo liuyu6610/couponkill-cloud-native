@@ -1,137 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper">
 
-    <resultMap id="CouponResultMap" type="com.aliyun.seckill.common.pojo.Coupon">
-        <id property="id" column="id"/>
-        <result property="virtualId" column="virtual_id"/>
-        <result property="name" column="name"/>
-        <result property="description" column="description"/>
-        <result property="type" column="type"/>
-        <result property="faceValue" column="face_value"/>
-        <result property="minSpend" column="min_spend"/>
-        <result property="validDays" column="valid_days"/>
-        <result property="perUserLimit" column="per_user_limit"/>
-        <result property="totalStock" column="total_stock"/>
-        <result property="seckillTotalStock" column="seckill_total_stock"/>
-        <result property="remainingStock" column="remaining_stock"/>
-        <result property="seckillRemainingStock" column="seckill_remaining_stock"/>
-        <result property="status" column="status"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
-        <result property="version" column="version"/>
+    <resultMap id="CouponMap" type="com.aliyun.seckill.common.pojo.Coupon">
+        <id column="id" property="id"/>
+        <id column="shard_index" property="shardIndex"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="type" property="type"/>
+        <result column="face_value" property="faceValue"/>
+        <result column="min_spend" property="minSpend"/>
+        <result column="valid_days" property="validDays"/>
+        <result column="per_user_limit" property="perUserLimit"/>
+        <result column="total_stock" property="totalStock"/>
+        <result column="seckill_total_stock" property="seckillTotalStock"/>
+        <result column="remaining_stock" property="remainingStock"/>
+        <result column="seckill_remaining_stock" property="seckillRemainingStock"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="version" property="version"/>
     </resultMap>
 
-    <select id="selectAvailableCoupons" resultMap="CouponResultMap">
-        SELECT * FROM coupon
-        WHERE status = 1
-        AND remaining_stock > 0
-        ORDER BY create_time DESC
-    </select>
-
-    <select id="selectAll" resultMap="CouponResultMap">
-        SELECT * FROM coupon
-        ORDER BY create_time DESC
-    </select>
-
-    <select id="selectById" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE id = #{id}
-    </select>
-
-    <select id="selectByVirtualId" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE virtual_id = #{virtualId}
-    </select>
-
-    <insert id="insertCoupon" parameterType="com.aliyun.seckill.common.pojo.Coupon">
+    <insert id="insertCoupon">
         INSERT INTO coupon (
-            id, virtual_id, name, description, type, face_value, min_spend, valid_days,
+            id, name, description, type, face_value, min_spend, valid_days,
             per_user_limit, total_stock, seckill_total_stock, remaining_stock,
-            seckill_remaining_stock, status, create_time, update_time, version
+            seckill_remaining_stock, status, create_time, update_time, version, shard_index
         ) VALUES (
-            #{id}, #{virtualId}, #{name}, #{description}, #{type}, #{faceValue}, #{minSpend}, #{validDays},
-            #{perUserLimit}, #{totalStock}, #{seckillTotalStock}, #{remainingStock},
-            #{seckillRemainingStock}, #{status}, #{createTime}, #{updateTime}, #{version}
-        )
+                     #{id}, #{name}, #{description}, #{type}, #{faceValue}, #{minSpend}, #{validDays},
+                     #{perUserLimit}, #{totalStock}, #{seckillTotalStock}, #{remainingStock},
+                     #{seckillRemainingStock}, #{status}, #{createTime}, #{updateTime}, #{version}, #{shardIndex}
+                 )
     </insert>
 
-    <insert id="batchInsertVirtualCoupons">
-        INSERT INTO coupon (
-            id, virtual_id, name, description, type, face_value, min_spend, valid_days,
-            per_user_limit, total_stock, seckill_total_stock, remaining_stock,
-            seckill_remaining_stock, status, create_time, update_time, version
-        ) VALUES
-        <foreach collection="list" item="coupon" separator=",">
-            (
-                #{coupon.id}, #{coupon.virtualId}, #{coupon.name}, #{coupon.description}, #{coupon.type},
-                #{coupon.faceValue}, #{coupon.minSpend}, #{coupon.validDays}, #{coupon.perUserLimit},
-                #{coupon.totalStock}, #{coupon.seckillTotalStock}, #{coupon.remainingStock},
-                #{coupon.seckillRemainingStock}, #{coupon.status}, #{coupon.createTime}, #{coupon.updateTime},
-                #{coupon.version}
-            )
-        </foreach>
-    </insert>
+    <delete id="deleteCouponById">
+        DELETE FROM coupon WHERE id = #{id}
+    </delete>
 
-    <!-- 按虚拟ID更新库存 -->
-    <update id="updateStockByVirtualId">
-        UPDATE coupon
-        SET remaining_stock = remaining_stock + #{change},
-            seckill_remaining_stock = seckill_remaining_stock + #{change},
-            update_time = NOW(),
-            version = version + 1
-        WHERE virtual_id = #{virtualId}
-          AND remaining_stock + #{change} >= 0
-          AND seckill_remaining_stock + #{change} >= 0
-          AND version = #{version}
-    </update>
-
-    <update id="updateRemainingStockByVirtualId">
-        UPDATE coupon
-        SET remaining_stock = #{remainingStock},
-            update_time = #{updateTime},
-            version = version + 1
-        WHERE virtual_id = #{virtualId}
-          AND version = #{version}
-    </update>
-
-    <!-- 查询指定优惠券的所有虚拟分片 -->
-    <select id="selectByCouponId" resultMap="CouponResultMap">
-        SELECT * FROM coupon WHERE virtual_id LIKE CONCAT(#{couponId}, '\_%')
+    <select id="selectAvailableCoupons" resultMap="CouponMap">
+        SELECT * FROM coupon WHERE status = 1 AND create_time >= DATE_SUB(NOW(), INTERVAL valid_days DAY) GROUP BY id
     </select>
 
-    <insert id="batchGrantCoupons">
-        INSERT INTO user_coupon (user_id, coupon_id, create_time)
-        VALUES
-        <foreach collection="userIds" item="userId" separator=",">
-            (#{userId}, #{couponId}, NOW())
-        </foreach>
-    </insert>
-
-    <!-- 查询过期优惠券 -->
-    <select id="selectExpiredCoupons" resultMap="CouponResultMap">
-        SELECT * FROM coupon
-        WHERE status = 1
-        AND valid_days > 0
-        AND create_time < #{expireTime}
+    <select id="selectAll" resultMap="CouponMap">
+        SELECT * FROM coupon GROUP BY id
     </select>
 
-    <!-- 更新优惠券状态 -->
-    <update id="updateCouponStatus">
+    <select id="selectById" resultMap="CouponMap">
+        SELECT * FROM coupon WHERE id = #{id} GROUP BY id
+    </select>
+
+    <!-- 根据优惠券ID查询所有分片 -->
+    <select id="selectByCouponId" resultMap="CouponMap">
+        SELECT * FROM coupon WHERE id = #{couponId}
+    </select>
+
+    <!-- 查询所有优惠券的主分片（shard_index=0）用于预热 -->
+    <select id="selectMainShardsForCache" resultMap="CouponMap">
+        SELECT * FROM coupon WHERE shard_index = 0
+    </select>
+
+    <update id="updateStockByShardIndex">
         UPDATE coupon
-        SET status = #{status}, update_time = NOW()
-        WHERE id = #{couponId}
+        SET seckill_remaining_stock = seckill_remaining_stock + #{change},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{couponId} AND shard_index = #{shardIndex} AND version = #{version}
     </update>
 
-    <!-- 按ID更新库存 -->
     <update id="updateStock">
         UPDATE coupon
         SET remaining_stock = remaining_stock + #{change},
-            seckill_remaining_stock = seckill_remaining_stock + #{change},
-            update_time = NOW(),
-            version = version + 1
-        WHERE id = #{couponId}
-          AND remaining_stock + #{change} >= 0
-          AND seckill_remaining_stock + #{change} >= 0
-          AND version = #{version}
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{couponId} AND version = #{version}
     </update>
+
+    <select id="selectExpiredCoupons" resultMap="CouponMap">
+        SELECT * FROM coupon
+        WHERE status = 1 AND create_time &lt;= #{expireTime} GROUP BY id
+    </select>
+
+    <update id="updateCouponStatus">
+        UPDATE coupon
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{couponId}
+    </update>
+
 </mapper>

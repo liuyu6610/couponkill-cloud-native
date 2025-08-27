@@ -28,7 +28,18 @@ public class AsyncConfig {
 
     @Value("${thread-pool.order.rejected-policy:CALLER_RUNS}")
     private String rejectedPolicy;
-
+    @Bean("seckillAsyncExecutor")
+    public Executor seckillAsyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(20);
+        executor.setMaxPoolSize(100);
+        executor.setQueueCapacity(500);
+        executor.setKeepAliveSeconds(60);
+        executor.setThreadNamePrefix("seckill-async-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
     @Bean("orderAsyncExecutor")
     public Executor orderAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

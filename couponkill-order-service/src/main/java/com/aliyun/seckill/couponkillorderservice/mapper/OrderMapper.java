@@ -2,34 +2,38 @@ package com.aliyun.seckill.couponkillorderservice.mapper;
 
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Mapper
 public interface OrderMapper {
     int insert(Order order);
 
-    Order selectById(String orderId);
+    Order selectById(@Param("id") String id);
 
-    Order selectOrderById(Long id);
+    Order selectOrderById(@Param("id") String id);
 
-    List<Order> selectByUserId(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
+    int updateStatus(@Param("id") String id, @Param("status") int status, @Param("updateTime") LocalDateTime updateTime);
 
-    List<Order> selectAllByCondition(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("offset") int offset, @Param("limit") int limit);
+    int updateStatusWithCancelTime(@Param("id") String id, @Param("status") int status, @Param("cancelTime") LocalDateTime cancelTime, @Param("updateTime") LocalDateTime updateTime);
 
-    int updateStatus(@Param("orderId") String orderId, @Param("status") int status, @Param("updateTime") java.time.LocalDateTime updateTime);
-
-    int updateStatusWithCancelTime(@Param("orderId") String orderId, @Param("status") int status, @Param("cancelTime") java.time.LocalDateTime cancelTime, @Param("updateTime") java.time.LocalDateTime updateTime);
-
-    int updateOrderStatus(@Param("orderId") Long orderId, @Param("status") int status);
+    int updateOrderStatus(@Param("id") String id, @Param("status") int status);
 
     long countByUserAndCoupon(@Param("userId") Long userId, @Param("couponId") Long couponId);
 
-    UserCouponCount selectUserCouponCountById(Long userId);
+    List<Order> selectByUserId(@Param("userId") Long userId, @Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    List<Order> selectAllByCondition(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    UserCouponCount selectUserCouponCountById(@Param("userId") Long userId);
 
     int insertUserCouponCount(UserCouponCount userCouponCount);
 
     int updateUserCouponCount(@Param("userId") Long userId, @Param("totalCount") int totalCount, @Param("seckillCount") int seckillCount);
 
-    long countAll();
+    // 新增方法：插入订单
+    int insertOrder(Order order);
 }

@@ -58,10 +58,6 @@ public class SnowflakeIdGenerator {
                 | sequence;
     }
 
-    public long nextIdDesc() {
-        return Long.MAX_VALUE - nextId();
-    }
-
     private long tilNextMillis(long lastTimestamp) {
         long timestamp = timeGen();
         while (timestamp <= lastTimestamp) {

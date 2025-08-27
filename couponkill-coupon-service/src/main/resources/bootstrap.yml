@@ -1,38 +1,32 @@
-# Spring
 spring:
-  sql:
-    init:
-      mode: never
   application:
-    # 应用名称
     name: couponkill-coupon-service
   profiles:
-    # 环境配置
     active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
       discovery:
-        # 服务注册地址
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         namespace: ${NACOS_NAMESPACE:120}
         heart-beat-timeout: 30000
-        heart-beat-interval: 30000
       config:
-        # 配置中心地址
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: ${NACOS_NAMESPACE:120}
-        # 配置文件格式
         file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: ${NACOS_NAMESPACE:120}
+        # 引入共用配置common.yaml
         extension-configs:
           - data-id: common.yaml
             group: DEFAULT_GROUP
             refresh: true
-seata:
-  enable-auto-data-source-proxy: false
+        refresh-enabled: true
+
+# ShardingSphere配置
 shardingsphere:
-  namespace: 998
+  namespace: 998  # ShardingSphere专用命名空间ID
 mybatis:
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.aliyun.seckill.pojo
+  type-aliases-package: com.aliyun.seckill.common.pojo
+
 
 

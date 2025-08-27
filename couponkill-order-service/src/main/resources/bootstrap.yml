@@ -20,8 +20,6 @@ spring:
             group: DEFAULT_GROUP
             refresh: true
         refresh-enabled: true
-seata:
-  enable-auto-data-source-proxy: false
 # ShardingSphere配置
 shardingsphere:
   namespace: 998  # ShardingSphere专用命名空间ID

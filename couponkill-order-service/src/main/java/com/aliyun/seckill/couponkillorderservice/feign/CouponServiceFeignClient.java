@@ -51,7 +51,7 @@ public interface CouponServiceFeignClient {
 
     // 添加缺失的方法注解
     @PostMapping("/api/v1/coupon/compensation")
-    void createCompensationCoupon(@RequestBody Coupon compensationCoupon);
+    ApiResponse<Void> createCompensationCoupon(@RequestBody Coupon compensationCoupon);
 
     // 添加缺失的库存锁定相关方法
     @PostMapping("/api/v1/coupon/lock/{id}")
@@ -117,8 +117,9 @@ public interface CouponServiceFeignClient {
         }
 
         @Override
-        public void createCompensationCoupon(Coupon compensationCoupon) {
+        public ApiResponse<Void> createCompensationCoupon(Coupon compensationCoupon) {
             log.error("调用 createCompensationCoupon 失败");
+            return null;
         }
 
         @Override

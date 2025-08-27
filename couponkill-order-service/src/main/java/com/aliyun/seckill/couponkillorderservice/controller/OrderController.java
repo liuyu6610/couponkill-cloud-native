@@ -6,7 +6,6 @@ import com.aliyun.seckill.common.config.ServiceGoConfig;
 import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.result.Result;
-import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.feign.GoSeckillFeignClient;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,9 +29,6 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
-
-    @Autowired
-    private CouponServiceFeignClient couponServiceFeignClient;
 
     @Autowired
     private GoSeckillFeignClient goSeckillFeignClient;
@@ -120,31 +116,27 @@ public class OrderController {
         int currentCount = currentRequestCount.incrementAndGet();
 
         try {
+            // 检查用户是否在冷却期
+            boolean inCooldown = orderService.checkUserInCooldown(userId, couponId);
+            if (inCooldown) {
+                log.info("用户 {} 在冷却期，无法参与秒杀 couponId={}", userId, couponId);
+                return Result.fail(ResultCode.COOLING_DOWN, "请在" + cooldownSeconds + "秒后再试");
+            }
+
             // 如果当前请求数量未超过阈值，由Java服务处理
             if (currentCount <= JAVA_SERVICE_THRESHOLD) {
                 log.info("Java服务处理秒杀请求: userId={}, couponId={}, currentCount={}", userId, couponId, currentCount);
-                // 检查用户是否在冷却期
-                boolean inCooldown = orderService.checkUserInCooldown(userId, couponId);
-                if (inCooldown) {
-                    log.info("用户 {} 在冷却期，无法参与秒杀 couponId={}", userId, couponId);
-                    return Result.fail(ResultCode.COOLING_DOWN, "请在" + cooldownSeconds + "秒后再试");
+                boolean result = orderService.processSeckill(userId, couponId);
+                if (result) {
+                    // 设置冷却时间
+                    orderService.setUserCooldown(userId, couponId, cooldownSeconds);
+                    return Result.success("秒杀成功");
+                } else {
+                    return Result.fail(500, "秒杀失败");
                 }
-
-                // Java服务处理核心逻辑
-                Order order = orderService.createOrder(userId, couponId);
-                // 设置冷却时间
-                orderService.setUserCooldown(userId, couponId, cooldownSeconds);
-                return Result.success(order);
             } else {
                 // 超过阈值，由Go服务处理
                 log.info("超过阈值，路由到Go服务处理秒杀请求: userId={}, couponId={}, currentCount={}", userId, couponId, currentCount);
-
-                // 检查用户是否在冷却期
-                boolean inCooldown = orderService.checkUserInCooldown(userId, couponId);
-                if (inCooldown) {
-                    log.info("用户 {} 在冷却期，无法参与秒杀 couponId={}", userId, couponId);
-                    return Result.fail(ResultCode.COOLING_DOWN, "请在" + cooldownSeconds + "秒后再试");
-                }
 
                 // 路由到Go服务处理完整逻辑
                 GoSeckillFeignClient.SeckillRequest request = new GoSeckillFeignClient.SeckillRequest(userId, couponId);

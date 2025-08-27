@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper">
 
     <resultMap id="BaseResultMap" type="com.aliyun.seckill.common.pojo.Order">
@@ -11,75 +10,74 @@
         <result column="status" property="status"/>
         <result column="get_time" property="getTime"/>
         <result column="use_time" property="useTime"/>
-        <result column="expire_time" property="expireTime"/>
         <result column="cancel_time" property="cancelTime"/>
+        <result column="expire_time" property="expireTime"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
-        <result column="created_by_java" property="createdByJava"/>
-        <result column="created_by_go" property="createdByGo"/>
         <result column="request_id" property="requestId"/>
         <result column="version" property="version"/>
     </resultMap>
 
-    <resultMap id="UserCouponCountResultMap" type="com.aliyun.seckill.common.pojo.UserCouponCount">
-        <id column="user_id" property="userId"/>
-        <result column="total_count" property="totalCount"/>
-        <result column="seckill_count" property="seckillCount"/>
-        <result column="normal_count" property="normalCount"/>
-        <result column="expired_count" property="expiredCount"/>
-        <result column="update_time" property="updateTime"/>
-        <result column="version" property="version"/>
-    </resultMap>
-
     <insert id="insert" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
-        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
+        INSERT INTO `order` (
+            id, user_id, coupon_id, virtual_id, status, get_time, use_time, cancel_time,
+            expire_time, create_time, update_time, request_id, version
+        ) VALUES (
+                     #{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{cancelTime},
+                     #{expireTime}, #{createTime}, #{updateTime}, #{requestId}, #{version}
+                 )
     </insert>
 
     <insert id="insertOrder" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version)
-        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime}, #{createTime}, #{updateTime}, #{createdByJava}, #{createdByGo}, #{requestId}, #{version})
+        INSERT INTO `order` (
+            id, user_id, coupon_id, virtual_id, status, get_time, use_time, cancel_time,
+            expire_time, create_time, update_time, request_id, version
+        ) VALUES (
+                     #{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{cancelTime},
+                     #{expireTime}, #{createTime}, #{updateTime}, #{requestId}, #{version}
+                 )
     </insert>
 
-    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
-        FROM `order`
-        WHERE id = #{orderId}
+    <select id="selectById" parameterType="string" resultMap="BaseResultMap">
+        SELECT * FROM `order` WHERE id = #{id}
     </select>
 
-    <select id="selectOrderById" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
-        FROM `order`
+    <select id="selectOrderById" parameterType="string" resultMap="BaseResultMap">
+        SELECT * FROM `order` WHERE id = #{id}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE `order`
+        SET status = #{status}, update_time = #{updateTime}
         WHERE id = #{id}
-    </select>
+    </update>
 
-    <select id="selectByUserIdAndVirtualId" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
-        FROM `order`
-        WHERE user_id = #{userId} AND virtual_id = #{virtualId}
-    </select>
+    <update id="updateStatusWithCancelTime">
+        UPDATE `order`
+        SET status = #{status}, cancel_time = #{cancelTime}, update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
 
-    <select id="countByUserAndCoupon" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM `order` USE INDEX(uk_user_coupon)
-        WHERE user_id = #{userId} AND coupon_id = #{couponId}
-    </select>
+    <update id="updateOrderStatus">
+        UPDATE `order`
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
 
-    <select id="countUserCouponsByVirtualId" resultType="java.lang.Integer">
+    <select id="countByUserAndCoupon" resultType="long">
         SELECT COUNT(*) FROM `order`
         WHERE user_id = #{userId} AND coupon_id = #{couponId}
     </select>
 
     <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
-        FROM `order`
+        SELECT * FROM `order`
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="selectAllByCondition" resultMap="BaseResultMap">
-        SELECT id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time, created_by_java, created_by_go, request_id, version
-        FROM `order`
+        SELECT * FROM `order`
         <where>
             <if test="startTime != null and startTime != ''">
                 AND create_time >= #{startTime}
@@ -89,52 +87,29 @@
             </if>
         </where>
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+        LIMIT #{offset}, #{pageSize}
     </select>
 
-    <select id="countAll" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM `order`
-    </select>
-
-    <select id="selectUserCouponCountById" parameterType="java.lang.Long" resultMap="UserCouponCountResultMap">
-        SELECT user_id, total_count, seckill_count, normal_count, expired_count, update_time, version
+    <select id="selectUserCouponCountById" resultType="com.aliyun.seckill.common.pojo.UserCouponCount">
+        SELECT user_id, total_count, seckill_count, normal_count, expired_count
         FROM user_coupon_count
         WHERE user_id = #{userId}
     </select>
 
-    <update id="updateStatus">
-        UPDATE `order`
-        SET status = #{status}, update_time = #{updateTime}
-        WHERE id = #{orderId}
-    </update>
-
-    <update id="updateStatusWithCancelTime">
-        UPDATE `order`
-        SET status = #{status}, cancel_time = #{cancelTime}, update_time = #{updateTime}
-        WHERE id = #{orderId}
-    </update>
-
-    <update id="updateOrderStatus">
-        UPDATE `order`
-        SET status = #{status}
-        WHERE id = #{orderId}
-    </update>
-
     <insert id="insertUserCouponCount" parameterType="com.aliyun.seckill.common.pojo.UserCouponCount">
-        INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count, version)
-        VALUES (#{userId}, #{totalCount}, #{seckillCount}, #{normalCount}, #{expiredCount}, #{version})
+        INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count)
+        VALUES (#{userId}, #{totalCount}, #{seckillCount}, #{normalCount}, #{expiredCount})
         ON DUPLICATE KEY UPDATE
-                             total_count = VALUES(total_count),
-                             seckill_count = VALUES(seckill_count),
-                             normal_count = VALUES(normal_count),
-                             expired_count = VALUES(expired_count),
-                             version = VALUES(version)
+                             total_count = #{totalCount},
+                             seckill_count = #{seckillCount},
+                             normal_count = #{normalCount},
+                             expired_count = #{expiredCount}
     </insert>
-
 
     <update id="updateUserCouponCount">
         UPDATE user_coupon_count
-        SET total_count = #{totalCount}, seckill_count = #{seckillCount}, version = version + 1
+        SET total_count = #{totalCount},
+            seckill_count = #{seckillCount}
         WHERE user_id = #{userId}
     </update>
 

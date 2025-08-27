@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourcePerFileMappings">
-    <file url="dbSrc:///44fe9906/ca53c07b-db91-4c0f-968c-161de6d20500/schema/order_db_0/routine/create_order_tables@()P.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
-    <file url="dbSrc:///44fe9906/ca53c07b-db91-4c0f-968c-161de6d20500/schema/order_db_1/routine/create_order_tables@()P.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
-    <file url="dbSrc:///44fe9906/ca53c07b-db91-4c0f-968c-161de6d20500/schema/order_db_2/routine/create_order_tables@()P.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
-    <file url="dbSrc:///44fe9906/ca53c07b-db91-4c0f-968c-161de6d20500/schema/order_db_3/routine/create_order_tables@()P.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/8b5eb66e-77ae-4f5e-b85c-25a0db7a3638/console.sql" value="8b5eb66e-77ae-4f5e-b85c-25a0db7a3638" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console_1.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
@@ -12,6 +8,7 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console_3.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console_4.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console_5.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ca53c07b-db91-4c0f-968c-161de6d20500/console_6.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$PROJECT_DIR$/TestGroup/insert_users.go" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$PROJECT_DIR$/TestGroup/token.go" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$PROJECT_DIR$/couponkill-coupon-service/src/main/java/com/aliyun/seckill/couponkillcouponservice/service/Impl/CouponServiceImpl.java" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
@@ -19,6 +16,5 @@
     <file url="file://$PROJECT_DIR$/couponkill-order-service/src/main/resources/mapper/OrderMapper.xml" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$PROJECT_DIR$/couponkill-user-service/src/main/java/com/aliyun/seckill/couponkilluserservice/mapper/UserCouponCountMapper.java" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
     <file url="file://$PROJECT_DIR$/couponkill-user-service/src/main/java/com/aliyun/seckill/couponkilluserservice/mapper/UserMapper.java" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
-    <file url="file://$PROJECT_DIR$/sql/test.sql" value="ca53c07b-db91-4c0f-968c-161de6d20500" />
   </component>
 </project>

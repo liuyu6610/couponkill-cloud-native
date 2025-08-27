@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -178,64 +180,24 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
             }
 
-            // 3. 异步扣减库存（提高响应速度）
-            CompletableFuture<ApiResponse<Boolean>> deductFuture =
-                    CompletableFuture.supplyAsync(() -> {
-                        try {
-                            return couponServiceFeignClient.deductStock(couponId);
-                        } catch (Exception e) {
-                            log.error("扣减库存失败", e);
-                            return ApiResponse.fail(500, "扣减库存失败");
-                        }
-                    }, executorService);
+            // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
+            // 这里直接调用Coupon服务的deductStockWithVirtualId方法
+            // 该方法会从优惠券的所有虚拟分片中随机或轮询选择一个有库存的分片进行扣减
+            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+            String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
 
-            // 4. 设置超时时间，防止阻塞
-            ApiResponse<Boolean> deductResponse =
-                    deductFuture.get(200, TimeUnit.MILLISECONDS);
-
-            boolean deductSuccess = deductResponse != null &&
-                    deductResponse.getData() != null &&
-                    deductResponse.getData();
-
-            if (!deductSuccess) {
-                // 清理Redis标记
+            if (selectedVirtualId == null || selectedVirtualId.isEmpty()) {
+                // 扣减库存失败，清理Redis标记
                 redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
             }
 
-            // 5. 创建订单 - 使用更轻量级的操作
+            // 4. 创建订单
             Order order = new Order();
             order.setId(String.valueOf(idGenerator.nextId()));
             order.setUserId(userId);
             order.setCouponId(couponId);
-
-            // 设置虚拟ID（从coupon服务获取实际使用的虚拟分片）
-            // 调用coupon服务的deductStockWithVirtualId方法，该方法会扣减库存并返回使用的虚拟分片ID
-            CompletableFuture<ApiResponse<String>> deductWithVirtualIdFuture =
-                    CompletableFuture.supplyAsync(() -> {
-                        try {
-                            return couponServiceFeignClient.deductStockWithVirtualId(couponId);
-                        } catch (Exception e) {
-                            log.error("扣减库存并获取虚拟分片ID失败", e);
-                            return ApiResponse.fail(500, "扣减库存并获取虚拟分片ID失败");
-                        }
-                    }, executorService);
-
-            // 设置超时时间，防止阻塞
-            ApiResponse<String> deductWithVirtualIdResponse =
-                    deductWithVirtualIdFuture.get(200, TimeUnit.MILLISECONDS);
-
-            String selectedVirtualId = deductWithVirtualIdResponse != null &&
-                    deductWithVirtualIdResponse.getData() != null ?
-                    deductWithVirtualIdResponse.getData() : null;
-
-            if (selectedVirtualId == null) {
-                // 清理Redis标记
-                redisTemplate.delete(userReceivedKey);
-                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
-            }
-
-            order.setVirtualId(selectedVirtualId);
+            order.setVirtualId(selectedVirtualId); // 设置使用的虚拟分片ID
 
             order.setStatus(1); // 已创建
             order.setGetTime(LocalDateTime.now());
@@ -248,7 +210,7 @@ public class OrderServiceImpl implements OrderService {
             // 插入数据库
             orderMapper.insert(order);
 
-            // 异步处理后续操作
+            // 5. 异步处理后续操作
             handlePostOrderCreation(userId, couponId, coupon.getType(), order);
 
             return order;
@@ -264,6 +226,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
     }
+
     // 处理订单创建后的后续操作
     private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {
         try {
@@ -297,7 +260,16 @@ public class OrderServiceImpl implements OrderService {
             orderMessage.setCouponId(couponId);
             orderMessage.setCreateTime(new Date());
             orderMessage.setStatus("PENDING");
-            asyncSendMessage(orderMessage);
+
+            // 将OrderMessage包装成Message对象
+            Message<OrderMessage> message = MessageBuilder.withPayload(orderMessage).build();
+
+            // 发送事务消息（确保本地事务提交后消息才被消费）
+            rocketMQTemplate.sendMessageInTransaction(
+                    seckillOrderCreateTopic,
+                    message, // 使用包装后的Message对象
+                    order // 附加参数，用于事务回调判断
+            );
         } catch (Exception e) {
             log.error("获取消息对象失败", e);
         } finally {
@@ -532,25 +504,51 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void handleSeckillFailure(String orderId, Long userId, Long couponId) {
         try {
-            // 1. 恢复库存
-            couponServiceFeignClient.increaseStock(couponId);
+            log.info("开始处理秒杀失败补偿，orderId={}, userId={}, couponId={}", orderId, userId, couponId);
+
+            // 1. 恢复库存 - 调用Coupon服务的增加库存方法
+            try {
+                ApiResponse<Boolean> response = couponServiceFeignClient.increaseStock(couponId);
+                if (response != null && response.getData() != null && response.getData()) {
+                    log.info("恢复库存成功，couponId={}", couponId);
+                } else {
+                    log.warn("恢复库存可能失败，couponId={}", couponId);
+                }
+            } catch (Exception e) {
+                log.error("调用Coupon服务恢复库存时发生异常，couponId={}", couponId, e);
+            }
 
             // 2. 清理用户领取状态缓存，允许用户重新参与秒杀
             String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
             try {
                 redisTemplate.delete(userReceivedKey);
+                log.info("清理用户领取状态缓存成功: userId={}, couponId={}", userId, couponId);
             } catch (Exception e) {
                 log.warn("清理用户领取状态缓存失败: userId={}, couponId={}", userId, couponId, e);
             }
 
             // 3. 创建补偿优惠券
-            Coupon compensationCoupon = new Coupon();
-            compensationCoupon.setUserId(userId);
-            compensationCoupon.setType(1); // 普通优惠券
-            compensationCoupon.setAmount(BigDecimal.valueOf(compensationAmount)); // 从配置获取
-            compensationCoupon.setValidDays(1); // 1天有效期
-            compensationCoupon.setStatus(1);
-            couponServiceFeignClient.createCompensationCoupon(compensationCoupon);
+            try {
+                Coupon compensationCoupon = new Coupon();
+                compensationCoupon.setType(1); // 普通优惠券
+                compensationCoupon.setFaceValue(BigDecimal.valueOf(compensationAmount)); // 从配置获取
+                compensationCoupon.setValidDays(1); // 1天有效期
+                compensationCoupon.setStatus(1);
+                compensationCoupon.setName("秒杀失败补偿券");
+                compensationCoupon.setDescription("由于秒杀失败给予的补偿优惠券");
+                compensationCoupon.setMinSpend(BigDecimal.ZERO);
+                compensationCoupon.setPerUserLimit(1);
+
+                // 修复：createCompensationCoupon返回的是ApiResponse<Void>
+                ApiResponse<Void> response = couponServiceFeignClient.createCompensationCoupon(compensationCoupon);
+                if (response != null && response.success()) {
+                    log.info("创建补偿优惠券成功");
+                } else {
+                    log.warn("创建补偿优惠券可能失败");
+                }
+            } catch (Exception e) {
+                log.error("创建补偿优惠券时发生异常", e);
+            }
 
             // 4. 发送补偿结果消息（用于监控和对账）
             OrderMessage compensationMsg = new OrderMessage();
@@ -605,7 +603,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
         }
         try {
-            return orderMapper.selectOrderById(id);
+            return orderMapper.selectOrderById(String.valueOf(id));
         } catch (Exception e) {
             log.error("查询订单失败，订单ID: {}", id, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "查询订单失败");
@@ -621,7 +619,7 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             // 1. 查询订单是否存在
-            Order order = orderMapper.selectOrderById(orderId);
+            Order order = orderMapper.selectOrderById(String.valueOf(orderId));
             if (order == null) {
                 throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
             }
@@ -638,7 +636,8 @@ public class OrderServiceImpl implements OrderService {
             order.setUseTime(now);
             order.setUpdateTime(now);
 
-            int result = orderMapper.updateOrderStatus(orderId, 2); // 2表示已使用
+            // 修复：将Long类型的orderId转换为String类型
+            int result = orderMapper.updateOrderStatus(String.valueOf(orderId), 2); // 2表示已使用
             return result > 0;
         } catch (BusinessException e) {
             throw e;
@@ -669,6 +668,164 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "获取优惠券信息失败");
         }
     }
+
+    @Override
+    public void handleSeckillSuccess(String orderId, Long userId, Long couponId, String virtualId) {
+        try {
+            log.info("处理秒杀成功，orderId={}, userId={}, couponId={}, virtualId={}", orderId, userId, couponId, virtualId);
+
+            // 1. 更新用户优惠券计数
+            try {
+                // 获取优惠券类型
+                Coupon coupon = getCouponById(couponId);
+                if (coupon != null) {
+                    updateUserCouponCount(userId, coupon.getType(), 1);
+                    log.info("更新用户优惠券计数成功，userId={}, couponType={}", userId, coupon.getType());
+                }
+            } catch (Exception e) {
+                log.error("更新用户优惠券计数失败，userId={}", userId, e);
+            }
+
+            // 2. 设置用户冷却期
+            try {
+                setUserCooldown(userId, couponId, 2); // 设置2秒冷却期
+                log.info("设置用户冷却期成功，userId={}, couponId={}", userId, couponId);
+            } catch (Exception e) {
+                log.error("设置用户冷却期失败，userId={}, couponId={}", userId, couponId, e);
+            }
+
+            // 3. 更新Redis缓存
+            try {
+                Coupon coupon = getCouponById(couponId);
+                if (coupon != null) {
+                    batchUpdateRedisOnCreate(userId, couponId, coupon.getType());
+                    log.info("更新Redis缓存成功，userId={}, couponId={}", userId, couponId);
+                }
+            } catch (Exception e) {
+                log.error("更新Redis缓存失败，userId={}, couponId={}", userId, couponId, e);
+            }
+
+            // 4. 发送订单创建成功消息
+            try {
+                OrderMessage orderMessage = new OrderMessage();
+                orderMessage.setOrderId(orderId);
+                orderMessage.setUserId(userId);
+                orderMessage.setCouponId(couponId);
+                orderMessage.setVirtualId(virtualId);
+                orderMessage.setCreateTime(new Date());
+                orderMessage.setStatus("SUCCESS");
+
+                asyncSendMessage(orderMessage);
+                log.info("发送订单创建成功消息成功，orderId={}", orderId);
+            } catch (Exception e) {
+                log.error("发送订单创建成功消息失败，orderId={}", orderId, e);
+            }
+        } catch (Exception e) {
+            log.error("处理秒杀成功时出错，orderId={}, userId={}, couponId={}, virtualId={}",
+                    orderId, userId, couponId, virtualId, e);
+        }
+    }
+
+    /**
+     * 处理秒杀逻辑
+     * @param userId 用户ID
+     * @param couponId 优惠券ID
+     * @return 是否秒杀成功
+     */
+    @Override
+    @Transactional
+    public boolean processSeckill(Long userId, Long couponId) {
+        String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
+
+        try {
+            // 1. 使用Lua脚本原子性检查和设置（防止重复秒杀）
+            String luaScript =
+                    "local key = KEYS[1] " +
+                            "local exists = redis.call('EXISTS', key) " +
+                            "if exists == 1 then " +
+                            "   return 0 " +  // 已存在
+                            "else " +
+                            "   redis.call('SET', key, '1') " +
+                            "   redis.call('EXPIRE', key, 3600) " +
+                            "   return 1 " +  // 设置成功
+                            "end";
+            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+            redisScript.setScriptText(luaScript);
+            redisScript.setResultType(Long.class);
+
+            Long result = redisTemplate.execute(redisScript,
+                    Collections.singletonList(userReceivedKey));
+
+            if (result == 0) {
+                throw new BusinessException(ResultCode.REPEAT_SECKILL);
+            }
+
+            // 2. 检查用户限制
+            Coupon coupon = getCouponById(couponId);
+            if (coupon == null) {
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
+            }
+
+            if (!checkCouponCountLimit(userId, coupon.getType())) {
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
+            }
+
+            // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
+            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+            String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
+
+            if (selectedVirtualId == null || selectedVirtualId.isEmpty()) {
+                // 扣减库存失败，清理Redis标记
+                redisTemplate.delete(userReceivedKey);
+                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+            }
+
+            // 4. 创建订单
+            Order order = new Order();
+            order.setId(String.valueOf(idGenerator.nextId()));
+            order.setUserId(userId);
+            order.setCouponId(couponId);
+            order.setVirtualId(selectedVirtualId); // 设置使用的虚拟分片ID
+
+            order.setStatus(1); // 已创建
+            order.setGetTime(LocalDateTime.now());
+            order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
+            order.setCreateTime(LocalDateTime.now());
+            order.setUpdateTime(LocalDateTime.now());
+            order.setRequestId(UUID.randomUUID().toString());
+            order.setVersion(0);
+
+            // 插入数据库
+            orderMapper.insert(order);
+
+            // 5. 异步处理后续操作
+            handlePostOrderCreation(userId, couponId, coupon.getType(), order);
+
+            // 6. 处理秒杀成功后的操作
+            handleSeckillSuccess(order.getId(), userId, couponId, selectedVirtualId);
+
+            return true;
+
+        } catch (Exception e) {
+            // 清理Redis缓存
+            redisTemplate.delete(userReceivedKey);
+
+            if (e instanceof BusinessException) {
+                throw (BusinessException) e;
+            } else {
+                // 处理秒杀失败补偿
+                try {
+                    handleSeckillFailure(null, userId, couponId);
+                } catch (Exception ex) {
+                    log.error("秒杀失败补偿处理异常", ex);
+                }
+                throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
+            }
+        }
+    }
+
 
     // 在 OrderServiceImpl 类中添加对象池
     private final GenericObjectPool<OrderMessage> messagePool = new GenericObjectPool<>(

@@ -1,17 +1,11 @@
-// 文件路径: couponkill-order-service/src/main/java/com/aliyun/seckill/couponkillorderservice/service/OrderService.java
 package com.aliyun.seckill.couponkillorderservice.service;
 
 import com.aliyun.seckill.common.pojo.Order;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface OrderService {
-    // 原有方法
-    Order createOrder(Order order);
-    Order getOrderById(Long id);
-    boolean payOrder(Long orderId);
-
-    // 新增方法
     Order createOrder(Long userId, Long couponId);
     boolean cancelOrder(String orderId, Long userId);
     boolean hasUserReceivedCoupon(Long userId, Long couponId);
@@ -19,24 +13,53 @@ public interface OrderService {
     List<Order> getOrderByUserId(Long userId, Integer pageNum, Integer pageSize);
     List<Order> getAllOrderByCondition(Integer pageNum, Integer pageSize, String startTime, String endTime);
     Order saveOrder(Order order);
+    void updateUserCouponCount(Long userId, int couponType, int change);
+    boolean checkUserInCooldown(Long userId, Long couponId);
+    void setUserCooldown(Long userId, Long couponId, int seconds);
+    void handleSeckillFailure(String orderId, Long userId, Long couponId);
+    void clearUserReceivedStatus(Long userId, Long couponId);
+    void updateOrderStatus(String orderId, int status);
+    Order createOrder(Order order);
+    Order getOrderById(Long id);
+    boolean payOrder(Long orderId);
     long count();
 
-    // 用户优惠券计数相关方法
-    void updateUserCouponCount(Long userId, int couponType, int change);
-
-    boolean checkUserInCooldown(Long userId, Long couponId);
-
-    void setUserCooldown(Long userId, Long couponId, int cooldownSeconds);
-
-    
-    void handleSeckillFailure(String orderId, Long userId, Long couponId);
-
-    void updateOrderStatus(String orderId, int i);
-
     /**
-     * 清理用户领取优惠券的状态，允许用户重新参与秒杀
+     * 处理秒杀逻辑
      * @param userId 用户ID
      * @param couponId 优惠券ID
+     * @return 是否秒杀成功
      */
-    void clearUserReceivedStatus(Long userId, Long couponId);
+    boolean processSeckill(Long userId, Long couponId);
+
+    /**
+     * 处理秒杀成功后的操作
+     * @param orderId 订单ID
+     * @param userId 用户ID
+     * @param couponId 优惠券ID
+     * @param virtualId 虚拟ID
+     */
+    void handleSeckillSuccess(String orderId, Long userId, Long couponId, String virtualId);
+    
+    /**
+     * 异步处理秒杀逻辑以提高QPS
+     * @param userId 用户ID
+     * @param couponId 优惠券ID
+     * @return CompletableFuture包装的处理结果
+     */
+    default CompletableFuture<Boolean> processSeckillAsync(Long userId, Long couponId) {
+        return CompletableFuture.supplyAsync(() -> processSeckill(userId, couponId));
+    }
+    
+    /**
+     * 异步处理秒杀成功后的操作以提高QPS
+     * @param orderId 订单ID
+     * @param userId 用户ID
+     * @param couponId 优惠券ID
+     * @param virtualId 虚拟ID
+     * @return CompletableFuture包装的处理结果
+     */
+    default CompletableFuture<Void> handleSeckillSuccessAsync(String orderId, Long userId, Long couponId, String virtualId) {
+        return CompletableFuture.runAsync(() -> handleSeckillSuccess(orderId, userId, couponId, virtualId));
+    }
 }

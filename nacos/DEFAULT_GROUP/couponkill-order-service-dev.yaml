@@ -14,6 +14,7 @@ spring:
         enabled: true
         max-retries-on-next-service-instance: 2
         max-retries-on-same-service-instance: 1
+
 # Feign配置
 feign:
   client:
@@ -36,31 +37,13 @@ feign:
     max-connections-per-route: 1000
     connection-timeout: 2000
     connection-timer-repeat: 3000
+
 # 负载均衡配置
 ribbon:
   ConnectTimeout: 3000
   ReadTimeout: 10000
   MaxAutoRetries: 1
   MaxAutoRetriesNextServer: 2
-
-seata:
-  enabled: true
-  application-id: couponkill-order-service
-  tx-service-group: couponkill-order-service-tx-group
-  registry:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: 120
-      group: DEFAULT_GROUP
-      application: seata-server
-  config:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: 120
-      group: DEFAULT_GROUP
-
 # RocketMQ 配置
 rocketmq:
   name-server: 114.55.117.16:9876

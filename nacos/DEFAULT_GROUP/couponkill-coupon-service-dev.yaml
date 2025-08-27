@@ -7,31 +7,17 @@ coupon:
     max-count: 10000  # 单批次最大发布数量（开发环境）
   cache:
     preload: true  # 启动时预加载优惠券到缓存
+
 # JWT配置
 jwt:
   secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
   expiration: 86400000 # 24小时，单位毫秒
+
 couponkill:
   seckill:
     cooldown-seconds: 2
     deduct-ttl-seconds: 300
-seata:
-  enabled: true
-  application-id: couponkill-coupon-service
-  tx-service-group: couponkill-coupon-service-tx-group
-  registry:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: 120
-      group: DEFAULT_GROUP
-      application: seata-server
-  config:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: 120
-      group: DEFAULT_GROUP
+      
 # 流量控制配置
 traffic:
   control:

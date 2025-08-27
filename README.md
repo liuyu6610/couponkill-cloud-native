@@ -59,12 +59,6 @@ helm repo add nacos https://nacos-group.github.io/nacos-k8s/
 helm install nacos nacos/nacos -n middleware --create-namespace
 ```
 
-#### 部署Seata
-
-```bash
-helm repo add seata https://seata.io/seata-helm-charts/
-helm install seata seata/seata -n middleware
-```
 
 #### 部署Sentinel
 

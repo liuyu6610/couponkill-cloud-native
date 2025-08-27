@@ -80,23 +80,6 @@ BEGIN
         SET i = i + 1;
     END WHILE;
 
-    -- 创建Seata undo_log表（每个数据库仅需创建一次）
-    CREATE TABLE IF NOT EXISTS `undo_log` (
-        branch_id BIGINT NOT NULL COMMENT '分支事务ID' PRIMARY KEY,
-        xid VARCHAR(128) NOT NULL COMMENT '全局事务ID',
-        context VARCHAR(128) NOT NULL COMMENT '上下文信息',
-        rollback_info LONGBLOB NOT NULL COMMENT '回滚信息',
-        log_status INT NOT NULL COMMENT '日志状态：0-正常，1-已删除',
-        log_created DATETIME NOT NULL COMMENT '创建时间',
-        log_modified DATETIME NOT NULL COMMENT '修改时间'
-    ) COMMENT 'AT模式undo日志表' ROW_FORMAT = DYNAMIC;
-
-    -- 创建undo_log表索引
-    BEGIN
-        DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; -- 忽略重复键错误
-        CREATE INDEX idx_xid ON undo_log (xid);
-    END;
-
 END$$
 
 -- 恢复默认分隔符
