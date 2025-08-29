@@ -20,797 +20,511 @@ db:
   # 单节点模式配置
   host: mysql
   port: 3306
-  user: root
-  password: password
-  database: couponkill
-  
-  # 集群模式配置
+  username: root
+  password: root
+  database: console
+  # 集群模式配置 (适用于MySQL Group Replication或类似集群方案)
   cluster:
-    enabled: false  # 是否启用集群模式
-    nodes: []       # 集群节点列表，格式: ["host1:port1", "host2:port2", ...]
-    loadBalancer:   # 负载均衡配置
-      type: "round-robin"  # 负载均衡算法: round-robin, random, least-connection
-      healthCheck:
-        enabled: true
-        interval: 30s
-        timeout: 5s
-  
-  # 主从复制配置
+    enabled: false
+    # 节点列表格式: host:port
+    # 示例: 
+    # nodes:
+    #   - "mysql-node1:3306"
+    #   - "mysql-node2:3306"
+    #   - "mysql-node3:3306"
+    nodes: []
+  # 主从复制模式配置
   replication:
     enabled: false
-    master: 
+    # 主库配置
+    master:
       host: ""
       port: 3306
+    # 从库列表
+    # slaves:
+    #   - host: "mysql-slave1"
+    #     port: 3306
+    #   - host: "mysql-slave2"
+    #     port: 3306
     slaves: []
-    loadBalancer:
-      type: "round-robin"
-      healthCheck:
-        enabled: true
-        interval: 30s
-        timeout: 5s
-  
-  init:
-    enabled: true
-    name: db-init
-    image:
-      repository: mysql
-      tag: 8.0
-      pullPolicy: IfNotPresent
 
 # Redis配置 - 支持集群模式和哨兵模式
 redis:
   # 单节点模式配置
-  host: redis
+  host: redis-master
   port: 6379
   password: ""
-  
-  # 集群模式配置
+  database: 0
+  # 集群模式配置 (适用于Redis Cluster)
   cluster:
-    enabled: false  # 是否启用集群模式
-    nodes: []       # 集群节点列表，格式: ["host1:port1", "host2:port2", ...]
-    maxRedirects: 5 # 最大重定向次数
-    readOnly: false # 是否只读模式
-  
-  # 哨兵模式配置
+    enabled: false
+    # 节点列表格式: host:port
+    # 示例:
+    # nodes:
+    #   - "redis-node1:6379"
+    #   - "redis-node2:6379"
+    #   - "redis-node3:6379"
+    #   - "redis-node4:6379"
+    #   - "redis-node5:6379"
+    #   - "redis-node6:6379"
+    nodes: []
+  # 哨兵模式配置 (适用于Redis Sentinel)
   sentinel:
     enabled: false
+    # 主节点名称
     masterName: "mymaster"
-    nodes: []       # 哨兵节点列表，格式: ["host1:port1", "host2:port2", ...]
+    # 哨兵节点列表格式: host:port
+    # 示例:
+    # nodes:
+    #   - "sentinel1:26379"
+    #   - "sentinel2:26379"
+    #   - "sentinel3:26379"
+    nodes: []
+    # 哨兵密码
     password: ""
-  
-  init:
-    enabled: true
-    name: redis-init
-    image:
-      repository: redis
-      tag: 7.0
-      pullPolicy: IfNotPresent
 
-# Kafka配置 - 支持集群模式
-kafka:
-  # 单节点模式配置
-  broker: broker:9092
-  
-  # 集群模式配置
-  cluster:
-    enabled: false  # 是否启用集群模式
-    brokers: []     # 集群节点列表，格式: ["host1:port1", "host2:port2", ...]
-    retries: 3      # 重试次数
-    retryBackoff: 100ms  # 重试间隔
-  
-  topics: "seckill_order_create,seckill_order_cancel"
-  init:
-    enabled: true
-    name: kafka-init
-    image:
-      repository: bitnami/kafka
-      tag: 3.0
-      pullPolicy: IfNotPresent
-
-# RocketMQ配置 - 支持集群模式
+# RocketMQ配置
 rocketmq:
-  enabled: true
-  name: rocketmq
-  image:
-    repository: apache/rocketmq
-    tag: 4.9.4
-    pullPolicy: IfNotPresent
-  
-  # NameServer 配置 - 支持集群
-  nameServer:
-    replicas: 1
-    service:
-      port: 9876
-    cluster:
-      enabled: false  # 是否启用集群模式
-      replicas: 1     # 集群节点数
-  
-  # Broker 配置 - 支持集群
-  broker:
-    replicas: 1
-    service:
-      ports:
-        listenPort: 10911
-        haListenPort: 10912
-    cluster:
-      enabled: false  # 是否启用集群模式
-      replicas: 1     # 集群节点数
-      config:         # Broker 配置
-        brokerRole: ASYNC_MASTER  # Broker 角色: ASYNC_MASTER, SYNC_MASTER, SLAVE
-        flushDiskType: ASYNC_FLUSH  # 刷盘类型: ASYNC_FLUSH, SYNC_FLUSH
-  
-  init:
-    enabled: true
-    name: rocketmq-init
-    image:
-      repository: apache/rocketmq
-      tag: 4.9.4
-      pullPolicy: IfNotPresent
-  topics: "seckill_order_create,seckill_order_cancel"
-
-# Nacos配置 - 支持集群模式
-nacos:
-  enabled: true
-  name: nacos
-  image:
-    repository: nacos/nacos-server
-    tag: v2.1.1
-    pullPolicy: IfNotPresent
-  replicas: 1
-  
+  # NameServer地址
+  nameServer: "rocketmq-namesrv:9876"
   # 集群模式配置
   cluster:
-    enabled: false  # 是否启用集群模式
-    replicas: 3     # 集群节点数
-    config:         # 集群配置
-      serverAddr: ""  # 集群地址，格式: "nacos-0.nacos-headless:8848,nacos-1.nacos-headless:8848,nacos-2.nacos-headless:8848"
+    enabled: false
+    # NameServer节点列表格式: host:port
+    # 示例:
+    # nameServer:
+    #   - "rocketmq-namesrv1:9876"
+    #   - "rocketmq-namesrv2:9876"
+    nameServer: []
+
+# Kafka配置
+kafka:
+  # Broker地址
+  brokers: "kafka:9092"
+  # 集群模式配置
+  cluster:
+    enabled: false
+    # Broker节点列表格式: host:port
+    # 示例:
+    # brokers:
+    #   - "kafka-broker1:9092"
+    #   - "kafka-broker2:9092"
+    #   - "kafka-broker3:9092"
+    brokers: []
+
+# 镜像配置部分，定义了服务使用的镜像仓库地址和标签
+image:
+  # 镜像仓库地址
+  registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+  # 镜像标签
+  tag: latest
+
+# 服务配置部分，定义了各个微服务的部署参数
+services:
+  # 网关服务配置
+  gateway:
+    # 镜像名称
+    image: gateway
+    # 副本数
+    replicas: 1
+    # 服务端口
+    port: 8080
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   
+  # Go服务配置
+  go:
+    # 镜像名称
+    image: seckill-go
+    # 副本数
+    replicas: 2
+    # 服务端口
+    port: 8090
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+  
+  # 优惠券服务配置
+  coupon:
+    # 镜像名称
+    image: coupon
+    # 副本数
+    replicas: 2
+    # 服务端口
+    port: 8081
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  
+  # 订单服务配置
+  order:
+    # 镜像名称
+    image: order
+    # 副本数
+    replicas: 2
+    # 服务端口
+    port: 8082
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  
+  # 用户服务配置
+  user:
+    # 镜像名称
+    image: user
+    # 副本数
+    replicas: 1
+    # 服务端口
+    port: 8083
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  # Operator配置
+  operator:
+    # 镜像名称
+    image: operator
+    # 副本数
+    replicas: 1
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+# RocketMQ依赖服务配置
+rocketmq:
+  # 是否启用RocketMQ
+  enabled: true
+  # NameServer配置
+  nameServer:
+    # 镜像配置
+    image: 
+      registry: docker.io
+      repository: apache/rocketmq
+      tag: 4.9.4-alpine
+    # 副本数
+    replicas: 1
+    # 服务端口
+    ports:
+      - 9876
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    # 存储配置
+    persistence:
+      enabled: true
+      size: 1Gi
+  # Broker配置
+  broker:
+    # 镜像配置
+    image:
+      registry: docker.io
+      repository: apache/rocketmq
+      tag: 4.9.4-alpine
+    # 副本数
+    replicas: 1
+    # 服务端口
+    ports:
+      - 10909
+      - 10911
+      - 10912
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    # 存储配置
+    persistence:
+      enabled: true
+      size: 5Gi
+
+# Nacos依赖服务配置
+nacos:
+  # 是否启用Nacos
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: nacos/nacos-server
+    tag: v2.2.3
+  # 副本数
+  replicas: 1
+  # 服务端口
+  ports:
+    - 8848
+    - 9848
+    - 9849
+  # 环境变量
+  env:
+    MODE: standalone
+    PREFER_HOST_MODE: hostname
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  # 存储配置
+  persistence:
+    enabled: true
+    size: 5Gi
+  # 服务配置
   service:
-    port: 8848
-    # 外部访问配置
+    # 是否启用外部访问
     external:
       enabled: true
       type: LoadBalancer
-      port: 8848
-  storage:
-    type: embedded
-    mysql:
-      host: mysql
-      port: 3306
-      user: root
-      password: password
-      database: nacos
-  
-  # 配置监听器
-  configWatcher:
-    enabled: true  # 是否启用配置监听器
-    schedule: "*/5 * * * *"  # 检查配置更新的频率 (cron 表达式)
-  
-  config:
-    # Nacos初始配置
-    common:
-      dataId: common.yaml
-      group: DEFAULT_GROUP
-      content: |
-        spring:
-          data:
-            redis:
-              host: redis
-              port: 6379
-              lettuce:
-                pool:
-                  max-active: 50
-                  max-idle: 20
-                  min-idle: 5
-                  max-wait: 2000ms
-          cloud:
-            sentinel:
-              transport:
-                dashboard: sentinel-dashboard:8080
-                port: 8719
-              eager: true
-            nacos:
-              discovery:
-                server-addr: nacos:8848
-              config:
-                server-addr: nacos:8848
-                refresh-enabled: true
-                refresh-interval: 3000
-          datasource:
-            url: jdbc:mysql://mysql:3306/couponkill?useSSL=false&serverTimezone=UTC
-            username: root
-            password: password
-            driver-class-name: com.mysql.cj.jdbc.Driver
-        rocketmq:
-          name-server: rocketmq-namesrv:9876
-          producer:
-            group: common-producer-group
-            send-message-timeout: 3000
-            retry-times-when-send-failed: 1
-            max-message-size: 4096
-        thread-pool:
-          async:
-            core-pool-size: 16
-            max-pool-size: 32
-            queue-capacity: 200
-            keep-alive-seconds: 60
-            rejected-policy: CALLER_RUNS
-          order:
-            core-pool-size: 20
-            max-pool-size: 40
-            queue-capacity: 500
-            thread-name-prefix: "order-async-"
-            keep-alive-seconds: 60
-            rejected-policy: CALLER_RUNS
-        # 动态中间件配置
-        middleware:
-          mysql:
-            cluster:
-              enabled: false
-              nodes: []
-            replication:
-              enabled: false
-              master:
-                host: ""
-                port: 3306
-              slaves: []
-          redis:
-            cluster:
-              enabled: false
-              nodes: []
-            sentinel:
-              enabled: false
-              masterName: "mymaster"
-              nodes: []
-              password: ""
-          rocketmq:
-            cluster:
-              enabled: false
-              nameServer: []
-          kafka:
-            cluster:
-              enabled: false
-              brokers: []
-    # 各个服务的分库分表配置
-    sharding:
-      user:
-        dataId: user-service-sharding.yaml
-        group: DEFAULT_GROUP
-        content: |
-          dataSources:
-            user-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            user-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-          rules:
-          - !SHARDING
-            tables:
-              user:
-                actualDataNodes: user-db-$->{0..1}.user
-                databaseStrategy:
-                  standard:
-                    shardingColumn: id
-                    shardingAlgorithmName: user-db-inline
-              user_coupon_count:
-                actualDataNodes: user-db-$->{0..1}.user_coupon_count
-                databaseStrategy:
-                  standard:
-                    shardingColumn: user_id
-                    shardingAlgorithmName: user-coupon-count-db-inline
-            shardingAlgorithms:
-              user-db-inline:
-                type: INLINE
-                props:
-                  algorithm-expression: user-db-$->{id % 2}
-              user-coupon-count-db-inline:
-                type: INLINE
-                props:
-                  algorithm-expression: user-db-$->{user_id % 2}
-            keyGenerators:
-              snowflake:
-                type: SNOWFLAKE
-                props:
-                  worker-id: 1
-                  data-center-id: 1
-          props:
-            sql-show: true
-            sql-trace: true
-            query-with-cipher-column: false
-            sql-comment-parse-enabled: true
-      order:
-        dataId: order-service-sharding.yaml
-        group: DEFAULT_GROUP
-        content: |
-          dataSources:
-            order-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_0?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            order-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_1?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            order-db-2:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_2?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            order-db-3:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_3?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-          rules:
-          - !SHARDING
-            tables:
-              order:
-                actualDataNodes: order-db-$->{0..3}.order_$->{0..15}
-                databaseStrategy:
-                  standard:
-                    shardingColumn: user_id
-                    shardingAlgorithmName: order-db-inline
-                tableStrategy:
-                  standard:
-                    shardingColumn: user_id
-                    shardingAlgorithmName: order-table-inline
-            shardingAlgorithms:
-              order-db-inline:
-                type: INLINE
-                props:
-                  algorithm-expression: order-db-$->{user_id % 4}
-              order-table-inline:
-                type: INLINE
-                props:
-                  algorithm-expression: order_$->{user_id % 16}
-            keyGenerators:
-              snowflake:
-                type: SNOWFLAKE
-                props:
-                  worker-id: 1
-                  data-center-id: 1
-          props:
-            sql-show: true
-            query-with-cipher-column: false
-            sql-comment-parse-enabled: true
-      coupon:
-        dataId: coupon-service-sharding.yaml
-        group: DEFAULT_GROUP
-        content: |
-          dataSources:
-            coupon-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_0?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            coupon-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_1?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            coupon-db-2:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_2?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-            coupon-db-3:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_3?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
-              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-          rules:
-            - !SHARDING
-              tables:
-                coupon:
-                  actualDataNodes: coupon-db-$->{0..3}.coupon_$->{0..15}
-                  databaseStrategy:
-                    standard:
-                      shardingColumn: shard_index
-                      shardingAlgorithmName: coupon-db-inline
-                  tableStrategy:
-                    standard:
-                      shardingColumn: shard_index
-                      shardingAlgorithmName: coupon-table-inline
-                stock_log:
-                  actualDataNodes: coupon-db-$->{0..3}.stock_log_$->{0..15}
-                  databaseStrategy:
-                    standard:
-                      shardingColumn: shard_index
-                      shardingAlgorithmName: coupon-db-inline
-                  tableStrategy:
-                    standard:
-                      shardingColumn: shard_index
-                      shardingAlgorithmName: stock-log-table-inline
-              shardingAlgorithms:
-                coupon-db-inline:
-                  type: INLINE
-                  props:
-                    algorithm-expression: coupon-db-$->{(int)(shard_index / 16) % 4}
-                coupon-table-inline:
-                  type: INLINE
-                  props:
-                    algorithm-expression: coupon_$->{shard_index % 16}
-                stock-log-table-inline:
-                  type: INLINE
-                  props:
-                    algorithm-expression: stock_log_$->{shard_index % 16}
-              keyGenerators:
-                snowflake:
-                  type: SNOWFLAKE
-                  props:
-                    worker-id: 1
-                    data-center-id: 1
-          props:
-            sql-show: true
-            query-with-cipher-column: false
-            sql-comment-parse-enabled: true
-    # 服务协同配置
-    collaboration:
-      content: |
-        collaboration:
-          java-service-url: "http://couponkill-coupon-service:8081"
-          go-service-url: "http://seckill-go-svc:8090"
-          java-qps-threshold: 1000
-          go-enabled: true
-          fallback-to-go: true
-    # 中间件集群配置模板
-    middleware:
-      content: |
-        # 中间件集群配置模板
-        # 用户只需填写节点信息和密码即可快速切换到集群模式
-        
-        middleware:
-          # MySQL 配置模板
-          mysql:
-            # 集群模式配置 (适用于MySQL Group Replication或类似集群方案)
-            cluster:
-              enabled: false
-              # 节点列表格式: host:port
-              # 示例: 
-              # nodes:
-              #   - "mysql-node1:3306"
-              #   - "mysql-node2:3306"
-              #   - "mysql-node3:3306"
-              nodes: []
-            
-            # 主从复制模式配置
-            replication:
-              enabled: false
-              # 主库配置
-              master:
-                host: ""
-                port: 3306
-              # 从库列表
-              # slaves:
-              #   - host: "mysql-slave1"
-              #     port: 3306
-              #   - host: "mysql-slave2"
-              #     port: 3306
-              slaves: []
-          
-          # Redis 配置模板
-          redis:
-            # 集群模式配置 (适用于Redis Cluster)
-            cluster:
-              enabled: false
-              # 节点列表格式: host:port
-              # 示例:
-              # nodes:
-              #   - "redis-node1:6379"
-              #   - "redis-node2:6379"
-              #   - "redis-node3:6379"
-              #   - "redis-node4:6379"
-              #   - "redis-node5:6379"
-              #   - "redis-node6:6379"
-              nodes: []
-            
-            # 哨兵模式配置 (适用于Redis Sentinel)
-            sentinel:
-              enabled: false
-              # 主节点名称
-              masterName: "mymaster"
-              # 哨兵节点列表格式: host:port
-              # 示例:
-              # nodes:
-              #   - "sentinel1:26379"
-              #   - "sentinel2:26379"
-              #   - "sentinel3:26379"
-              nodes: []
-              # 哨兵密码
-              password: ""
-          
-          # RocketMQ 配置模板
-          rocketmq:
-            cluster:
-              enabled: false
-              # NameServer节点列表格式: host:port
-              # 示例:
-              # nameServer:
-              #   - "rocketmq-namesrv1:9876"
-              #   - "rocketmq-namesrv2:9876"
-              nameServer: []
-          
-          # Kafka 配置模板
-          kafka:
-            cluster:
-              enabled: false
-              # Broker节点列表格式: host:port
-              # 示例:
-              # brokers:
-              #   - "kafka-broker1:9092"
-              #   - "kafka-broker2:9092"
-              #   - "kafka-broker3:9092"
-              brokers: []
-    # 网关路由配置
-    gateway:
-      content: |
-        spring:
-          cloud:
-            gateway:
-              routes:
-                - id: user-service
-                  uri: lb://couponkill-user-service
-                  predicates:
-                    - Path=/api/v1/user/**
-                  filters:
-                    - StripPrefix=3
-                - id: order-service
-                  uri: lb://couponkill-order-service
-                  predicates:
-                    - Path=/api/v1/order/**
-                  filters:
-                    - StripPrefix=3
-                - id: coupon-service
-                  uri: lb://couponkill-coupon-service
-                  predicates:
-                    - Path=/api/v1/coupon/**
-                  filters:
-                    - StripPrefix=3
-                - id: go-service
-                  uri: lb://seckill-go-svc
-                  predicates:
-                    - Path=/seckill/**
-                  filters:
-                    - StripPrefix=1
-    # Go服务配置
-    go:
-      dataId: go-service-dev.yaml
-      group: DEFAULT_GROUP
-      content: |
-        server:
-          port: 8090
-        seckill:
-          max-concurrency: 1000
-          redis-key-prefix: "seckill:"
-          valid-days: 7
-          redis:
-            stock-key-prefix: "coupon:stock:"
-        mysql:
-          dsn: "root:password@tcp(mysql:3306)/couponkill?charset=utf8mb4&parseTime=True&loc=Local"
-        data.redis:
-          host: "redis:6379"
-          username: ""
-          password: ""
-          db: 0
-        nacos:
-          server-addr: "nacos:8848"
-          namespace-id: "120"
-        collaboration:
-          java-service-url: "http://couponkill-coupon-service:8081"
-          go-service-url: "http://seckill-go-svc:8090"
-          java-qps-threshold: 1000
-          go-enabled: true
-          fallback-to-go: true
-        middleware:
-          mysql:
-            cluster:
-              enabled: false
-              nodes: []
-            replication:
-              enabled: false
-              master:
-                host: ""
-                port: 3306
-              slaves: []
-          redis:
-            cluster:
-              enabled: false
-              nodes: []
-            sentinel:
-              enabled: false
-              masterName: "mymaster"
-              nodes: []
-              password: ""
-          rocketmq:
-            cluster:
-              enabled: false
-              nameServer: 
-                - "rocketmq-namesrv:9876"
-
-# Sentinel配置
-sentinel:
-  enabled: true
-  name: sentinel
-  dashboard:
-    image:
-      repository: bladex/sentinel-dashboard
-      tag: 1.8.5
-      pullPolicy: IfNotPresent
-    replicas: 1
-    service:
-      port: 8080
-  tokenServer:
+  # 集群配置
+  cluster:
+    # 是否启用集群模式
     enabled: false
-    image:
-      repository: sentinel-group/sentinel-token-server
-      tag: 1.8.5
-      pullPolicy: IfNotPresent
-    replicas: 1
+    # 集群节点数
+    replicas: 3
 
-# 全局配置
-global:
-  registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker  # 默认镜像仓库地址
-  domain: couponkill.example.com  # 默认域名
+# Sentinel依赖服务配置
+sentinel:
+  # 是否启用Sentinel
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: bladex/sentinel-dashboard
+    tag: 1.8.6
+  # 副本数
+  replicas: 1
+  # 服务端口
+  port: 8080
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
 
-# 镜像配置信息
-image:
-  registry: "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"  # 镜像仓库地址
-  tag: "latest"  # 默认镜像标签
+# MySQL依赖服务配置
+mysql:
+  # 是否启用MySQL
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: mysql
+    tag: 8.0
+  # 服务端口
+  port: 3306
+  # 环境变量
+  env:
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: console
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  # 存储配置
+  persistence:
+    enabled: true
+    size: 20Gi
+  # 主从复制配置
+  replication:
+    enabled: false
+    master:
+      replicas: 1
+    slave:
+      replicas: 2
 
-# 微服务配置列表
-services:
-  # Go秒杀服务配置
-  go:
-    name: seckill-go-svc  # 服务名称
-    port: 8090  # 服务端口
-    replicas: 2  # 初始副本数
-    image: 
-      name: "seckill-go"
-      tag: "latest"
-    # 水平自动扩缩容配置
-    hpa:
-      enabled: true  # 是否启用HPA
-      minReplicas: 1  # 最小副本数
-      maxReplicas: 5  # 最大副本数
-      cpu: 70  # CPU使用率触发阈值(百分比)
-    # Go运行时优化参数
-    goOpts:
-      gc: 20
-      maxProcs: 4
+# Redis依赖服务配置
+redis:
+  # 是否启用Redis
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: redis
+    tag: 7.0
+  # 服务端口
+  port: 6379
+  # 密码
+  password: ""
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"
+  # 存储配置
+  persistence:
+    enabled: true
+    size: 8Gi
+  # 集群配置
+  cluster:
+    enabled: false
+    nodes: 6
+  # 哨兵配置
+  sentinel:
+    enabled: false
+    masterName: "mymaster"
+    nodes: 3
 
-  # 优惠券服务配置
-  coupon:
-    name: couponkill-coupon-service  # 服务名称
-    port: 8081  # 服务端口
-    replicas: 2  # 初始副本数
-    image:
-      name: "coupon"
-      tag: "latest"
-    # 水平自动扩缩容配置
-    hpa:
-      enabled: true  # 是否启用HPA
-      minReplicas: 2  # 最小副本数
-      maxReplicas: 4  # 最大副本数
-      cpu: 60  # CPU使用率触发阈值(百分比)
-    # JVM优化参数
-    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
-    threadPoolOpts: "-Dserver.tomcat.max-threads=300 -Dserver.tomcat.min-spare-threads=30 -Dserver.tomcat.accept-count=200 -Dserver.tomcat.max-connections=8000"
+# Kafka依赖服务配置
+kafka:
+  # 是否启用Kafka
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: bitnami/kafka
+    tag: 3.4.0
+  # 服务端口
+  port: 9092
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  # 存储配置
+  persistence:
+    enabled: true
+    size: 8Gi
+  # 集群配置
+  cluster:
+    enabled: false
+    replicas: 3
 
-  # 订单服务配置
-  order:
-    name: couponkill-order-service  # 服务名称
-    port: 8082  # 服务端口
-    replicas: 2  # 初始副本数
-    image:
-      name: "order"
-      tag: "latest"
-    # 水平自动扩缩容配置
-    hpa:
-      enabled: true  # 是否启用HPA
-      minReplicas: 2  # 最小副本数
-      maxReplicas: 4  # 最大副本数
-      cpu: 60  # CPU使用率触发阈值(百分比)
-    # JVM优化参数
-    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
-    threadPoolOpts: "-Dserver.tomcat.max-threads=400 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=300 -Dserver.tomcat.max-connections=10000"
+# Zookeeper依赖服务配置 (Kafka依赖)
+zookeeper:
+  # 是否启用Zookeeper
+  enabled: true
+  # 镜像配置
+  image:
+    registry: docker.io
+    repository: bitnami/zookeeper
+    tag: 3.8.1
+  # 服务端口
+  port: 2181
+  # 资源请求和限制
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"
+  # 存储配置
+  persistence:
+    enabled: true
+    size: 8Gi
 
-  # 用户服务配置
-  user:
-    name: couponkill-user-service  # 服务名称
-    port: 8083  # 服务端口
-    replicas: 1  # 初始副本数
-    image:
-      name: "user"
-      tag: "latest"
-    # 水平自动扩缩容配置
-    hpa:
-      enabled: true  # 是否启用HPA
-      minReplicas: 1  # 最小副本数
-      maxReplicas: 3  # 最大副本数
-      cpu: 60  # CPU使用率触发阈值(百分比)
-    # JVM优化参数
-    jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
-    threadPoolOpts: "-Dserver.tomcat.max-threads=200 -Dserver.tomcat.min-spare-threads=20 -Dserver.tomcat.accept-count=100 -Dserver.tomcat.max-connections=5000"
-    
-  # operator配置
-  operator:
-    name: couponkill-operator
-    port: 8084  # 服务端口
-    replicas: 1  # 初始副本数
-    image:
-      name: "operator"
-      tag: "latest"
-    # Go运行时优化参数
-    goOpts:
-      gc: 20
-      maxProcs: 4
+# KEDA自动扩缩容配置部分，基于Kafka消息队列的消费延迟进行扩缩容
+keda:
+  # 是否启用KEDA
+  enabled: true
+  # Kafka配置
+  kafka:
+    # Kafka broker地址
+    bootstrapServers: "kafka:9092"
+    # Go服务扩缩容配置
+    go:
+      # 是否启用扩缩容
+      enabled: true
+      # 对应的Deployment名称
+      deploymentName: "seckill-go-svc"
+      # 消费者组名称
+      consumerGroup: "seckill-go-group"
+      # 监控的主题
+      topic: "seckill_order_create"
+      # 最小副本数
+      minReplicaCount: 1
+      # 最大副本数
+      maxReplicaCount: 5
+      # Kafka消费延迟阈值，当延迟超过该值时触发扩容
+      lagThreshold: "5"
+    # Order服务扩缩容配置
+    order:
+      # 是否启用扩缩容
+      enabled: true
+      # 对应的Deployment名称
+      deploymentName: "couponkill-order-service"
+      # 消费者组名称
+      consumerGroup: "order-create"
+      # 监控的主题
+      topic: "seckill_order_create"
+      # 最小副本数
+      minReplicaCount: 1
+      # 最大副本数
+      maxReplicaCount: 5
+      # Kafka消费延迟阈值，当延迟超过该值时触发扩容
+      lagThreshold: "5"
 
-# Istio 服务网格配置
+# Istio服务网格配置部分，用于暴露服务到集群外部
 istio:
-  enabled: true  # 是否启用Istio
+  # 是否启用Istio
+  enabled: true
   # 网关配置
   gateway:
-    name: couponkill-gateway  # 网关名称
-    host: "*"  # 访问域名
-    port: 80  # 网关端口
-    tls: false  # 是否启用TLS加密
+    # 网关名称
+    name: couponkill-gateway
+    # 网关绑定的主机名
+    host: couponkill.example.com
+    # 网关监听的端口
+    port: 80
+    # 是否启用TLS，当前为明文传输
+    tls: false
 
-  # 目标规则配置
-  destinationRule:
-    connectionPool:
-      tcp:
-        maxConnections: 100
-        connectTimeout: 30ms
-        tcpKeepalive:
-          enabled: true
-          probes: 3
-          time: 30s
-          interval: 5s
-      http:
-        http1MaxPendingRequests: 1024
-        http2MaxRequests: 1024
-        maxRequestsPerConnection: 10
-        maxRetries: 3
-    outlierDetection:
-      consecutive5xxErrors: 5
-      interval: 30s
-      baseEjectionTime: 30s
-
-# KEDA自动扩缩容配置
-keda:
-  enabled: true
-  kafka:
-    bootstrapServers: "broker:9092"
-    go:
-      enabled: true
-      deploymentName: "seckill-go-svc"
-      consumerGroup: "seckill-go-group"
-      topic: "seckill_order_create"
-      minReplicaCount: 1
-      maxReplicaCount: 5
-      lagThreshold: "5"
-    order:
-      enabled: true
-      deploymentName: "couponkill-order-service"
-      consumerGroup: "seckill-order-group"
-      topic: "seckill_order_create"
-      minReplicaCount: 2
-      maxReplicaCount: 4
-      lagThreshold: "10"
+# Nacos配置监听器配置
+nacos:
+  configWatcher:
+    # 是否启用配置监听器
+    enabled: true
+    # 配置监听器检查配置变更的频率 (单位: 秒)
+    schedule: "0/30 * * * * ?"

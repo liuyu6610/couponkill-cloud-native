@@ -4,6 +4,7 @@ pipeline {
     
     environment {
         REGISTRY = "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"
+        CANARY_REGISTRY = "crpi-n5rumpjwbqinoz4c-vpc.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev"
         NAMESPACE = "couponkill"
         HELM_CHART_PATH = "./charts/couponkill"
     }
@@ -34,31 +35,37 @@ pipeline {
                 stage('Gateway Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} -f couponkill-gateway/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/gateway:canary -f couponkill-gateway/Dockerfile .'
                     }
                 }
                 stage('Coupon Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/coupon:${BUILD_NUMBER} -f couponkill-coupon-service/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/coupon:canary -f couponkill-coupon-service/Dockerfile .'
                     }
                 }
                 stage('Order Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/order:${BUILD_NUMBER} -f couponkill-order-service/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/order:canary -f couponkill-order-service/Dockerfile .'
                     }
                 }
                 stage('User Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/user:${BUILD_NUMBER} -f couponkill-user-service/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/user:canary -f couponkill-user-service/Dockerfile .'
                     }
                 }
                 stage('Go Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/seckill-go:${BUILD_NUMBER} -f couponkill-go-service/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/seckill-go:canary -f couponkill-go-service/Dockerfile .'
                     }
                 }
                 stage('Operator') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/operator:${BUILD_NUMBER} -f couponkill-operator/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/operator:canary -f couponkill-operator/Dockerfile .'
                     }
                 }
             }
@@ -74,6 +81,62 @@ pipeline {
                     sh 'docker push ${REGISTRY}/user:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/seckill-go:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/operator:${BUILD_NUMBER}'
+                    
+                    // 推送金丝雀版本镜像
+                    sh 'docker push ${CANARY_REGISTRY}/gateway:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/coupon:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/order:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/user:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/seckill-go:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/operator:canary'
+                }
+            }
+        }
+        
+        stage('Pull and Push Dependency Images') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-registry', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh 'echo ${DOCKER_PASSWORD} | docker login ${REGISTRY} -u ${DOCKER_USERNAME} --password-stdin'
+                    
+                    // MySQL
+                    sh 'docker pull mysql:8.0'
+                    sh 'docker tag mysql:8.0 ${REGISTRY}/mysql:8.0'
+                    sh 'docker push ${REGISTRY}/mysql:8.0'
+                    
+                    // Redis
+                    sh 'docker pull redis:7.0'
+                    sh 'docker tag redis:7.0 ${REGISTRY}/redis:7.0'
+                    sh 'docker push ${REGISTRY}/redis:7.0'
+                    
+                    // RocketMQ nameserver
+                    sh 'docker pull apache/rocketmq:4.9.4-alpine'
+                    sh 'docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine'
+                    sh 'docker push ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine'
+                    
+                    // RocketMQ broker
+                    sh 'docker pull apache/rocketmq:4.9.4-alpine'
+                    sh 'docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-broker:4.9.4-alpine'
+                    sh 'docker push ${REGISTRY}/rocketmq-broker:4.9.4-alpine'
+                    
+                    // Nacos
+                    sh 'docker pull nacos/nacos-server:v2.2.3'
+                    sh 'docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}/nacos-server:v2.2.3'
+                    sh 'docker push ${REGISTRY}/nacos-server:v2.2.3'
+                    
+                    // Sentinel
+                    sh 'docker pull bladex/sentinel-dashboard:1.8.6'
+                    sh 'docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}/sentinel-dashboard:1.8.6'
+                    sh 'docker push ${REGISTRY}/sentinel-dashboard:1.8.6'
+                    
+                    // Kafka
+                    sh 'docker pull bitnami/kafka:3.4.0'
+                    sh 'docker tag bitnami/kafka:3.4.0 ${REGISTRY}/kafka:3.4.0'
+                    sh 'docker push ${REGISTRY}/kafka:3.4.0'
+                    
+                    // Zookeeper (for Kafka)
+                    sh 'docker pull bitnami/zookeeper:3.8.1'
+                    sh 'docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}/zookeeper:3.8.1'
+                    sh 'docker push ${REGISTRY}/zookeeper:3.8.1'
                 }
             }
         }
@@ -82,6 +145,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh 'helm upgrade --install couponkill ${HELM_CHART_PATH} --namespace ${NAMESPACE} --create-namespace --set image.tag=${BUILD_NUMBER}'
+                }
+            }
+        }
+        
+        stage('Deploy Canary Release') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh 'helm upgrade --install couponkill-canary ${HELM_CHART_PATH} --namespace ${NAMESPACE} --create-namespace -f ${HELM_CHART_PATH}/values.canary-keda.yaml'
                 }
             }
         }

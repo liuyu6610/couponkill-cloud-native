@@ -21,15 +21,17 @@ CI/CD: Jenkins
 监控: 自定义 Operator
 
 ## 架构图
+
 ![架构图.png](docs/%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
 ## 核心服务
-- couponkill-coupon-service: 优惠券管理服务
-- couponkill-order-service: 订单服务
-- couponkill-user-service: 用户服务
-- couponkill-go-service: 基于 Go 的秒杀核心处理服务
-- couponkill-gateway: 网关服务
-- couponkill-operator: 自定义 Kubernetes Operator，用于管理整个秒杀系统的部署和自动扩缩容
+
+- **couponkill-coupon-service**: 优惠券管理服务
+- **couponkill-order-service**: 订单服务
+- **couponkill-user-service**: 用户服务
+- **couponkill-go-service**: 基于 Go 的秒杀核心处理服务
+- **couponkill-gateway**: 网关服务
+- **couponkill-operator**: 自定义 Kubernetes Operator，用于管理整个秒杀系统的部署和自动扩缩容
 
 ## 高并发优化策略
 
@@ -96,6 +98,9 @@ helm install couponkill ./charts/couponkill --namespace couponkill --create-name
 
 # 生产环境部署
 helm install couponkill ./charts/couponkill --namespace couponkill --create-namespace -f ./charts/couponkill/values-prod.yaml
+
+# 金丝雀发布部署
+helm install couponkill ./charts/couponkill --namespace couponkill --create-namespace -f ./charts/couponkill/values.canary-keda.yaml
 ```
 
 #### 手动部署中间件
@@ -126,7 +131,11 @@ helm install rocketmq rocketmq/rocketmq -n middleware
 #### 使用 Helm 部署应用
 
 ```bash
+# 稳定版本部署
 helm install couponkill ./charts/couponkill -n couponkill --create-namespace
+
+# 金丝雀版本部署
+helm install couponkill-canary ./charts/couponkill -n couponkill --create-namespace -f ./charts/couponkill/values.canary-keda.yaml
 ```
 
 #### 部署 Operator
@@ -170,6 +179,12 @@ make run
 # 构建所有镜像
 make build-all-images
 
+# 构建并推送稳定版镜像到阿里云仓库
+make build-and-push-all
+
+# 构建并推送金丝雀版本镜像到阿里云仓库
+make build-and-push-all-canary
+
 # 或者单独构建每个服务的镜像
 docker build -t gateway:latest -f couponkill-gateway/Dockerfile .
 docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
@@ -194,6 +209,31 @@ Operator 提供了以下监控和运维功能：
 3. 状态报告: 提供每个服务的详细状态信息
 4. 事件记录: 记录重要操作和状态变更事件
 
+## 金丝雀发布
+
+CouponKill 系统支持金丝雀发布，可以通过 Helm Chart 部署稳定版本和金丝雀版本，实现渐进式交付。
+
+### 金丝雀发布配置
+
+金丝雀发布配置在 `charts/couponkill/values.canary-keda.yaml` 文件中定义：
+
+- 使用独立的阿里云镜像仓库 `crpi-n5rumpjwbqinoz4c-vpc.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev` 存储金丝雀版本镜像
+- 为各个服务配置流量权重，控制稳定版本和金丝雀版本之间的流量分配
+- 支持基于 KEDA 的自动扩缩容
+
+### 部署金丝雀版本
+
+```bash
+# 部署金丝雀版本
+helm install couponkill-canary ./charts/couponkill --namespace couponkill --create-namespace -f ./charts/couponkill/values.canary-keda.yaml
+
+# 更新金丝雀版本配置
+helm upgrade couponkill-canary ./charts/couponkill --namespace couponkill -f ./charts/couponkill/values.canary-keda.yaml
+
+# 动态调整流量权重（通过 Nacos 或其他配置中心）
+# 可以在 Nacos 中修改服务权重配置，实现动态流量切换
+```
+
 ## 故障排除
 
 ### 常见问题
@@ -213,6 +253,11 @@ Operator 提供了以下监控和运维功能：
    - 检查 Metrics Server 是否正常运行
    - 验证资源请求和限制是否已设置
 
+4. 金丝雀发布问题
+   - 检查镜像仓库地址和标签是否正确
+   - 确认流量权重配置是否合理
+   - 查看 Istio 配置是否正确应用
+
 ### 访问服务
 
 部署完成后，可以通过以下方式访问服务：
@@ -231,5 +276,8 @@ Operator 提供了以下监控和运维功能：
 
 主要步骤包括：
 1. 并行构建所有服务
-2. 构建并推送 Docker 镜像到私有仓库
+2. 构建并推送 Docker 镜像到私有仓库（包括稳定版本和金丝雀版本）
 3. 使用 Helm 部署到 Kubernetes 集群
+4. 部署金丝雀版本以支持渐进式交付
+
+通过金丝雀发布功能，可以实现更安全、更可控的服务更新，降低新版本上线带来的风险。
