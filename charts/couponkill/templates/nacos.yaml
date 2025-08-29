@@ -1,4 +1,142 @@
 {{- if .Values.nacos.enabled }}
+{{- if .Values.nacos.cluster.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.nacos.name }}-cluster-config
+  namespace: {{ .Values.namespace }}
+data:
+  # Nacos 集群配置
+  cluster.conf: |
+    {{- if .Values.nacos.cluster.config.serverAddr }}
+    {{ .Values.nacos.cluster.config.serverAddr | quote }}
+    {{- else }}
+    {{- range $i, $e := until (.Values.nacos.cluster.replicas | int) }}
+    {{ $.Values.nacos.name }}-{{ $i }}.{{ $.Values.nacos.name }}-headless:{{ $.Values.nacos.service.port }}
+    {{- end }}
+    {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nacos.name }}-headless
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}
+spec:
+  ports:
+    - port: {{ .Values.nacos.service.port }}
+      targetPort: 8848
+      protocol: TCP
+      name: nacos-port
+    - port: 9848
+      targetPort: 9848
+      protocol: TCP
+      name: raft-port
+    - port: 9849
+      targetPort: 9849
+      protocol: TCP
+      name: raft-port-2
+  clusterIP: None
+  selector:
+    app: {{ .Values.nacos.name }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.nacos.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.nacos.name }}
+  annotations:
+    # 用于支持Nacos集群的动态扩缩容
+    helm.sh/upgrade-max-unavailable: "1"
+spec:
+  serviceName: {{ .Values.nacos.name }}-headless
+  replicas: {{ .Values.nacos.cluster.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.nacos.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nacos.name }}
+    spec:
+      containers:
+        - name: nacos
+          image: "{{ .Values.nacos.image.repository }}:{{ .Values.nacos.image.tag }}"
+          imagePullPolicy: {{ .Values.nacos.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+          ports:
+            - containerPort: 8848
+              name: client-port
+            - containerPort: 9848
+              name: raft-port
+            - containerPort: 9849
+              name: raft-port-2
+          env:
+            - name: NACOS_REPLICAS
+              value: "{{ .Values.nacos.cluster.replicas }}"
+            - name: NACOS_SERVER_PORT
+              value: "{{ .Values.nacos.service.port }}"
+            {{- if .Values.nacos.cluster.config.serverAddr }}
+            - name: NACOS_SERVERS
+              value: "{{ .Values.nacos.cluster.config.serverAddr }}"
+            {{- else }}
+            {{- range $i, $e := until (.Values.nacos.cluster.replicas | int) }}
+            - name: NACOS_SERVER_{{ add $i 1 }}
+              value: "http://{{ $.Values.nacos.name }}-{{ $i }}.{{ $.Values.nacos.name }}-headless:{{ $.Values.nacos.service.port }}"
+            {{- end }}
+            {{- end }}
+            - name: PREFER_HOST_MODE
+              value: "hostname"
+            - name: MODE
+              value: "cluster"
+            {{- if eq .Values.nacos.storage.type "mysql" }}
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: "mysql"
+            - name: MYSQL_SERVICE_HOST
+              value: "{{ .Values.nacos.storage.mysql.host }}"
+            - name: MYSQL_SERVICE_PORT
+              value: "{{ .Values.nacos.storage.mysql.port }}"
+            - name: MYSQL_SERVICE_USER
+              value: "{{ .Values.nacos.storage.mysql.user }}"
+            - name: MYSQL_SERVICE_PASSWORD
+              value: "{{ .Values.nacos.storage.mysql.password }}"
+            - name: MYSQL_SERVICE_DB_NAME
+              value: "{{ .Values.nacos.storage.mysql.database }}"
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /home/nacos/data
+            - name: logs
+              mountPath: /home/nacos/logs
+            - name: cluster-config
+              mountPath: /home/nacos/conf/cluster.conf
+              subPath: cluster.conf
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: cluster-config
+          configMap:
+            name: {{ .Values.nacos.name }}-cluster-config
+  # 支持Nacos集群的滚动更新
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+{{- else }}
 ---
 apiVersion: v1
 kind: Service
@@ -101,4 +239,5 @@ spec:
           emptyDir: {}
         - name: logs
           emptyDir: {}
+{{- end }}
 {{- end }}

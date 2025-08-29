@@ -20,6 +20,7 @@ spring:
             group: DEFAULT_GROUP
             refresh: true
         refresh-enabled: true
+        refresh-interval: 3000  # 配置刷新间隔，单位毫秒
 
 # ShardingSphere配置
 shardingsphere:
@@ -28,5 +29,9 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.aliyun.seckill.common.pojo
 
-
-
+# 配置刷新相关设置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh,health,info

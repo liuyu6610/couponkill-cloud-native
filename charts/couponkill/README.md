@@ -1,42 +1,76 @@
 # CouponKill Helm Chart
 
-CouponKill秒杀系统Helm Chart，支持一键部署完整系统。
+CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专为秋招展示而设计。该系统具备高可用性、可扩展性和弹性伸缩能力，能够应对秒杀场景下的流量峰值。
 
-## 简介
+## 功能特性
 
-CouponKill是一个基于云原生微服务架构的秒杀系统，包含以下组件：
-- 网关服务 (Gateway Service)
-- 用户服务 (User Service)
-- 优惠券服务 (Coupon Service)
-- 订单服务 (Order Service)
-- Go秒杀服务 (Go Seckill Service)
-- Operator控制器 (CouponKill Operator)
-- RocketMQ消息队列
-- Nacos服务发现与配置中心
-- Sentinel流量防护组件
+### 服务网格支持 (Istio)
+Chart支持Istio服务网格，提供流量管理、安全性和可观察性功能。
 
-## 版本信息
+### 自动扩缩容 (KEDA)
+通过KEDA实现基于Kafka消息队列的自动扩缩容功能。
 
-- Chart版本: 0.9.0
-- 应用版本: 1.7.0
+### 监控集成
+支持Prometheus和Grafana监控集成。
 
-## 先决条件
+### 数据库初始化
+自动创建数据库表结构。
+
+### 依赖服务管理
+支持MySQL、Redis、Kafka、RocketMQ、Nacos和Sentinel等依赖服务的部署和初始化。
+
+### 动态配置和集群支持
+支持中间件的动态扩展和集群模式，包括：
+- MySQL 集群模式
+- MySQL 主从复制模式
+- Redis 集群模式
+- Redis 哨兵模式
+- Kafka 集群模式
+- RocketMQ 集群模式
+- Nacos 集群模式
+
+### Nacos配置管理
+自动初始化Nacos配置，包括：
+- 公共配置(common.yaml)
+- 用户服务分库分表配置(user-service-sharding.yaml)
+- 订单服务分库分表配置(order-service-sharding.yaml)
+- 优惠券服务分库分表配置(coupon-service-sharding.yaml)
+- 网关路由配置(gateway-routes.yaml)
+- Go服务配置(go-service-dev.yaml)
+
+### ShardingSphere 动态规则
+支持 ShardingSphere 分库分表规则的动态更新，服务可以实时感知配置变化。
+
+### Nacos外部访问
+Nacos支持外部访问，可通过LoadBalancer服务从集群外部访问Nacos控制台，便于配置管理。
+
+### 零停机动态配置更新
+支持在不中断服务的情况下动态更新中间件配置：
+- 中间件集群节点动态增减
+- 分库分表规则动态调整
+- 服务配置参数实时生效
+- 配置监听器自动同步配置变更
+
+## 部署
+
+### 前提条件
 
 - Kubernetes 1.16+
 - Helm 3.0+
-- Istio 1.10+ (可选)
-- KEDA 2.0+ (可选)
-- Prometheus & Grafana (可选)
 
-## 安装Chart
-
-### 一键部署完整系统
+### 快速开始
 
 ```bash
-# 添加repo (如果从远程repo安装)
-helm repo add couponkill https://couponkill.github.io/couponkill-cloud-native
+# 添加 Helm 仓库
+helm repo add couponkill https://github.com/couponkill/couponkill-cloud-native
 
-# 本地安装
+# 安装 Chart
+helm install couponkill couponkill/couponkill
+```
+
+### 基础部署
+
+```bash
 helm install couponkill ./couponkill
 ```
 
@@ -78,80 +112,334 @@ helm install couponkill ./couponkill \
 | `nacos.service.external.enabled` | 是否启用Nacos外部访问 | `true` |
 | `sentinel.enabled` | 是否启用Sentinel | `true` |
 
-## 性能优化配置
+## 动态配置和集群支持
 
-### JVM优化参数
+### 中间件配置模板
 
-所有Java服务（Gateway、Coupon、Order、User）都配置了JVM优化参数，包括：
-- G1垃圾回收器优化
-- 对象指针压缩
-- 字符串连接优化
-- 大页内存使用
+系统为常用的中间件提供了配置模板，用户只需填写节点信息和密码即可快速切换到集群模式。配置模板位于Nacos的`middleware-cluster-config.yaml`中。
 
-### 线程池优化
+#### MySQL配置模板
 
-各服务配置了专门的线程池参数以适应不同的负载需求：
-- 网关服务：最大线程数500，用于处理高并发请求
-- 订单服务：最大线程数400，处理复杂的订单逻辑
-- 优惠券服务：最大线程数300，处理优惠券相关操作
-- 用户服务：最大线程数200，处理用户相关操作
-
-### Go运行时优化
-
-Go服务（Go Seckill和Operator）配置了运行时优化参数：
-- GOGC=20：降低垃圾回收阈值，更频繁地进行垃圾回收以减少内存占用
-- GOMAXPROCS=4：限制CPU使用核心数，避免过度占用系统资源
-
-## 升级Chart
-
-```bash
-helm upgrade couponkill ./couponkill
+```yaml
+middleware:
+  mysql:
+    # 集群模式配置 (适用于MySQL Group Replication或类似集群方案)
+    cluster:
+      enabled: false
+      # 节点列表格式: host:port
+      # 示例: 
+      # nodes:
+      #   - "mysql-node1:3306"
+      #   - "mysql-node2:3306"
+      #   - "mysql-node3:3306"
+      nodes: []
+    
+    # 主从复制模式配置
+    replication:
+      enabled: false
+      # 主库配置
+      master:
+        host: ""
+        port: 3306
+      # 从库列表
+      # slaves:
+      #   - host: "mysql-slave1"
+      #     port: 3306
+      #   - host: "mysql-slave2"
+      #     port: 3306
+      slaves: []
 ```
 
-## 卸载Chart
+#### Redis配置模板
 
-```bash
-helm uninstall couponkill
+```yaml
+middleware:
+  redis:
+    # 集群模式配置 (适用于Redis Cluster)
+    cluster:
+      enabled: false
+      # 节点列表格式: host:port
+      # 示例:
+      # nodes:
+      #   - "redis-node1:6379"
+      #   - "redis-node2:6379"
+      #   - "redis-node3:6379"
+      #   - "redis-node4:6379"
+      #   - "redis-node5:6379"
+      #   - "redis-node6:6379"
+      nodes: []
+    
+    # 哨兵模式配置 (适用于Redis Sentinel)
+    sentinel:
+      enabled: false
+      # 主节点名称
+      masterName: "mymaster"
+      # 哨兵节点列表格式: host:port
+      # 示例:
+      # nodes:
+      #   - "sentinel1:26379"
+      #   - "sentinel2:26379"
+      #   - "sentinel3:26379"
+      nodes: []
+      # 哨兵密码
+      password: ""
 ```
 
-## 功能特性
+#### RocketMQ配置模板
 
-### 服务网格支持 (Istio)
-Chart支持Istio服务网格，提供流量管理、安全性和可观察性功能。
+```yaml
+middleware:
+  rocketmq:
+    cluster:
+      enabled: false
+      # NameServer节点列表格式: host:port
+      # 示例:
+      # nameServer:
+      #   - "rocketmq-namesrv1:9876"
+      #   - "rocketmq-namesrv2:9876"
+      nameServer: []
+```
 
-### 自动扩缩容 (KEDA)
-通过KEDA实现基于Kafka消息队列的自动扩缩容功能。
+#### Kafka配置模板
 
-### 监控集成
-支持Prometheus和Grafana监控集成。
+```yaml
+middleware:
+  kafka:
+    cluster:
+      enabled: false
+      # Broker节点列表格式: host:port
+      # 示例:
+      # brokers:
+      #   - "kafka-broker1:9092"
+      #   - "kafka-broker2:9092"
+      #   - "kafka-broker3:9092"
+      brokers: []
+```
 
-### 数据库初始化
-自动创建数据库表结构。
+### 中间件集群模式
 
-### 依赖服务管理
-支持MySQL、Redis、Kafka、RocketMQ、Nacos和Sentinel等依赖服务的部署和初始化。
+CouponKill Helm Chart 支持多种中间件的集群模式，可以通过修改 values.yaml 文件中的配置来启用：
 
-### Nacos配置管理
-自动初始化Nacos配置，包括：
-- 公共配置(common.yaml)
-- 用户服务分库分表配置(user-service-sharding.yaml)
-- 订单服务分库分表配置(order-service-sharding.yaml)
-- 优惠券服务分库分表配置(coupon-service-sharding.yaml)
+#### Nacos 集群模式
 
-### Nacos外部访问
-Nacos支持外部访问，可通过LoadBalancer服务从集群外部访问Nacos控制台，便于配置管理。
+```yaml
+nacos:
+  cluster:
+    enabled: true
+    replicas: 3
+```
 
-## 访问服务
+#### RocketMQ 集群模式
 
-部署完成后，可以通过以下方式访问服务：
+```yaml
+rocketmq:
+  nameServer:
+    cluster:
+      enabled: true
+      replicas: 3
+  broker:
+    cluster:
+      enabled: true
+      replicas: 2
+      config:
+        brokerRole: ASYNC_MASTER
+        flushDiskType: ASYNC_FLUSH
+```
 
-- 网关服务: `http://<ingress-ip>`
-- 用户服务: `http://<ingress-ip>/api/v1/user`
-- 订单服务: `http://<ingress-ip>/api/v1/order`
-- 优惠券服务: `http://<ingress-ip>/api/v1/coupon`
-- Go秒杀服务: `http://<ingress-ip>/seckill`
-- Sentinel Dashboard: `http://<ingress-ip>:8080`
-- Nacos Dashboard: `http://<external-ip>:8848` (外部访问)
+#### 数据库集群模式
+
+```yaml
+db:
+  cluster:
+    enabled: true
+    nodes:
+      - "mysql-0.mysql-headless:3306"
+      - "mysql-1.mysql-headless:3306"
+      - "mysql-2.mysql-headless:3306"
+```
+
+#### 数据库主从复制模式
+
+```yaml
+db:
+  replication:
+    enabled: true
+    master:
+      host: "mysql-master"
+      port: 3306
+    slaves:
+      - host: "mysql-slave-0"
+        port: 3306
+      - host: "mysql-slave-1"
+        port: 3306
+```
+
+#### Redis 集群模式
+
+```yaml
+redis:
+  cluster:
+    enabled: true
+    nodes:
+      - "redis-0.redis-headless:6379"
+      - "redis-1.redis-headless:6379"
+      - "redis-2.redis-headless:6379"
+```
+
+#### Redis 哨兵模式
+
+```yaml
+redis:
+  sentinel:
+    enabled: true
+    masterName: "mymaster"
+    nodes:
+      - "redis-sentinel-0.redis-headless:26379"
+      - "redis-sentinel-1.redis-headless:26379"
+      - "redis-sentinel-2.redis-headless:26379"
+```
+
+### 动态配置更新
+
+所有服务都支持通过 Nacos 进行动态配置更新。当在 Nacos 中修改配置后，服务会自动感知并应用新的配置，无需重启服务。
+
+#### 分库分表规则动态更新
+
+ShardingSphere 的分库分表规则可以通过 Nacos 进行动态更新。更新规则后，服务会自动重新加载规则并应用到新的数据访问中。
+
+#### 零停机配置变更
+
+系统支持以下零停机配置变更：
+
+1. **中间件节点动态增减**：
+   - 在 Nacos 配置中添加或删除中间件节点
+   - 服务自动感知节点变化并调整连接策略
+
+2. **分库分表规则调整**：
+   - 修改分库分表规则配置
+   - 服务实时应用新规则，无需重启
+
+3. **服务配置参数更新**：
+   - 调整线程池大小、连接池配置等参数
+   - 配置实时生效
+
+4. **配置监听器**：
+   - 系统内置配置监听器，定期检查并同步配置变更
+   - 可通过 `nacos.configWatcher.schedule` 配置检查频率
+
+### Nacos 集群模式和动态配置
+
+Nacos 本身支持集群模式部署，通过 ConfigMap 管理集群配置，可以动态添加或删除节点。当启用 Nacos 集群模式时，系统会自动创建 Headless Service 和 StatefulSet 来管理 Nacos 集群节点。
+
+#### 启用 Nacos 集群模式
+
+在 values.yaml 中设置：
+
+```yaml
+nacos:
+  cluster:
+    enabled: true
+    replicas: 3
+```
+
+#### 动态更新 Nacos 集群配置
+
+1. 修改 values.yaml 中的 Nacos 集群配置
+2. 执行 `helm upgrade` 命令更新部署
+3. Nacos 集群会自动更新配置并重新加载
+
+#### 中间件集群配置管理
+
+通过 Nacos 管理中间件集群配置，可以在运行时动态启用或禁用集群模式：
+
+1. 登录 Nacos 控制台
+2. 找到 `middleware-cluster-config.yaml` 配置
+3. 修改配置内容，例如启用 Redis 集群模式：
+
+```yaml
+middleware:
+  redis:
+    cluster:
+      enabled: true
+      nodes:
+        - "redis-0.redis-headless:6379"
+        - "redis-1.redis-headless:6379"
+        - "redis-2.redis-headless:6379"
+```
+
+4. 保存配置后，相关服务会自动感知并应用新的集群配置
+
+### 网关路由配置管理
+
+系统支持通过 Nacos 动态管理网关路由配置：
+
+1. 登录 Nacos 控制台
+2. 找到 `gateway-routes.yaml` 配置
+3. 修改路由规则
+4. 保存配置后，网关会自动感知并应用新的路由规则
+
+### Go服务配置管理
+
+Go服务支持通过 Nacos 进行动态配置管理：
+
+1. 登录 Nacos 控制台
+2. 找到 `go-service-dev.yaml` 配置
+3. 修改服务配置（如端口、Redis配置等）
+4. 保存配置后，Go服务会自动感知并应用新的配置
+
+### 自动扩缩容
+
+通过 KEDA 实现基于消息队列的自动扩缩容：
+
+```yaml
+keda:
+  enabled: true
+  kafka:
+    bootstrapServers: "broker:9092"
+    go:
+      enabled: true
+      deploymentName: "seckill-go-svc"
+      consumerGroup: "seckill-go-group"
+      topic: "seckill_order_create"
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      lagThreshold: "5"
+```
+
+## 零停机集群扩展
+
+系统支持在不中断服务的情况下进行集群扩展，包括中间件集群扩展和Nacos自身集群化：
+
+### 中间件集群扩展
+
+1. 在Nacos控制台中修改`middleware-cluster-config.yaml`配置
+2. 添加新的节点信息并启用集群模式
+3. 服务会自动感知新的集群配置并建立连接
+
+例如，扩展Redis集群：
+```yaml
+middleware:
+  redis:
+    cluster:
+      enabled: true
+      nodes:
+        - "redis-0.redis-headless:6379"
+        - "redis-1.redis-headless:6379"
+        - "redis-2.redis-headless:6379"  # 新增节点
+```
+
+### Nacos自身集群化
+
+1. 初始部署时Nacos以单机模式运行
+2. 当需要扩展为集群时，修改values.yaml：
+   ```yaml
+   nacos:
+     cluster:
+       enabled: true
+       replicas: 3
+   ```
+3. 执行`helm upgrade`更新部署
+4. Nacos会自动切换到集群模式，服务会自动连接到新的集群
 
 ## 故障排除
 

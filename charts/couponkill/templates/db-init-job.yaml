@@ -1,4 +1,4 @@
-{{- if .Values.db.init.enabled }}
+{{- if and .Values.db.init.enabled .Values.dependencies.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -35,34 +35,236 @@ spec:
             - -c
             - |
               echo "Waiting for MySQL to be ready..."
-              until mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1"; do
+              until mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1"; do
                 sleep 2
               done
               
-              echo "Creating database if not exists..."
-              mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;"
+              echo "Creating database and tables..."
+              mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD <<EOF
+              CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;
+              USE $MYSQL_DATABASE;
               
-              echo "Initializing database schema..."
-              mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE < /scripts/init.sql
+              -- 用户表
+              CREATE TABLE IF NOT EXISTS user (
+                id BIGINT PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                password VARCHAR(100) NOT NULL,
+                phone VARCHAR(20),
+                email VARCHAR(100),
+                status TINYINT DEFAULT 1,
+                create_time DATETIME,
+                update_time DATETIME,
+                last_active_time DATETIME,
+                INDEX idx_username (username),
+                INDEX idx_phone (phone)
+              );
+              
+              -- 用户优惠券统计表
+              CREATE TABLE IF NOT EXISTS user_coupon_count (
+                user_id BIGINT PRIMARY KEY,
+                total_count INT DEFAULT 0,
+                seckill_count INT DEFAULT 0,
+                normal_count INT DEFAULT 0,
+                expired_count INT DEFAULT 0,
+                update_time DATETIME,
+                version INT DEFAULT 0
+              );
+              
+              -- 订单表 (分表示例)
+              CREATE TABLE IF NOT EXISTS order_0 (
+                id VARCHAR(32) PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                coupon_id BIGINT,
+                virtual_id VARCHAR(50),
+                status TINYINT DEFAULT 1,
+                get_time DATETIME,
+                use_time DATETIME,
+                cancel_time DATETIME,
+                expire_time DATETIME,
+                create_time DATETIME,
+                update_time DATETIME,
+                request_id VARCHAR(50),
+                version INT DEFAULT 0,
+                INDEX idx_user_id (user_id),
+                INDEX idx_create_time (create_time),
+                INDEX idx_status (status)
+              );
+              
+              -- 优惠券表 (分表示例)
+              CREATE TABLE IF NOT EXISTS coupon_0 (
+                id BIGINT NOT NULL,
+                shard_index INT NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                description TEXT,
+                type TINYINT NOT NULL COMMENT '1-常驻,2-秒抢',
+                face_value DECIMAL(10,2) NOT NULL,
+                min_spend DECIMAL(10,2) NOT NULL,
+                valid_days INT NOT NULL,
+                per_user_limit INT NOT NULL,
+                total_stock INT NOT NULL,
+                seckill_total_stock INT DEFAULT 0,
+                remaining_stock INT NOT NULL,
+                seckill_remaining_stock INT DEFAULT 0,
+                status TINYINT DEFAULT 1,
+                create_time DATETIME,
+                update_time DATETIME,
+                version INT DEFAULT 0,
+                PRIMARY KEY (id, shard_index),
+                INDEX idx_type_status (type, status),
+                INDEX idx_create_time (create_time)
+              );
+              
+              -- 库存日志表 (分表示例)
+              CREATE TABLE IF NOT EXISTS stock_log_0 (
+                id BIGINT PRIMARY KEY,
+                coupon_id BIGINT NOT NULL,
+                shard_index INT NOT NULL,
+                operation_type TINYINT NOT NULL COMMENT '1-扣减,2-增加',
+                amount INT NOT NULL,
+                create_time DATETIME,
+                INDEX idx_coupon_id (coupon_id),
+                INDEX idx_create_time (create_time)
+              );
+              
+              -- 创建其他分表 (简化示例)
+              CREATE TABLE IF NOT EXISTS order_1 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_2 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_3 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_4 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_5 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_6 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_7 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_8 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_9 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_10 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_11 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_12 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_13 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_14 LIKE order_0;
+              CREATE TABLE IF NOT EXISTS order_15 LIKE order_0;
+              
+              CREATE TABLE IF NOT EXISTS coupon_1 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_2 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_3 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_4 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_5 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_6 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_7 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_8 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_9 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_10 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_11 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_12 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_13 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_14 LIKE coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_15 LIKE coupon_0;
+              
+              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_4 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_5 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_6 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_7 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_8 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_9 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_10 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_11 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_12 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_13 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_14 LIKE stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_15 LIKE stock_log_0;
+              
+              -- 用户数据库分库分表示例
+              CREATE DATABASE IF NOT EXISTS user_db_0;
+              CREATE DATABASE IF NOT EXISTS user_db_1;
+              
+              USE user_db_0;
+              CREATE TABLE IF NOT EXISTS user LIKE couponkill.user;
+              CREATE TABLE IF NOT EXISTS user_coupon_count LIKE couponkill.user_coupon_count;
+              
+              USE user_db_1;
+              CREATE TABLE IF NOT EXISTS user LIKE couponkill.user;
+              CREATE TABLE IF NOT EXISTS user_coupon_count LIKE couponkill.user_coupon_count;
+              
+              -- 订单数据库分库分表示例
+              CREATE DATABASE IF NOT EXISTS order_db_0;
+              CREATE DATABASE IF NOT EXISTS order_db_1;
+              CREATE DATABASE IF NOT EXISTS order_db_2;
+              CREATE DATABASE IF NOT EXISTS order_db_3;
+              
+              USE order_db_0;
+              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
+              
+              USE order_db_1;
+              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
+              
+              USE order_db_2;
+              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
+              
+              USE order_db_3;
+              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
+              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
+              
+              -- 优惠券数据库分库分表示例
+              CREATE DATABASE IF NOT EXISTS coupon_db_0;
+              CREATE DATABASE IF NOT EXISTS coupon_db_1;
+              CREATE DATABASE IF NOT EXISTS coupon_db_2;
+              CREATE DATABASE IF NOT EXISTS coupon_db_3;
+              
+              USE coupon_db_0;
+              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
+              
+              USE coupon_db_1;
+              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
+              
+              USE coupon_db_2;
+              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
+              
+              USE coupon_db_3;
+              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
+              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
+              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
+              
+              EOF
               
               echo "Database initialization completed."
-          volumeMounts:
-            - name: init-scripts
-              mountPath: /scripts
-      volumes:
-        - name: init-scripts
-          configMap:
-            name: {{ .Values.db.init.name }}-scripts
       restartPolicy: OnFailure
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.db.init.name }}-scripts
-  namespace: {{ .Values.namespace }}
-  labels:
-    app: {{ .Values.db.init.name }}
-data:
-  init.sql: |
-    {{- .Files.Get "scripts/init.sql" | nindent 4 }}
 {{- end }}

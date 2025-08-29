@@ -10,20 +10,46 @@
 #   .Values.services.coupon.port: 容器暴露的端口
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: {{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
+metadata: 
+  name: {{ .Values.services.coupon.name }}
+  namespace: {{ .Values.namespace }}
+  annotations:
+    # 添加配置版本标签，用于配置更新时触发滚动更新
+    config-version: "{{ now | date "20060102150405" }}"
 spec:
   replicas: {{ .Values.services.coupon.replicas }}
-  selector: {matchLabels: {app: {{ .Values.services.coupon.name }}}}
+  selector: 
+    matchLabels: 
+      app: {{ .Values.services.coupon.name }}
   template:
-    metadata: {labels: {app: {{ .Values.services.coupon.name }}}}
+    metadata: 
+      labels: 
+        app: {{ .Values.services.coupon.name }}
+      annotations:
+        # 添加配置更新时间戳，用于触发滚动更新
+        config-update-time: "{{ now | date "2006-01-02T15:04:05Z07:00" }}"
     spec:
       containers:
         - name: app
           image: "{{ .Values.image.registry }}/{{ .Values.services.coupon.image.name }}:{{ .Values.services.coupon.image.tag }}"
-          ports: [{containerPort: {{ .Values.services.coupon.port }} }]
+          ports: 
+            - containerPort: {{ .Values.services.coupon.port }}
           # 配置就绪探针，检查服务是否准备就绪
           # 初始延迟5秒，每10秒检查一次
-          readinessProbe: {httpGet: {path: /actuator/health, port: {{ .Values.services.coupon.port }}}, initialDelaySeconds: 5, periodSeconds: 10}
+          readinessProbe: 
+            httpGet: 
+              path: /actuator/health
+              port: {{ .Values.services.coupon.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # 配置存活探针，检查服务是否正常运行
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.coupon.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
           env:
             # 设置 Redis 主机地址
             - name: REDIS_HOST
@@ -36,8 +62,13 @@ spec:
               value: "broker:9092"
             {{- end }}
             {{- if .Values.nacos.enabled }}
+            {{- if .Values.nacos.cluster.enabled }}
+            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}-headless:{{ .Values.nacos.service.port }}"
+            {{- else }}
             - name: SPRING_CLOUD_NACOS_SERVER-ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- end }}
             {{- end }}
             {{- if .Values.sentinel.enabled }}
             - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
@@ -52,40 +83,41 @@ spec:
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.coupon.threadPoolOpts }}"
             {{- end }}
----
-# 定义 Coupon 服务的 Service 资源
-# 用于暴露服务，使其他服务可以通过 ClusterIP 访问该服务
-# 参数:
-#   .Values.services.coupon.name: 服务名称
-#   .Values.namespace: 命名空间
-#   .Values.services.coupon.port: 目标端口
-apiVersion: v1
-kind: Service
-metadata: {name: {{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
-spec:
-  selector: {app: {{ .Values.services.coupon.name }}}
-  ports: [{port: 80, targetPort: {{ .Values.services.coupon.port }} }]
----
-# 条件性定义 HorizontalPodAutoscaler (HPA) 资源
-# 当启用 HPA 时，根据 CPU 使用率自动扩缩容 Pod 副本数量
-# 参数:
-#   .Values.services.coupon.hpa.enabled: 是否启用 HPA
-#   .Values.services.coupon.name: 服务名称
-#   .Values.namespace: 命名空间
-#   .Values.services.coupon.hpa.minReplicas: 最小副本数
-#   .Values.services.coupon.hpa.maxReplicas: 最大副本数
-#   .Values.services.coupon.hpa.cpu: 目标 CPU 平均利用率
-{{- if .Values.services.coupon.hpa.enabled }}
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata: {name: {{ .Values.services.coupon.name }}, namespace: {{ .Values.namespace }}}
-spec:
-  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: {{ .Values.services.coupon.name }}}
-  minReplicas: {{ .Values.services.coupon.hpa.minReplicas }}
-  maxReplicas: {{ .Values.services.coupon.hpa.maxReplicas }}
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target: {type: Utilization, averageUtilization: {{ .Values.services.coupon.hpa.cpu }}}
-{{- end }}
+            # 添加配置刷新环境变量
+            - name: SPRING_CLOUD_NACOS_CONFIG_REFRESH_ENABLED
+              value: "true"
+            - name: SPRING_CLOUD_NACOS_CONFIG_REFRESH_INTERVAL
+              value: "3000"
+            # 数据库连接池配置
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: "20"
+            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+              value: "5"
+            - name: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
+              value: "30000"
+            - name: SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT
+              value: "600000"
+            - name: SPRING_DATASOURCE_HIKARI_MAX_LIFETIME
+              value: "1800000"
+            # 启用ShardingSphere动态配置
+            - name: SHARDINGSPHERE_PROPS_SQL_SHOW
+              value: "true"
+            - name: SHARDINGSPHERE_PROPS_SQL_TRACE
+              value: "true"
+          # 资源限制
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          # 挂载配置卷
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+      volumes:
+        - name: config-volume
+          emptyDir: {}
+      # 优雅停止
+      terminationGracePeriodSeconds: 30

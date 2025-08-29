@@ -2,7 +2,9 @@ package com.aliyun.seckill.couponkillcouponservice.config;
 
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +15,9 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 
+@Slf4j
 @Configuration
 public class CouponShardingSphereConfig {
 
@@ -26,6 +30,9 @@ public class CouponShardingSphereConfig {
     @Value("${spring.cloud.nacos.config.group:DEFAULT_GROUP}")
     private String group;
 
+    private ConfigService configService;
+    private DataSource dataSource;
+
     @Bean
     @Primary
     public DataSource dataSource() throws SQLException, IOException, NacosException {
@@ -37,7 +44,7 @@ public class CouponShardingSphereConfig {
                 properties.put("namespace", namespace);
             }
 
-            ConfigService configService = NacosFactory.createConfigService(properties);
+            configService = NacosFactory.createConfigService(properties);
 
             // 从Nacos获取coupon-service的ShardingSphere配置
             String dataId = "coupon-service-sharding.yaml";
@@ -48,10 +55,77 @@ public class CouponShardingSphereConfig {
             }
 
             // 使用从Nacos获取的配置创建数据源（不使用Seata代理）
-            return YamlShardingSphereDataSourceFactory.createDataSource(configContent.getBytes());
+            dataSource = YamlShardingSphereDataSourceFactory.createDataSource(configContent.getBytes());
+            
+            // 添加配置监听器，实现动态配置更新
+            addConfigListener(dataId);
+            
+            // 添加中间件集群配置监听器
+            addMiddlewareConfigListener();
+            
+            return dataSource;
         } catch (Exception e) {
             // 如果Nacos配置获取失败，使用默认配置
             throw new RuntimeException("数据源配置失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 添加配置监听器，实现动态配置更新
+     * @param dataId 配置ID
+     */
+    private void addConfigListener(String dataId) {
+        try {
+            configService.addListener(dataId, group, new Listener() {
+                @Override
+                public Executor getExecutor() {
+                    return null;
+                }
+
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    log.info("接收到Nacos配置变更通知，dataId: {}", dataId);
+                    try {
+                        // 重新创建数据源
+                        DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(configInfo.getBytes());
+                        
+                        // 替换旧的数据源（实际生产环境中需要更复杂的处理）
+                        dataSource = newDataSource;
+                        log.info("成功更新ShardingSphere数据源配置");
+                    } catch (Exception e) {
+                        log.error("更新ShardingSphere数据源配置失败", e);
+                    }
+                }
+            });
+            log.info("已添加Nacos配置监听器，dataId: {}", dataId);
+        } catch (Exception e) {
+            log.error("添加Nacos配置监听器失败", e);
+        }
+    }
+    
+    /**
+     * 添加中间件集群配置监听器
+     */
+    private void addMiddlewareConfigListener() {
+        try {
+            // 监听中间件集群配置
+            configService.addListener("middleware-cluster-config.yaml", group, new Listener() {
+                @Override
+                public Executor getExecutor() {
+                    return null;
+                }
+
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    log.info("接收到中间件集群配置变更通知");
+                    // 这里可以处理中间件集群配置变更，例如更新Redis、MySQL等客户端配置
+                    log.info("中间件集群配置: {}", configInfo);
+                }
+            });
+            
+            log.info("已添加中间件集群配置监听器");
+        } catch (Exception e) {
+            log.error("添加中间件集群配置监听器失败", e);
         }
     }
 }

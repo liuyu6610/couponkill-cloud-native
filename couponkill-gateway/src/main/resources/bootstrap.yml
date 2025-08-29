@@ -22,4 +22,12 @@ spring:
           - data-id: common.yaml
             group: DEFAULT_GROUP
             refresh: true
+          - data-id: gateway-routes.yaml
+            group: DEFAULT_GROUP
+            refresh: true
         refresh-enabled: true
+        refresh-interval: 3000  # 配置刷新间隔，单位毫秒
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:secret}  # JWT密钥

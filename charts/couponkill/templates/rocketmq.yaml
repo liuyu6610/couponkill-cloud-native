@@ -1,4 +1,67 @@
 {{- if .Values.rocketmq.enabled }}
+{{- if .Values.rocketmq.nameServer.cluster.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv-headless
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-namesrv
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.nameServer.service.port }}
+      targetPort: 9876
+      protocol: TCP
+      name: namesrv
+  clusterIP: None
+  selector:
+    app: {{ .Values.rocketmq.name }}-namesrv
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-namesrv
+spec:
+  serviceName: {{ .Values.rocketmq.name }}-namesrv-headless
+  replicas: {{ .Values.rocketmq.nameServer.cluster.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-namesrv
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-namesrv
+    spec:
+      containers:
+        - name: namesrv
+          image: "{{ .Values.rocketmq.image.repository }}:{{ .Values.rocketmq.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+          ports:
+            - containerPort: 9876
+              name: namesrv
+          command: ["sh", "mqnamesrv"]
+          env:
+            - name: JAVA_OPT
+              value: "-server -Xms1g -Xmx1g -Xmn512m"
+          volumeMounts:
+            - name: data
+              mountPath: /home/rocketmq/store
+      volumes:
+        - name: data
+          emptyDir: {}
+{{- else }}
 ---
 apiVersion: v1
 kind: Service
@@ -15,28 +78,6 @@ spec:
       name: namesrv
   selector:
     app: {{ .Values.rocketmq.name }}-namesrv
-  type: ClusterIP
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.rocketmq.name }}-broker
-  namespace: {{ .Values.namespace }}
-  labels:
-    app: {{ .Values.rocketmq.name }}-broker
-spec:
-  ports:
-    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
-      targetPort: 10911
-      protocol: TCP
-      name: broker-port
-    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
-      targetPort: 10912
-      protocol: TCP
-      name: broker-ha-port
-  selector:
-    app: {{ .Values.rocketmq.name }}-broker
   type: ClusterIP
 
 ---
@@ -63,34 +104,59 @@ spec:
           imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
               memory: "1Gi"
               cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
           ports:
             - containerPort: 9876
+          command: ["sh", "mqnamesrv"]
           env:
             - name: JAVA_OPT
-              value: "-server -Xms512m -Xmx512m -Xmn256m"
-          command: ["sh", "mqnamesrv"]
+              value: "-server -Xms1g -Xmx1g -Xmn512m"
           volumeMounts:
             - name: data
               mountPath: /home/rocketmq/store
       volumes:
         - name: data
           emptyDir: {}
+{{- end }}
+
+{{- if .Values.rocketmq.broker.cluster.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker-headless
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
+      targetPort: 10911
+      protocol: TCP
+      name: broker-port
+    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
+      targetPort: 10912
+      protocol: TCP
+      name: broker-ha-port
+  clusterIP: None
+  selector:
+    app: {{ .Values.rocketmq.name }}-broker
 
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Values.rocketmq.name }}-broker
   namespace: {{ .Values.namespace }}
   labels:
     app: {{ .Values.rocketmq.name }}-broker
 spec:
-  replicas: {{ .Values.rocketmq.broker.replicas }}
+  serviceName: {{ .Values.rocketmq.name }}-broker-headless
+  replicas: {{ .Values.rocketmq.broker.cluster.replicas }}
   selector:
     matchLabels:
       app: {{ .Values.rocketmq.name }}-broker
@@ -105,20 +171,30 @@ spec:
           imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
           resources:
             requests:
-              memory: "1Gi"
-              cpu: "500m"
-            limits:
               memory: "2Gi"
               cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
           ports:
             - containerPort: 10911
+              name: broker-port
             - containerPort: 10912
+              name: broker-ha-port
+          command: ["sh", "mqbroker"]
           env:
             - name: NAMESRV_ADDR
+              {{- if .Values.rocketmq.nameServer.cluster.enabled }}
+              value: "{{ range $i, $e := until (.Values.rocketmq.nameServer.cluster.replicas | int) }}{{ $.Values.rocketmq.name }}-namesrv-{{ $i }}.{{ $.Values.rocketmq.name }}-namesrv-headless:{{ $.Values.rocketmq.nameServer.service.port }};{{ end }}"
+              {{- else }}
               value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+              {{- end }}
             - name: JAVA_OPT
-              value: "-server -Xms1g -Xmx1g -Xmn512m"
-          command: ["sh", "mqbroker", "-n", "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"]
+              value: "-server -Xms2g -Xmx2g -Xmn1g"
+            - name: BROKER_ROLE
+              value: "{{ .Values.rocketmq.broker.cluster.config.brokerRole }}"
+            - name: FLUSH_DISK_TYPE
+              value: "{{ .Values.rocketmq.broker.cluster.config.flushDiskType }}"
           volumeMounts:
             - name: data
               mountPath: /home/rocketmq/store
@@ -144,7 +220,80 @@ data:
     brokerId = 0
     deleteWhen = 04
     fileReservedTime = 48
-    brokerRole = ASYNC_MASTER
-    flushDiskType = ASYNC_FLUSH
-    namesrvAddr = {{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}
+    brokerRole = {{ .Values.rocketmq.broker.cluster.config.brokerRole }}
+    flushDiskType = {{ .Values.rocketmq.broker.cluster.config.flushDiskType }}
+{{- else }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker
+spec:
+  ports:
+    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
+      targetPort: 10911
+      protocol: TCP
+      name: broker-port
+    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
+      targetPort: 10912
+      protocol: TCP
+      name: broker-ha-port
+  selector:
+    app: {{ .Values.rocketmq.name }}-broker
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker
+spec:
+  replicas: {{ .Values.rocketmq.broker.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-broker
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-broker
+    spec:
+      containers:
+        - name: broker
+          image: "{{ .Values.rocketmq.image.repository }}:{{ .Values.rocketmq.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.image.pullPolicy }}
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          ports:
+            - containerPort: 10911
+              name: broker-port
+            - containerPort: 10912
+              name: broker-ha-port
+          command: ["sh", "mqbroker"]
+          env:
+            - name: NAMESRV_ADDR
+              {{- if .Values.rocketmq.nameServer.cluster.enabled }}
+              value: "{{ range $i, $e := until (.Values.rocketmq.nameServer.cluster.replicas | int) }}{{ $.Values.rocketmq.name }}-namesrv-{{ $i }}.{{ $.Values.rocketmq.name }}-namesrv-headless:{{ $.Values.rocketmq.nameServer.service.port }};{{ end }}"
+              {{- else }}
+              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
+              {{- end }}
+            - name: JAVA_OPT
+              value: "-server -Xms2g -Xmx2g -Xmn1g"
+          volumeMounts:
+            - name: data
+              mountPath: /home/rocketmq/store
+      volumes:
+        - name: data
+          emptyDir: {}
+{{- end }}
 {{- end }}
