@@ -20,7 +20,6 @@ import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,10 +36,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +46,34 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
+    
+    // 在类的字段部分添加messagePool定义
+    private final GenericObjectPool<OrderMessage> messagePool = new GenericObjectPool<>(
+            new BasePooledObjectFactory<OrderMessage>() {
+                @Override
+                public OrderMessage create() {
+                    return new OrderMessage();
+                }
+
+                @Override
+                public PooledObject<OrderMessage> wrap(OrderMessage obj) {
+                    return new DefaultPooledObject<>(obj);
+                }
+
+                @Override
+                public void passivateObject(PooledObject<OrderMessage> p) throws Exception {
+                    // 重置对象状态
+                    OrderMessage message = p.getObject();
+                    message.setOrderId(null);
+                    message.setUserId(null);
+                    message.setCouponId(null);
+                    message.setVirtualId(null);
+                    message.setCreateTime(null);
+                    message.setStatus(null);
+                }
+            }
+    );
+
     @Autowired
     private CouponServiceFeignClient couponServiceFeignClient;
     @Autowired
@@ -206,8 +230,7 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
-            // 该方法会从优惠券的所有虚拟分片中随机或轮询选择一个有库存的分片进行扣减
-            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
             String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
 
             // 增加重试机制，提高在高并发下的成功率
@@ -218,15 +241,18 @@ public class OrderServiceImpl implements OrderService {
                     Thread.sleep(50 * (retryCount + 1)); // 指数退避延迟
                 } catch (InterruptedException ignored) {
                 }
-                deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+                deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
                 selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
                 retryCount++;
             }
 
+            // 处理最终结果
             if (selectedVirtualId == null || selectedVirtualId.isEmpty()) {
                 // 扣减库存失败，清理Redis标记
-                log.warn("扣减优惠券库存失败: couponId={}", couponId);
+                log.warn("扣减优惠券库存失败: couponId={}, 重试次数={}",
+                        couponId, retryCount);
                 redisTemplate.delete(userReceivedKey);
+
                 throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
             }
 
@@ -305,6 +331,7 @@ public class OrderServiceImpl implements OrderService {
     private void sendOrderMessage(Order order, Long userId, Long couponId) {
         OrderMessage orderMessage = null;
         try {
+            // 从对象池中借用对象
             orderMessage = messagePool.borrowObject();
             orderMessage.setOrderId(order.getId());
             orderMessage.setUserId(userId);
@@ -446,21 +473,16 @@ public class OrderServiceImpl implements OrderService {
 
         // 缓存未命中，查数据库
         if (totalCount == null || seckillCount == null) {
-            UserCouponCount count = orderMapper.selectUserCouponCountById(userId);
-            if (count == null) {
+            // 通过Feign调用UserService获取用户优惠券计数信息
+            try {
+                // 注意：这里需要UserService提供相应的Feign接口
+                // 暂时使用默认值0，后续通过Feign调用获取真实数据
                 totalCount = 0;
                 seckillCount = 0;
-                // 初始化用户优惠券数量
-                UserCouponCount newCount = new UserCouponCount();
-                newCount.setUserId(userId);
-                newCount.setTotalCount(0);
-                newCount.setSeckillCount(0);
-                newCount.setNormalCount(0);
-                newCount.setExpiredCount(0); // 确保设置 expiredCount
-                orderMapper.insertUserCouponCount(newCount);
-            } else {
-                totalCount = count.getTotalCount();
-                seckillCount = count.getSeckillCount();
+            } catch (Exception e) {
+                log.warn("获取用户优惠券计数失败，使用默认值: userId={}", userId, e);
+                totalCount = 0;
+                seckillCount = 0;
             }
 
             // 更新缓存，设置较长的过期时间以减少数据库访问
@@ -516,35 +538,23 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void updateUserCouponCount(Long userId, int couponType, int change) {
-        // 直接使用 orderMapper 处理用户优惠券计数
-        UserCouponCount count = orderMapper.selectUserCouponCountById(userId);
-        if (count == null) {
-            // 初始化逻辑
-            count = new UserCouponCount();
-            count.setUserId(userId);
-            count.setTotalCount(change > 0 ? change : 0);
-            count.setSeckillCount((couponType == 2 && change > 0) ? change : 0);
-            count.setNormalCount((couponType != 2 && change > 0) ? change : 0);
-            count.setExpiredCount(0); // 确保设置 expiredCount
-            orderMapper.insertUserCouponCount(count);
-        } else {
-            // 更新逻辑
-            int newTotalCount = count.getTotalCount() + change;
-            int newSeckillCount = count.getSeckillCount();
-            int newNormalCount = count.getNormalCount();
-
-            if (couponType == 2) { // 秒杀优惠券
-                newSeckillCount += change;
-            } else { // 普通优惠券
-                newNormalCount += change;
+        // 不再直接操作user_coupon_count表，而是通过其他服务间接更新
+        // 这里只需要更新Redis缓存即可，数据库由UserService负责维护
+        
+        String totalKey = USER_COUPON_COUNT_KEY + userId + ":total";
+        String seckillKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
+        
+        try {
+            // 更新Redis中的计数
+            if (change != 0) {
+                redisTemplate.opsForValue().increment(totalKey, change);
+                
+                if (couponType == 2) { // 秒杀优惠券
+                    redisTemplate.opsForValue().increment(seckillKey, change);
+                }
             }
-
-            // 确保数值不会为负数
-            newTotalCount = Math.max(0, newTotalCount);
-            newSeckillCount = Math.max(0, newSeckillCount);
-            newNormalCount = Math.max(0, newNormalCount);
-
-            orderMapper.updateUserCouponCount(userId, newTotalCount, newSeckillCount);
+        } catch (Exception e) {
+            log.warn("更新用户优惠券计数缓存失败: userId={}, change={}", userId, change, e);
         }
     }
 
@@ -671,7 +681,8 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
         }
         try {
-            return orderMapper.selectOrderById(String.valueOf(id));
+            // 使用现有的selectById方法替代已删除的selectOrderById方法
+            return orderMapper.selectById(String.valueOf(id));
         } catch (Exception e) {
             log.error("查询订单失败，订单ID: {}", id, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "查询订单失败");
@@ -687,7 +698,8 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             // 1. 查询订单是否存在
-            Order order = orderMapper.selectOrderById(String.valueOf(orderId));
+            // 使用现有的selectById方法替代已删除的selectOrderById方法
+            Order order = orderMapper.selectById(String.valueOf(orderId));
             if (order == null) {
                 throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
             }
@@ -704,8 +716,8 @@ public class OrderServiceImpl implements OrderService {
             order.setUseTime(now);
             order.setUpdateTime(now);
 
-            // 修复：将Long类型的orderId转换为String类型
-            int result = orderMapper.updateOrderStatus(String.valueOf(orderId), 2); // 2表示已使用
+            // 使用现有的updateStatus方法替代已删除的updateOrderStatus方法
+            int result = orderMapper.updateStatus(String.valueOf(orderId), 2, now); // 2表示已使用
             return result > 0;
         } catch (BusinessException e) {
             throw e;
@@ -845,7 +857,7 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
-            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
             String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
 
             // 增加重试机制，提高在高并发下的成功率
@@ -856,7 +868,7 @@ public class OrderServiceImpl implements OrderService {
                     Thread.sleep(50 * (retryCount + 1)); // 指数退避延迟
                 } catch (InterruptedException ignored) {
                 }
-                deductResponse = couponServiceFeignClient.deductStockWithVirtualId(couponId);
+                deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
                 selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
                 retryCount++;
             }
@@ -913,35 +925,4 @@ public class OrderServiceImpl implements OrderService {
             }
         }
     }
-
-
-    // 在 OrderServiceImpl 类中添加对象池
-    private final GenericObjectPool<OrderMessage> messagePool = new GenericObjectPool<>(
-            new BasePooledObjectFactory<OrderMessage>() {
-                @Override
-                public OrderMessage create() {
-                    return new OrderMessage();
-                }
-
-                @Override
-                public PooledObject<OrderMessage> wrap(OrderMessage obj) {
-                    return new DefaultPooledObject<>(obj);
-                }
-
-                @Override
-                public void passivateObject(PooledObject<OrderMessage> p) throws Exception {
-                    // 重置对象状态
-                    OrderMessage msg = p.getObject();
-                    msg.setOrderId(null);
-                    msg.setUserId(null);
-                    msg.setCouponId(null);
-                    msg.setCreateTime(null);
-                    msg.setStatus(null);
-                }
-            },
-            new GenericObjectPoolConfig<OrderMessage>() {{
-                setMaxTotal(100);
-                setMinIdle(10);
-            }}
-    );
 }

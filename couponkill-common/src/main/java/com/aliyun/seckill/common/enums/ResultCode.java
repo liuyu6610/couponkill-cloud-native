@@ -24,7 +24,7 @@ public enum ResultCode {
     COOLING_DOWN(9001, "用户冷却中" ),
     MQ_SEND_FAILED(9002,"消息发送失败" ),
     SERVICE_UNAVAILABLE(503, "服务不可用"),
-    SYSTEM_ERROR(9081, "系统错误" );
+    SYSTEM_ERROR(9081, "系统错误" ), COUPON_SERVICE_UNAVAILABLE(886, "优惠券服务不可用");
     private final int code;
     private final String message;
 }

@@ -2,115 +2,117 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper">
 
+    <!-- Result Maps -->
     <resultMap id="BaseResultMap" type="com.aliyun.seckill.common.pojo.Order">
-        <id column="id" property="id"/>
-        <result column="user_id" property="userId"/>
-        <result column="coupon_id" property="couponId"/>
-        <result column="virtual_id" property="virtualId"/>
-        <result column="status" property="status"/>
-        <result column="get_time" property="getTime"/>
-        <result column="use_time" property="useTime"/>
-        <result column="cancel_time" property="cancelTime"/>
-        <result column="expire_time" property="expireTime"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
-        <result column="request_id" property="requestId"/>
-        <result column="version" property="version"/>
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="coupon_id" jdbcType="BIGINT" property="couponId"/>
+        <result column="virtual_id" jdbcType="VARCHAR" property="virtualId"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="get_time" jdbcType="TIMESTAMP" property="getTime"/>
+        <result column="use_time" jdbcType="TIMESTAMP" property="useTime"/>
+        <result column="expire_time" jdbcType="TIMESTAMP" property="expireTime"/>
+        <result column="cancel_time" jdbcType="TIMESTAMP" property="cancelTime"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
     </resultMap>
 
+    <resultMap id="UserCouponCountResultMap" type="com.aliyun.seckill.common.pojo.UserCouponCount">
+        <id column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="total_count" jdbcType="INTEGER" property="totalCount"/>
+        <result column="seckill_count" jdbcType="INTEGER" property="seckillCount"/>
+        <result column="normal_count" jdbcType="INTEGER" property="normalCount"/>
+        <result column="expired_count" jdbcType="INTEGER" property="expiredCount"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="version" jdbcType="INTEGER" property="version"/>
+    </resultMap>
+
+    <!-- SQL片段 -->
+    <sql id="Base_Column_List">
+        id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time
+    </sql>
+
+    <!-- 插入订单 -->
     <insert id="insert" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (
-            id, user_id, coupon_id, virtual_id, status, get_time, use_time, cancel_time,
-            expire_time, create_time, update_time, request_id, version
-        ) VALUES (
-                     #{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{cancelTime},
-                     #{expireTime}, #{createTime}, #{updateTime}, #{requestId}, #{version}
-                 )
+        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time,
+                             create_time, update_time)
+        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime},
+                #{createTime}, #{updateTime})
     </insert>
 
-    <insert id="insertOrder" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (
-            id, user_id, coupon_id, virtual_id, status, get_time, use_time, cancel_time,
-            expire_time, create_time, update_time, request_id, version
-        ) VALUES (
-                     #{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{cancelTime},
-                     #{expireTime}, #{createTime}, #{updateTime}, #{requestId}, #{version}
-                 )
-    </insert>
-
+    <!-- 根据ID查询订单 -->
     <select id="selectById" parameterType="string" resultMap="BaseResultMap">
-        SELECT * FROM `order` WHERE id = #{id}
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `order`
+        WHERE id = #{id}
     </select>
 
-    <select id="selectOrderById" parameterType="string" resultMap="BaseResultMap">
-        SELECT * FROM `order` WHERE id = #{id}
+    <!-- 根据用户ID和优惠券ID统计订单数量 -->
+    <select id="countByUserAndCoupon" resultType="long">
+        SELECT COUNT(*) FROM `order`
+        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2, 3)
     </select>
 
+    <!-- 根据用户ID查询订单列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `order`
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据条件查询订单列表 -->
+    <select id="selectAllByCondition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `order`
+        WHERE 1=1
+        <if test="startTime != null and startTime != ''">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计订单总数 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM `order`
+    </select>
+
+    <!-- 更新订单状态 -->
     <update id="updateStatus">
         UPDATE `order`
         SET status = #{status}, update_time = #{updateTime}
-        WHERE id = #{id}
+        WHERE id = #{orderId}
     </update>
 
+    <!-- 更新订单状态和取消时间 -->
     <update id="updateStatusWithCancelTime">
         UPDATE `order`
         SET status = #{status}, cancel_time = #{cancelTime}, update_time = #{updateTime}
-        WHERE id = #{id}
+        WHERE id = #{orderId}
     </update>
 
-    <update id="updateOrderStatus">
-        UPDATE `order`
-        SET status = #{status}, update_time = NOW()
-        WHERE id = #{id}
-    </update>
+    <!-- 根据用户ID和虚拟ID查询订单 -->
+    <select id="selectByUserIdAndVirtualId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `order`
+        WHERE user_id = #{userId} AND coupon_id = #{virtualId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
 
-    <select id="countByUserAndCoupon" resultType="long">
+    <!-- 查询用户指定优惠券的领取次数 -->
+    <select id="countUserCouponsByVirtualId" resultType="int">
         SELECT COUNT(*) FROM `order`
         WHERE user_id = #{userId} AND coupon_id = #{couponId}
     </select>
-
-    <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT * FROM `order`
-        WHERE user_id = #{userId}
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
-    </select>
-
-    <select id="selectAllByCondition" resultMap="BaseResultMap">
-        SELECT * FROM `order`
-        <where>
-            <if test="startTime != null and startTime != ''">
-                AND create_time >= #{startTime}
-            </if>
-            <if test="endTime != null and endTime != ''">
-                AND create_time &lt;= #{endTime}
-            </if>
-        </where>
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
-    </select>
-
-    <select id="selectUserCouponCountById" resultType="com.aliyun.seckill.common.pojo.UserCouponCount">
-        SELECT user_id, total_count, seckill_count, normal_count, expired_count
-        FROM user_coupon_count
-        WHERE user_id = #{userId}
-    </select>
-
-    <insert id="insertUserCouponCount" parameterType="com.aliyun.seckill.common.pojo.UserCouponCount">
-        INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count)
-        VALUES (#{userId}, #{totalCount}, #{seckillCount}, #{normalCount}, #{expiredCount})
-        ON DUPLICATE KEY UPDATE
-                             total_count = #{totalCount},
-                             seckill_count = #{seckillCount},
-                             normal_count = #{normalCount},
-                             expired_count = #{expiredCount}
-    </insert>
-
-    <update id="updateUserCouponCount">
-        UPDATE user_coupon_count
-        SET total_count = #{totalCount},
-            seckill_count = #{seckillCount}
-        WHERE user_id = #{userId}
-    </update>
 
 </mapper>

@@ -50,10 +50,21 @@ public class Coupon implements Serializable {
         shard.setMinSpend(original.getMinSpend());
         shard.setValidDays(original.getValidDays());
         shard.setPerUserLimit(original.getPerUserLimit());
-        shard.setTotalStock(original.getTotalStock() / totalShards);
-        shard.setSeckillTotalStock(original.getSeckillTotalStock() / totalShards);
-        shard.setRemainingStock(original.getRemainingStock() / totalShards);
-        shard.setSeckillRemainingStock(original.getSeckillRemainingStock() / totalShards);
+        
+        // 添加空值检查，防止NullPointerException
+        if (original.getTotalStock() != null) {
+            shard.setTotalStock(original.getTotalStock() / totalShards);
+        }
+        if (original.getSeckillTotalStock() != null) {
+            shard.setSeckillTotalStock(original.getSeckillTotalStock() / totalShards);
+        }
+        if (original.getRemainingStock() != null) {
+            shard.setRemainingStock(original.getRemainingStock() / totalShards);
+        }
+        if (original.getSeckillRemainingStock() != null) {
+            shard.setSeckillRemainingStock(original.getSeckillRemainingStock() / totalShards);
+        }
+        
         shard.setStatus(original.getStatus());
         shard.setCreateTime(original.getCreateTime());
         shard.setUpdateTime(original.getUpdateTime());

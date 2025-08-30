@@ -22,6 +22,7 @@ spring:
             group: DEFAULT_GROUP
             refresh: true
         refresh-enabled: true
+        refresh-interval: 3000  # 配置刷新间隔，单位毫秒
 
 # ShardingSphere配置
 shardingsphere:
