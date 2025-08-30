@@ -81,11 +81,11 @@ CI/CD: Jenkins
 
 ### 环境要求
 
-- Kubernetes 1.24+（推荐使用kubekey安装）
+- Kubernetes 1.27+（推荐使用kubekey安装）
 - Helm 3.0+
-- Jenkins 2.3+
+- Jenkins 2.3+（可选，更推荐相关产品，如阿里云的云效，现在相关产品很完善并且可以利用可视化界面进行配置优化）
 - Docker 20.10+
-
+- kubectl 1.27+
 ### 部署步骤
 
 #### 一键部署（推荐）
