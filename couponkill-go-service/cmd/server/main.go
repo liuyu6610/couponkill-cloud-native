@@ -2,11 +2,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -96,21 +100,43 @@ func main() {
 	seckillService := service.NewSeckillService(mysqlRepo, redisRepo)
 	seckillHandler := handler.NewSeckillHandler(seckillService, cfg.Seckill.ValidDays)
 
+	// 确保在程序退出时关闭工作池
+	defer func() {
+		// 可以在这里添加任何清理工作
+	}()
+
 	// 5. 路由设置
 	r := gin.Default()
 	r.POST("/seckill", seckillHandler.HandleSeckill)
 
-	// 添加健康检查接口
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"port":    cfg.Server.Port,
-			"message": "Go服务运行正常",
-			"time":    time.Now().Format("2006-01-02 15:04:05"),
-		})
-	})
+	// 6. 启动HTTP服务器
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler: r,
+	}
 
-	// 6. 启动服务
-	log.Printf("Go服务启动成功，端口: %d", cfg.Server.Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), r))
+	// 在goroutine中启动服务器，以便可以捕获关闭信号
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("服务器启动失败: %v", err)
+		}
+	}()
+
+	log.Printf("服务器启动成功，监听端口 %d", cfg.Server.Port)
+
+	// 等待中断信号以优雅地关闭服务器
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("正在关闭服务器...")
+
+	// 设置超时时间以防止长时间阻塞
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("服务器强制关闭: ", err)
+	}
+
+	log.Println("服务器已退出")
 }

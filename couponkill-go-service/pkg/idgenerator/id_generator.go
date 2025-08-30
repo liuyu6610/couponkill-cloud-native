@@ -29,10 +29,22 @@ func init() {
 
 // GenerateGoOrderID 生成Go端订单ID
 func GenerateGoOrderID() string {
-	return goGenerator.nextID()
+	return goGenerator.NextID()
 }
 
-func (g *GoOrderIDGenerator) nextID() string {
+// Snowflake 算法参数
+const (
+	epoch          = int64(1577836800000)             // 2020-01-01 00:00:00 UTC
+	nodeBits       = uint(10)                         // 节点ID所占位数
+	sequenceBits   = uint(12)                         // 序列号所占位数
+	nodeMax        = int64(-1 ^ (-1 << nodeBits))     // 节点ID最大值
+	sequenceMax    = int64(-1 ^ (-1 << sequenceBits)) // 序列号最大值
+	nodeShift      = sequenceBits                     // 节点ID左移位数
+	timestampShift = sequenceBits + nodeBits          // 时间戳左移位数
+)
+
+// NextID 生成下一个ID
+func (g *GoOrderIDGenerator) NextID() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -42,9 +54,8 @@ func (g *GoOrderIDGenerator) nextID() string {
 	}
 
 	if currentTime == g.lastTime {
-		g.sequence = (g.sequence + 1) & 0xFFF // 12位序列号
+		g.sequence = (g.sequence + 1) & sequenceMax
 		if g.sequence == 0 {
-			// 序列号溢出，等待下一毫秒
 			for currentTime <= g.lastTime {
 				currentTime = time.Now().UnixMilli()
 			}
@@ -55,21 +66,12 @@ func (g *GoOrderIDGenerator) nextID() string {
 
 	g.lastTime = currentTime
 
-	// 结构：时间戳(41位) + workerID(10位) + 序列号(12位)
-	id := (currentTime << 22) | (g.workerID << 12) | g.sequence
+	id := ((currentTime - epoch) << timestampShift) |
+		(g.workerID << nodeShift) |
+		g.sequence
+
 	return strconv.FormatInt(id, 10)
 }
-
-// Snowflake 算法参数
-const (
-	epoch          = int64(1577836800000)             // 设置起始时间戳(毫秒)：2020-01-01 00:00:00
-	nodeBits       = uint(10)                         // 节点ID所占位数
-	sequenceBits   = uint(12)                         // 序列号所占位数
-	nodeMax        = int64(-1 ^ (-1 << nodeBits))     // 节点ID最大值
-	sequenceMax    = int64(-1 ^ (-1 << sequenceBits)) // 序列号最大值
-	nodeShift      = sequenceBits                     // 节点ID左移位数
-	timestampShift = sequenceBits + nodeBits          // 时间戳左移位数
-)
 
 // IDGenerator ID生成器结构体
 type IDGenerator struct {

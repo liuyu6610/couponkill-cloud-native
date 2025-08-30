@@ -195,6 +195,63 @@ func (r *MysqlRepository) UpdateCouponStock(ctx context.Context, couponID int64,
 	return nil
 }
 
+// CheckShardStock 检查特定分片的库存
+func (r *MysqlRepository) CheckShardStock(ctx context.Context, couponID int64, virtualID string) (bool, error) {
+	// 根据分库分表规则确定数据源和表名
+	dataSourceName := r.couponSharding.GetDataSourceName(virtualID)
+	tableName := r.couponSharding.GetTableName(virtualID)
+
+	// 获取对应的数据源
+	db, err := r.multiDS.GetDataSource(dataSourceName)
+	if err != nil {
+		return false, fmt.Errorf("获取数据源失败: %v", err)
+	}
+
+	query := fmt.Sprintf("SELECT stock_count FROM %s WHERE id = ? AND stock_count > 0", tableName)
+	var stockCount int
+	err = db.QueryRowContext(ctx, query, couponID).Scan(&stockCount)
+	if err != nil {
+		// 如果查询出错或者没有找到记录，认为库存不足
+		return false, nil
+	}
+
+	return stockCount > 0, nil
+}
+
+// DeductShardStock 扣减特定分片的库存
+func (r *MysqlRepository) DeductShardStock(ctx context.Context, couponID int64, virtualID string) (bool, error) {
+	// 根据分库分表规则确定数据源和表名
+	dataSourceName := r.couponSharding.GetDataSourceName(virtualID)
+	tableName := r.couponSharding.GetTableName(virtualID)
+
+	// 获取对应的数据源
+	db, err := r.multiDS.GetDataSource(dataSourceName)
+	if err != nil {
+		return false, fmt.Errorf("获取数据源失败: %v", err)
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE %s 
+		SET stock_count = stock_count - 1,
+		    version = version + 1,
+		    update_time = ?
+		WHERE id = ? AND stock_count > 0 AND version >= 0
+	`, tableName)
+
+	result, err := db.ExecContext(ctx, query, time.Now(), couponID)
+	if err != nil {
+		return false, err
+	}
+
+	// 检查是否有行被更新
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+
 // WaitForDataSync 等待数据同步到ShardingSphere
 func (r *MysqlRepository) WaitForDataSync(ctx context.Context, order *model.Order) error {
 	// 简化处理，实际项目中可能需要更复杂的同步确认机制

@@ -4,6 +4,7 @@ package com.aliyun.seckill.couponkilluserservice.service;
 import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 
+import java.util.List;
 import java.util.Map;
 
 public interface UserService {
@@ -47,4 +48,10 @@ public interface UserService {
      * @param count 变化数量（正数表示增加，负数表示减少）
      */
     void updateNormalCouponCount(Long userId, int count);
+    
+    /**
+     * 批量插入用户
+     * @param users 用户列表
+     */
+    void batchInsertUsers(List<User> users);
 }

@@ -4,7 +4,7 @@ pipeline {
     
     environment {
         REGISTRY = "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker"
-        CANARY_REGISTRY = "crpi-n5rumpjwbqinoz4c-vpc.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev"
+        CANARY_REGISTRY = "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev"
         NAMESPACE = "couponkill"
         HELM_CHART_PATH = "./charts/couponkill"
     }
@@ -100,43 +100,43 @@ pipeline {
                     
                     // MySQL
                     sh 'docker pull mysql:8.0'
-                    sh 'docker tag mysql:8.0 ${REGISTRY}/mysql:8.0'
-                    sh 'docker push ${REGISTRY}/mysql:8.0'
+                    sh 'docker tag mysql:8.0 ${REGISTRY}/mysql'
+                    sh 'docker push ${REGISTRY}/mysql'
                     
                     // Redis
                     sh 'docker pull redis:7.0'
-                    sh 'docker tag redis:7.0 ${REGISTRY}/redis:7.0'
-                    sh 'docker push ${REGISTRY}/redis:7.0'
+                    sh 'docker tag redis:7.0 ${REGISTRY}/redis'
+                    sh 'docker push ${REGISTRY}/redis'
                     
                     // RocketMQ nameserver
-                    sh 'docker pull apache/rocketmq:4.9.4-alpine'
-                    sh 'docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine'
-                    sh 'docker push ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine'
+                    sh 'docker pull apache/rocketmq:5.3.1'
+                    sh 'docker tag apache/rocketmq:5.3.1 ${REGISTRY}/rocketmq-namesrv'
+                    sh 'docker push ${REGISTRY}/rocketmq-namesrv'
                     
                     // RocketMQ broker
-                    sh 'docker pull apache/rocketmq:4.9.4-alpine'
-                    sh 'docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-broker:4.9.4-alpine'
-                    sh 'docker push ${REGISTRY}/rocketmq-broker:4.9.4-alpine'
+                    sh 'docker pull apache/rocketmq:5.3.1'
+                    sh 'docker tag apache/rocketmq:5.3.1 ${REGISTRY}/rocketmq-broker'
+                    sh 'docker push ${REGISTRY}/rocketmq-broker'
                     
                     // Nacos
                     sh 'docker pull nacos/nacos-server:v2.2.3'
-                    sh 'docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}/nacos-server:v2.2.3'
-                    sh 'docker push ${REGISTRY}/nacos-server:v2.2.3'
+                    sh 'docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}/nacos-server'
+                    sh 'docker push ${REGISTRY}/nacos-server'
                     
                     // Sentinel
                     sh 'docker pull bladex/sentinel-dashboard:1.8.6'
-                    sh 'docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}/sentinel-dashboard:1.8.6'
-                    sh 'docker push ${REGISTRY}/sentinel-dashboard:1.8.6'
+                    sh 'docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}/sentinel-dashboard'
+                    sh 'docker push ${REGISTRY}/sentinel-dashboard'
                     
                     // Kafka
                     sh 'docker pull bitnami/kafka:3.4.0'
-                    sh 'docker tag bitnami/kafka:3.4.0 ${REGISTRY}/kafka:3.4.0'
-                    sh 'docker push ${REGISTRY}/kafka:3.4.0'
+                    sh 'docker tag bitnami/kafka:3.4.0 ${REGISTRY}/kafka'
+                    sh 'docker push ${REGISTRY}/kafka'
                     
                     // Zookeeper (for Kafka)
                     sh 'docker pull bitnami/zookeeper:3.8.1'
-                    sh 'docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}/zookeeper:3.8.1'
-                    sh 'docker push ${REGISTRY}/zookeeper:3.8.1'
+                    sh 'docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}/zookeeper'
+                    sh 'docker push ${REGISTRY}/zookeeper'
                 }
             }
         }

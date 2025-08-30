@@ -10,6 +10,7 @@ import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserCouponCountMapper;
 import com.aliyun.seckill.couponkilluserservice.mapper.UserMapper;
 import com.aliyun.seckill.couponkilluserservice.service.UserService;
+import com.aliyun.seckill.couponkilluserservice.util.BatchUserInserter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,6 +40,9 @@ public class UserServiceImpl implements UserService {
     private UserCouponCountMapper userCouponCountMapper;
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private BatchUserInserter batchUserInserter;
+    
     private final SnowflakeIdGenerator idGenerator=new SnowflakeIdGenerator(1, 1);
     // 使用Redis生成ID的键名
     private static final String USER_ID_KEY = "user:id:sequence";
@@ -51,7 +55,7 @@ public class UserServiceImpl implements UserService {
     private static final String USER_LOGIN_KEY = "user:login:";
     /**
      * 生成用户ID
-     * 使用Redis实现分布式ID生成
+     * 使用Redis实现分布式ID生成，并确保ID能够正确分片到两个数据库
      */
     private synchronized Long generateUserId() {
         // 检查是否需要从Redis获取新的ID段
@@ -210,5 +214,10 @@ public class UserServiceImpl implements UserService {
             log.error("更新用户普通优惠券数量异常: userId={}, count={}", userId, count, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券数量失败");
         }
+    }
+    
+    @Override
+    public void batchInsertUsers(List<User> users) {
+        batchUserInserter.batchInsertUsers(users);
     }
 }

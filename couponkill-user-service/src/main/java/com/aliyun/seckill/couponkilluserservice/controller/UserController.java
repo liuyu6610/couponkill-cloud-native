@@ -70,4 +70,32 @@ public class UserController {
             @Parameter(description = "用户ID") @RequestParam Long userId) {
         return ApiResponse.success(userService.getUserById(userId));
     }
+    
+    @Operation(summary = "更新用户秒杀优惠券数量", description = "更新用户秒杀优惠券数量")
+    @PostMapping("/coupon/seckill/update")
+    public ApiResponse<Void> updateSeckillCouponCount(
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "变化数量") @RequestParam int count) {
+        try {
+            userService.updateSeckillCouponCount(userId, count);
+            return ApiResponse.success(null);
+        } catch (Exception e) {
+            log.error("更新用户秒杀优惠券数量失败: userId={}, count={}", userId, count, e);
+            return ApiResponse.fail(500, "更新用户秒杀优惠券数量失败: " + e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "更新用户普通优惠券数量", description = "更新用户普通优惠券数量")
+    @PostMapping("/coupon/normal/update")
+    public ApiResponse<Void> updateNormalCouponCount(
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "变化数量") @RequestParam int count) {
+        try {
+            userService.updateNormalCouponCount(userId, count);
+            return ApiResponse.success(null);
+        } catch (Exception e) {
+            log.error("更新用户普通优惠券数量失败: userId={}, count={}", userId, count, e);
+            return ApiResponse.fail(500, "更新用户普通优惠券数量失败: " + e.getMessage());
+        }
+    }
 }
