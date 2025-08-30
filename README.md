@@ -200,6 +200,113 @@ docker build -t operator:latest -f couponkill-operator/Dockerfile .
 make test
 ```
 
+## 构建和部署脚本说明
+
+CouponKill 项目提供了多种方式来构建和部署系统，包括 Makefile 和 PowerShell 脚本。
+
+### Makefile 脚本（Linux/macOS）
+
+在类 Unix 系统上，可以使用 Makefile 来执行各种构建和部署任务：
+
+```bash
+# 显示所有可用命令
+make help
+
+# 构建所有服务的 Docker 镜像
+make build-all-images
+
+# 部署整个系统
+make deploy-chart
+
+# 生产环境部署
+make deploy-chart-prod
+
+# 金丝雀发布部署
+make deploy-chart-canary
+
+# 构建并推送所有镜像到注册表
+make build-and-push-all
+
+# 构建金丝雀版本镜像
+make build-all-images-canary
+
+# 推送金丝雀版本镜像
+make push-all-images-canary
+
+# 构建并推送所有金丝雀镜像
+make build-and-push-all-canary
+
+# 拉取依赖镜像
+make pull-dependency-images
+
+# 构建并推送所有镜像（包括依赖）
+make build-and-push-all-complete
+```
+
+### PowerShell 脚本（Windows）
+
+在 Windows 系统上，可以使用 PowerShell 脚本来执行构建和部署任务：
+
+```powershell
+# 显示帮助信息
+powershell -File build.ps1 help
+
+# 构建所有服务的 Docker 镜像
+powershell -File build.ps1 build-all-images
+
+# 部署整个系统
+powershell -File build.ps1 deploy-chart
+
+# 生产环境部署
+powershell -File build.ps1 deploy-chart-prod
+
+# 金丝雀发布部署
+powershell -File build.ps1 deploy-chart-canary
+
+# 构建并推送所有镜像到注册表
+powershell -File build.ps1 build-and-push-all
+
+# 构建金丝雀版本镜像
+powershell -File build.ps1 build-all-images-canary
+
+# 推送金丝雀版本镜像
+powershell -File build.ps1 push-all-images-canary
+
+# 构建并推送所有金丝雀镜像
+powershell -File build.ps1 build-and-push-all-canary
+
+# 拉取依赖镜像
+powershell -File build.ps1 pull-dependency-images
+
+# 构建并推送所有镜像（包括依赖）
+powershell -File build.ps1 build-and-push-all-complete
+```
+
+或者在 PowerShell 中直接运行：
+
+```powershell
+# 导航到项目根目录
+cd D:\couponkill\couponkill-cloud-native
+
+# 直接运行脚本
+.\build.ps1 build-all-images
+```
+
+### 脚本功能对照表
+
+| 功能 | Makefile 命令 | PowerShell 命令 | 说明 |
+|------|---------------|-----------------|------|
+| 构建所有镜像 | `make build-all-images` | `build.ps1 build-all-images` | 构建所有服务的 Docker 镜像 |
+| 部署系统 | `make deploy-chart` | `build.ps1 deploy-chart` | 使用 Helm Chart 部署整个系统 |
+| 生产部署 | `make deploy-chart-prod` | `build.ps1 deploy-chart-prod` | 生产环境部署 |
+| 金丝雀部署 | `make deploy-chart-canary` | `build.ps1 deploy-chart-canary` | 金丝雀发布部署 |
+| 构建并推送镜像 | `make build-and-push-all` | `build.ps1 build-and-push-all` | 构建并推送稳定版镜像 |
+| 构建金丝雀镜像 | `make build-all-images-canary` | `build.ps1 build-all-images-canary` | 构建金丝雀版本镜像 |
+| 推送金丝雀镜像 | `make push-all-images-canary` | `build.ps1 push-all-images-canary` | 推送金丝雀版本镜像 |
+| 构建并推送金丝雀镜像 | `make build-and-push-all-canary` | `build.ps1 build-and-push-all-canary` | 构建并推送金丝雀版本镜像 |
+| 拉取依赖镜像 | `make pull-dependency-images` | `build.ps1 pull-dependency-images` | 拉取依赖服务镜像 |
+| 完整构建推送 | `make build-and-push-all-complete` | `build.ps1 build-and-push-all-complete` | 构建并推送所有镜像 |
+
 ## 监控和运维
 
 Operator 提供了以下监控和运维功能：

@@ -13,6 +13,12 @@
     <name>couponkill-common</name>
     <description>秒杀系统通用模块</description>
     <dependencies>
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        
         <!-- Feign进行跨服务传递文件依赖 -->
         <dependency>
             <groupId>io.github.openfeign.form</groupId>
@@ -159,11 +165,6 @@
             <version>${sentinel.version}</version>
         </dependency>
 
-
-        <dependency>
-           <groupId>org.springframework.boot</groupId>
-           <artifactId>spring-boot-starter</artifactId>
-       </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>

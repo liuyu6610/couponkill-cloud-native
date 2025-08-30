@@ -16,12 +16,15 @@ public class MySQLConfig {
 
     // 单节点配置
     @Value("${spring.datasource.host:mysql}")
+    private String host;
     @Value("${spring.datasource.port:3306}")
-    @Value("${spring.datasource.database:couponkill}")
-    @Value("${spring.datasource.username:root}")
-    @Value("${spring.datasource.password:password}")
-    private String host, database, username, password;
     private int port;
+    @Value("${spring.datasource.database:couponkill}")
+    private String database;
+    @Value("${spring.datasource.username:root}")
+    private String username;
+    @Value("${spring.datasource.password:password}")
+    private String password;
 
     // 集群配置
     @Value("${spring.datasource.cluster.nodes:}")
@@ -29,8 +32,8 @@ public class MySQLConfig {
 
     // 主从复制配置
     @Value("${spring.datasource.replication.master.host:}")
-    @Value("${spring.datasource.replication.master.port:3306}")
     private String masterHost;
+    @Value("${spring.datasource.replication.master.port:3306}")
     private int masterPort;
 
     @Value("${spring.datasource.replication.slaves:}")

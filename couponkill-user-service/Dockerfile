@@ -27,6 +27,8 @@ COPY --from=builder /app/couponkill-user-service/target/*.jar app.jar
 
 # 暴露端口
 EXPOSE 8083
+
+# JVM优化参数 - 为高并发场景优化
 ENV JAVA_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
 ENV THREAD_POOL_OPTS="-Dserver.tomcat.max-threads=200 -Dserver.tomcat.min-spare-threads=20 -Dserver.tomcat.accept-count=100 -Dserver.tomcat.max-connections=5000"
 

@@ -47,5 +47,8 @@ EXPOSE 8090
 ENV GOGC=20
 ENV GOMAXPROCS=4
 
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget --quiet --tries=1 --spider http://localhost:8090/health || exit 1
+
 # 启动应用
 ENTRYPOINT ["./seckill-go"]

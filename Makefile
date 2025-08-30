@@ -18,7 +18,7 @@ CONTAINER_TOOL ?= docker
 
 # 阿里云镜像仓库配置
 REGISTRY ?= crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-CANARY_REGISTRY ?= crpi-n5rumpjwbqinoz4c-vpc.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev
+CANARY_REGISTRY ?= crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/canary-keda-dev
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -153,42 +153,58 @@ build-all-images: ## Build all Docker images for the project
 
 .PHONY: build-all-images-registry
 build-all-images-registry: ## Build and tag all Docker images for pushing to registry
-	docker build -t ${REGISTRY}/gateway:latest -f couponkill-gateway/Dockerfile .
-	docker build -t ${REGISTRY}/coupon:latest -f couponkill-coupon-service/Dockerfile .
-	docker build -t ${REGISTRY}/order:latest -f couponkill-order-service/Dockerfile .
-	docker build -t ${REGISTRY}/user:latest -f couponkill-user-service/Dockerfile .
-	docker build -t ${REGISTRY}/seckill-go:latest -f couponkill-go-service/Dockerfile .
-	docker build -t ${REGISTRY}/operator:latest -f couponkill-operator/Dockerfile .
+	docker build -t gateway:latest -f couponkill-gateway/Dockerfile .
+	docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
+	docker build -t order:latest -f couponkill-order-service/Dockerfile .
+	docker build -t user:latest -f couponkill-user-service/Dockerfile .
+	docker build -t seckill-go:latest -f couponkill-go-service/Dockerfile .
+	docker build -t operator:latest -f couponkill-operator/Dockerfile .
+	
+	# Tag images for registry (阿里云个人仓库使用标签区分镜像)
+	docker tag gateway:latest ${REGISTRY}:gateway
+	docker tag coupon:latest ${REGISTRY}:coupon
+	docker tag order:latest ${REGISTRY}:order
+	docker tag user:latest ${REGISTRY}:user
+	docker tag seckill-go:latest ${REGISTRY}:seckill-go
+	docker tag operator:latest ${REGISTRY}:operator
 
 .PHONY: push-all-images
 push-all-images: ## Push all Docker images to registry
-	docker push ${REGISTRY}/gateway:latest
-	docker push ${REGISTRY}/coupon:latest
-	docker push ${REGISTRY}/order:latest
-	docker push ${REGISTRY}/user:latest
-	docker push ${REGISTRY}/seckill-go:latest
-	docker push ${REGISTRY}/operator:latest
+	docker push ${REGISTRY}:gateway
+	docker push ${REGISTRY}:coupon
+	docker push ${REGISTRY}:order
+	docker push ${REGISTRY}:user
+	docker push ${REGISTRY}:seckill-go
+	docker push ${REGISTRY}:operator
 
 .PHONY: build-and-push-all
 build-and-push-all: build-all-images-registry push-all-images ## Build and push all images to registry
 
 .PHONY: build-all-images-canary
 build-all-images-canary: ## Build and tag all Docker images for canary release
-	docker build -t ${CANARY_REGISTRY}/gateway:canary -f couponkill-gateway/Dockerfile .
-	docker build -t ${CANARY_REGISTRY}/coupon:canary -f couponkill-coupon-service/Dockerfile .
-	docker build -t ${CANARY_REGISTRY}/order:canary -f couponkill-order-service/Dockerfile .
-	docker build -t ${CANARY_REGISTRY}/user:canary -f couponkill-user-service/Dockerfile .
-	docker build -t ${CANARY_REGISTRY}/seckill-go:canary -f couponkill-go-service/Dockerfile .
-	docker build -t ${CANARY_REGISTRY}/operator:canary -f couponkill-operator/Dockerfile .
+	docker build -t gateway:latest -f couponkill-gateway/Dockerfile .
+	docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
+	docker build -t order:latest -f couponkill-order-service/Dockerfile .
+	docker build -t user:latest -f couponkill-user-service/Dockerfile .
+	docker build -t seckill-go:latest -f couponkill-go-service/Dockerfile .
+	docker build -t operator:latest -f couponkill-operator/Dockerfile .
+	
+	# Tag images for canary registry (阿里云个人仓库使用标签区分镜像)
+	docker tag gateway:latest ${CANARY_REGISTRY}:gateway
+	docker tag coupon:latest ${CANARY_REGISTRY}:coupon
+	docker tag order:latest ${CANARY_REGISTRY}:order
+	docker tag user:latest ${CANARY_REGISTRY}:user
+	docker tag seckill-go:latest ${CANARY_REGISTRY}:seckill-go
+	docker tag operator:latest ${CANARY_REGISTRY}:operator
 
 .PHONY: push-all-images-canary
 push-all-images-canary: ## Push all Docker images for canary release to registry
-	docker push ${CANARY_REGISTRY}/gateway:canary
-	docker push ${CANARY_REGISTRY}/coupon:canary
-	docker push ${CANARY_REGISTRY}/order:canary
-	docker push ${CANARY_REGISTRY}/user:canary
-	docker push ${CANARY_REGISTRY}/seckill-go:canary
-	docker push ${CANARY_REGISTRY}/operator:canary
+	docker push ${CANARY_REGISTRY}:gateway
+	docker push ${CANARY_REGISTRY}:coupon
+	docker push ${CANARY_REGISTRY}:order
+	docker push ${CANARY_REGISTRY}:user
+	docker push ${CANARY_REGISTRY}:seckill-go
+	docker push ${CANARY_REGISTRY}:operator
 
 .PHONY: build-and-push-all-canary
 build-and-push-all-canary: build-all-images-canary push-all-images-canary ## Build and push all canary images to registry
@@ -197,43 +213,43 @@ build-and-push-all-canary: build-all-images-canary push-all-images-canary ## Bui
 pull-dependency-images: ## Pull all dependency images to local registry
 	# Pull and retag MySQL image
 	docker pull mysql:8.0
-	docker tag mysql:8.0 ${REGISTRY}/mysql:8.0
-	docker push ${REGISTRY}/mysql:8.0
+	docker tag mysql:8.0 ${REGISTRY}:mysql
+	docker push ${REGISTRY}:mysql
 	
 	# Pull and retag Redis image
 	docker pull redis:7.0
-	docker tag redis:7.0 ${REGISTRY}/redis:7.0
-	docker push ${REGISTRY}/redis:7.0
+	docker tag redis:7.0 ${REGISTRY}:redis
+	docker push ${REGISTRY}:redis
 	
 	# Pull and retag RocketMQ nameserver image
-	docker pull apache/rocketmq:4.9.4-alpine
-	docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine
-	docker push ${REGISTRY}/rocketmq-namesrv:4.9.4-alpine
+	docker pull apache/rocketmq:5.3.1
+	docker tag apache/rocketmq:5.3.1 ${REGISTRY}:rocketmq-namesrv
+	docker push ${REGISTRY}:rocketmq-namesrv
 	
 	# Pull and retag RocketMQ broker image
-	docker pull apache/rocketmq:4.9.4-alpine
-	docker tag apache/rocketmq:4.9.4-alpine ${REGISTRY}/rocketmq-broker:4.9.4-alpine
-	docker push ${REGISTRY}/rocketmq-broker:4.9.4-alpine
+	docker pull apache/rocketmq:5.3.1
+	docker tag apache/rocketmq:5.3.1 ${REGISTRY}:rocketmq-broker
+	docker push ${REGISTRY}:rocketmq-broker
 	
 	# Pull and retag Nacos image
 	docker pull nacos/nacos-server:v2.2.3
-	docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}/nacos-server:v2.2.3
-	docker push ${REGISTRY}/nacos-server:v2.2.3
+	docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}:nacos-server
+	docker push ${REGISTRY}:nacos-server
 	
 	# Pull and retag Sentinel image
 	docker pull bladex/sentinel-dashboard:1.8.6
-	docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}/sentinel-dashboard:1.8.6
-	docker push ${REGISTRY}/sentinel-dashboard:1.8.6
+	docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}:sentinel-dashboard
+	docker push ${REGISTRY}:sentinel-dashboard
 	
 	# Pull and retag Kafka image
 	docker pull bitnami/kafka:3.4.0
-	docker tag bitnami/kafka:3.4.0 ${REGISTRY}/kafka:3.4.0
-	docker push ${REGISTRY}/kafka:3.4.0
+	docker tag bitnami/kafka:3.4.0 ${REGISTRY}:kafka
+	docker push ${REGISTRY}:kafka
 	
 	# Pull and retag Zookeeper image (for Kafka)
 	docker pull bitnami/zookeeper:3.8.1
-	docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}/zookeeper:3.8.1
-	docker push ${REGISTRY}/zookeeper:3.8.1
+	docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}:zookeeper
+	docker push ${REGISTRY}:zookeeper
 
 .PHONY: build-and-push-all-complete
 build-and-push-all-complete: build-and-push-all build-and-push-all-canary pull-dependency-images ## Build and push all project and dependency images

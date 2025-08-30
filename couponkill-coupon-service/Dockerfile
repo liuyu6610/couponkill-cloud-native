@@ -25,7 +25,6 @@ WORKDIR /app
 # 从构建阶段复制打包好的jar包
 COPY --from=builder /app/couponkill-coupon-service/target/*.jar app.jar
 
-
 # 暴露端口
 EXPOSE 8081
 # JVM优化参数 - 为高并发场景优化

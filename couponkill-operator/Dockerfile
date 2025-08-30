@@ -3,17 +3,18 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY couponkill-operator/go.mod go.mod
+COPY couponkill-operator/go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
 # Copy the go source
-COPY main.go main.go
-COPY api/ api/
-COPY controllers/ controllers/
-COPY hack/ hack/
+COPY couponkill-operator/main.go main.go
+COPY couponkill-operator/api/ api/
+COPY couponkill-operator/controllers/ controllers/
+# Copy hack directory contents if it exists
+COPY couponkill-operator/hack/ hack/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
@@ -29,5 +30,8 @@ ENV GOGC=20
 ENV GOMAXPROCS=4
 
 USER 65532:65532
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["/manager", "--help"]
 
 ENTRYPOINT ["/manager"]

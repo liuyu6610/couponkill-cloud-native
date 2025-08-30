@@ -83,19 +83,48 @@ redis:
     # 哨兵密码
     password: ""
 
-# RocketMQ配置
+# RocketMQ依赖服务配置
 rocketmq:
-  # NameServer地址
-  nameServer: "rocketmq-namesrv:9876"
-  # 集群模式配置
-  cluster:
-    enabled: false
-    # NameServer节点列表格式: host:port
-    # 示例:
-    # nameServer:
-    #   - "rocketmq-namesrv1:9876"
-    #   - "rocketmq-namesrv2:9876"
-    nameServer: []
+  # 是否启用RocketMQ
+  enabled: true
+  # NameServer配置
+  nameServer:
+    # 镜像配置
+    image: 
+      registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+      repository: ""
+      tag: rocketmq-namesrv
+    # 副本数
+    replicas: 1
+    # 服务端口
+    ports:
+      - 9876
+    # 资源请求和限制
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    # 存储配置
+    persistence:
+      enabled: true
+      size: 1Gi
+  # Broker配置
+  broker:
+    # 镜像配置
+    image:
+      registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+      repository: ""
+      tag: rocketmq-broker
+    # 副本数
+    replicas: 1
+    # 服务端口
+    ports:
+      - 10909
+      - 10911
+      - 10912
 
 # Kafka配置
 kafka:
@@ -118,413 +147,3 @@ image:
   registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
   # 镜像标签
   tag: latest
-
-# 服务配置部分，定义了各个微服务的部署参数
-services:
-  # 网关服务配置
-  gateway:
-    # 镜像名称
-    image: gateway
-    # 副本数
-    replicas: 1
-    # 服务端口
-    port: 8080
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
-        memory: "1Gi"
-        cpu: "500m"
-  
-  # Go服务配置
-  go:
-    # 镜像名称
-    image: seckill-go
-    # 副本数
-    replicas: 2
-    # 服务端口
-    port: 8090
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "500m"
-      limits:
-        memory: "1Gi"
-        cpu: "1000m"
-  
-  # 优惠券服务配置
-  coupon:
-    # 镜像名称
-    image: coupon
-    # 副本数
-    replicas: 2
-    # 服务端口
-    port: 8081
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "1Gi"
-        cpu: "500m"
-      limits:
-        memory: "2Gi"
-        cpu: "1000m"
-  
-  # 订单服务配置
-  order:
-    # 镜像名称
-    image: order
-    # 副本数
-    replicas: 2
-    # 服务端口
-    port: 8082
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "1Gi"
-        cpu: "500m"
-      limits:
-        memory: "2Gi"
-        cpu: "1000m"
-  
-  # 用户服务配置
-  user:
-    # 镜像名称
-    image: user
-    # 副本数
-    replicas: 1
-    # 服务端口
-    port: 8083
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
-        memory: "1Gi"
-        cpu: "500m"
-  
-  # Operator配置
-  operator:
-    # 镜像名称
-    image: operator
-    # 副本数
-    replicas: 1
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "64Mi"
-        cpu: "100m"
-      limits:
-        memory: "128Mi"
-        cpu: "200m"
-
-# RocketMQ依赖服务配置
-rocketmq:
-  # 是否启用RocketMQ
-  enabled: true
-  # NameServer配置
-  nameServer:
-    # 镜像配置
-    image: 
-      registry: docker.io
-      repository: apache/rocketmq
-      tag: 4.9.4-alpine
-    # 副本数
-    replicas: 1
-    # 服务端口
-    ports:
-      - 9876
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
-        memory: "1Gi"
-        cpu: "500m"
-    # 存储配置
-    persistence:
-      enabled: true
-      size: 1Gi
-  # Broker配置
-  broker:
-    # 镜像配置
-    image:
-      registry: docker.io
-      repository: apache/rocketmq
-      tag: 4.9.4-alpine
-    # 副本数
-    replicas: 1
-    # 服务端口
-    ports:
-      - 10909
-      - 10911
-      - 10912
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "1Gi"
-        cpu: "500m"
-      limits:
-        memory: "2Gi"
-        cpu: "1000m"
-    # 存储配置
-    persistence:
-      enabled: true
-      size: 5Gi
-
-# Nacos依赖服务配置
-nacos:
-  # 是否启用Nacos
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: nacos/nacos-server
-    tag: v2.2.3
-  # 副本数
-  replicas: 1
-  # 服务端口
-  ports:
-    - 8848
-    - 9848
-    - 9849
-  # 环境变量
-  env:
-    MODE: standalone
-    PREFER_HOST_MODE: hostname
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "1Gi"
-      cpu: "500m"
-    limits:
-      memory: "2Gi"
-      cpu: "1000m"
-  # 存储配置
-  persistence:
-    enabled: true
-    size: 5Gi
-  # 服务配置
-  service:
-    # 是否启用外部访问
-    external:
-      enabled: true
-      type: LoadBalancer
-  # 集群配置
-  cluster:
-    # 是否启用集群模式
-    enabled: false
-    # 集群节点数
-    replicas: 3
-
-# Sentinel依赖服务配置
-sentinel:
-  # 是否启用Sentinel
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: bladex/sentinel-dashboard
-    tag: 1.8.6
-  # 副本数
-  replicas: 1
-  # 服务端口
-  port: 8080
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "512Mi"
-      cpu: "250m"
-    limits:
-      memory: "1Gi"
-      cpu: "500m"
-
-# MySQL依赖服务配置
-mysql:
-  # 是否启用MySQL
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: mysql
-    tag: 8.0
-  # 服务端口
-  port: 3306
-  # 环境变量
-  env:
-    MYSQL_ROOT_PASSWORD: root
-    MYSQL_DATABASE: console
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "1Gi"
-      cpu: "500m"
-    limits:
-      memory: "2Gi"
-      cpu: "1000m"
-  # 存储配置
-  persistence:
-    enabled: true
-    size: 20Gi
-  # 主从复制配置
-  replication:
-    enabled: false
-    master:
-      replicas: 1
-    slave:
-      replicas: 2
-
-# Redis依赖服务配置
-redis:
-  # 是否启用Redis
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: redis
-    tag: 7.0
-  # 服务端口
-  port: 6379
-  # 密码
-  password: ""
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "250m"
-  # 存储配置
-  persistence:
-    enabled: true
-    size: 8Gi
-  # 集群配置
-  cluster:
-    enabled: false
-    nodes: 6
-  # 哨兵配置
-  sentinel:
-    enabled: false
-    masterName: "mymaster"
-    nodes: 3
-
-# Kafka依赖服务配置
-kafka:
-  # 是否启用Kafka
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: bitnami/kafka
-    tag: 3.4.0
-  # 服务端口
-  port: 9092
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "1Gi"
-      cpu: "500m"
-    limits:
-      memory: "2Gi"
-      cpu: "1000m"
-  # 存储配置
-  persistence:
-    enabled: true
-    size: 8Gi
-  # 集群配置
-  cluster:
-    enabled: false
-    replicas: 3
-
-# Zookeeper依赖服务配置 (Kafka依赖)
-zookeeper:
-  # 是否启用Zookeeper
-  enabled: true
-  # 镜像配置
-  image:
-    registry: docker.io
-    repository: bitnami/zookeeper
-    tag: 3.8.1
-  # 服务端口
-  port: 2181
-  # 资源请求和限制
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "250m"
-  # 存储配置
-  persistence:
-    enabled: true
-    size: 8Gi
-
-# KEDA自动扩缩容配置部分，基于Kafka消息队列的消费延迟进行扩缩容
-keda:
-  # 是否启用KEDA
-  enabled: true
-  # Kafka配置
-  kafka:
-    # Kafka broker地址
-    bootstrapServers: "kafka:9092"
-    # Go服务扩缩容配置
-    go:
-      # 是否启用扩缩容
-      enabled: true
-      # 对应的Deployment名称
-      deploymentName: "seckill-go-svc"
-      # 消费者组名称
-      consumerGroup: "seckill-go-group"
-      # 监控的主题
-      topic: "seckill_order_create"
-      # 最小副本数
-      minReplicaCount: 1
-      # 最大副本数
-      maxReplicaCount: 5
-      # Kafka消费延迟阈值，当延迟超过该值时触发扩容
-      lagThreshold: "5"
-    # Order服务扩缩容配置
-    order:
-      # 是否启用扩缩容
-      enabled: true
-      # 对应的Deployment名称
-      deploymentName: "couponkill-order-service"
-      # 消费者组名称
-      consumerGroup: "order-create"
-      # 监控的主题
-      topic: "seckill_order_create"
-      # 最小副本数
-      minReplicaCount: 1
-      # 最大副本数
-      maxReplicaCount: 5
-      # Kafka消费延迟阈值，当延迟超过该值时触发扩容
-      lagThreshold: "5"
-
-# Istio服务网格配置部分，用于暴露服务到集群外部
-istio:
-  # 是否启用Istio
-  enabled: true
-  # 网关配置
-  gateway:
-    # 网关名称
-    name: couponkill-gateway
-    # 网关绑定的主机名
-    host: couponkill.example.com
-    # 网关监听的端口
-    port: 80
-    # 是否启用TLS，当前为明文传输
-    tls: false
-
-# Nacos配置监听器配置
-nacos:
-  configWatcher:
-    # 是否启用配置监听器
-    enabled: true
-    # 配置监听器检查配置变更的频率 (单位: 秒)
-    schedule: "0/30 * * * * ?"
