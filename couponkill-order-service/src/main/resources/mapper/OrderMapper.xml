@@ -2,117 +2,105 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper">
 
-    <!-- Result Maps -->
-    <resultMap id="BaseResultMap" type="com.aliyun.seckill.common.pojo.Order">
-        <id column="id" jdbcType="VARCHAR" property="id"/>
-        <result column="user_id" jdbcType="BIGINT" property="userId"/>
-        <result column="coupon_id" jdbcType="BIGINT" property="couponId"/>
-        <result column="virtual_id" jdbcType="VARCHAR" property="virtualId"/>
-        <result column="status" jdbcType="INTEGER" property="status"/>
-        <result column="get_time" jdbcType="TIMESTAMP" property="getTime"/>
-        <result column="use_time" jdbcType="TIMESTAMP" property="useTime"/>
-        <result column="expire_time" jdbcType="TIMESTAMP" property="expireTime"/>
-        <result column="cancel_time" jdbcType="TIMESTAMP" property="cancelTime"/>
-        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
-        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    <resultMap id="OrderMap" type="com.aliyun.seckill.common.pojo.Order">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="virtual_id" property="virtualId"/>
+        <result column="status" property="status"/>
+        <result column="get_time" property="getTime"/>
+        <result column="expire_time" property="expireTime"/>
+        <result column="use_time" property="useTime"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="created_by_java" property="createdByJava"/>
+        <result column="created_by_go" property="createdByGo"/>
+        <result column="request_id" property="requestId"/>
+        <result column="version" property="version"/>
     </resultMap>
 
-    <resultMap id="UserCouponCountResultMap" type="com.aliyun.seckill.common.pojo.UserCouponCount">
-        <id column="user_id" jdbcType="BIGINT" property="userId"/>
-        <result column="total_count" jdbcType="INTEGER" property="totalCount"/>
-        <result column="seckill_count" jdbcType="INTEGER" property="seckillCount"/>
-        <result column="normal_count" jdbcType="INTEGER" property="normalCount"/>
-        <result column="expired_count" jdbcType="INTEGER" property="expiredCount"/>
-        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
-        <result column="version" jdbcType="INTEGER" property="version"/>
-    </resultMap>
-
-    <!-- SQL片段 -->
-    <sql id="Base_Column_List">
-        id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time, create_time, update_time
-    </sql>
-
-    <!-- 插入订单 -->
-    <insert id="insert" parameterType="com.aliyun.seckill.common.pojo.Order">
-        INSERT INTO `order` (id, user_id, coupon_id, virtual_id, status, get_time, use_time, expire_time, cancel_time,
-                             create_time, update_time)
-        VALUES (#{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime}, #{useTime}, #{expireTime}, #{cancelTime},
-                #{createTime}, #{updateTime})
+    <insert id="insert">
+        INSERT INTO `order` (
+            id, user_id, coupon_id, virtual_id, status, get_time, expire_time,
+            use_time, cancel_time, create_time, update_time, created_by_java,
+            created_by_go, request_id, version
+        ) VALUES (
+            #{id}, #{userId}, #{couponId}, #{virtualId}, #{status}, #{getTime},
+            #{expireTime}, #{useTime}, #{cancelTime}, #{createTime}, #{updateTime},
+            #{createdByJava}, #{createdByGo}, #{requestId}, #{version}
+        )
     </insert>
 
-    <!-- 根据ID查询订单 -->
-    <select id="selectById" parameterType="string" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `order`
-        WHERE id = #{id}
+    <select id="selectById" resultMap="OrderMap">
+        SELECT * FROM `order` WHERE id = #{id}
     </select>
 
-    <!-- 根据用户ID和优惠券ID统计订单数量 -->
-    <select id="countByUserAndCoupon" resultType="long">
-        SELECT COUNT(*) FROM `order`
-        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2, 3)
+    <select id="selectByUserId" resultMap="OrderMap">
+        SELECT * FROM `order` 
+        WHERE user_id = #{userId} 
+        ORDER BY create_time DESC 
+        LIMIT 100
     </select>
 
-    <!-- 根据用户ID查询订单列表 -->
-    <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `order`
-        WHERE user_id = #{userId}
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+    <select id="selectByCouponId" resultMap="OrderMap">
+        SELECT * FROM `order` 
+        WHERE coupon_id = #{couponId} 
+        ORDER BY create_time DESC 
+        LIMIT 100
     </select>
 
-    <!-- 根据条件查询订单列表 -->
-    <select id="selectAllByCondition" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `order`
-        WHERE 1=1
-        <if test="startTime != null and startTime != ''">
-            AND create_time &gt;= #{startTime}
-        </if>
-        <if test="endTime != null and endTime != ''">
-            AND create_time &lt;= #{endTime}
-        </if>
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+    <select id="selectByVirtualId" resultMap="OrderMap">
+        SELECT * FROM `order` WHERE virtual_id = #{virtualId}
     </select>
 
-    <!-- 统计订单总数 -->
-    <select id="countAll" resultType="long">
-        SELECT COUNT(*) FROM `order`
+    <select id="selectByUserIdAndCouponId" resultMap="OrderMap">
+        SELECT * FROM `order` 
+        WHERE user_id = #{userId} AND coupon_id = #{couponId} 
+        ORDER BY create_time DESC 
+        LIMIT 10
     </select>
 
-    <!-- 更新订单状态 -->
+    <select id="selectByUserIdAndStatus" resultMap="OrderMap">
+        SELECT * FROM `order` 
+        WHERE user_id = #{userId} AND status = #{status} 
+        ORDER BY create_time DESC 
+        LIMIT 100
+    </select>
+
     <update id="updateStatus">
-        UPDATE `order`
-        SET status = #{status}, update_time = #{updateTime}
-        WHERE id = #{orderId}
+        UPDATE `order` 
+        SET status = #{status}, update_time = NOW(), version = version + 1
+        WHERE id = #{id} AND version = #{version}
     </update>
 
-    <!-- 更新订单状态和取消时间 -->
-    <update id="updateStatusWithCancelTime">
-        UPDATE `order`
-        SET status = #{status}, cancel_time = #{cancelTime}, update_time = #{updateTime}
-        WHERE id = #{orderId}
+    <update id="updateUseTime">
+        UPDATE `order` 
+        SET use_time = #{useTime}, status = 2, update_time = NOW(), version = version + 1
+        WHERE id = #{id} AND version = #{version}
     </update>
 
-    <!-- 根据用户ID和虚拟ID查询订单 -->
-    <select id="selectByUserIdAndVirtualId" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `order`
-        WHERE user_id = #{userId} AND coupon_id = #{virtualId}
-        ORDER BY create_time DESC
-        LIMIT 1
+    <update id="updateCancelTime">
+        UPDATE `order` 
+        SET cancel_time = #{cancelTime}, status = 4, update_time = NOW(), version = version + 1
+        WHERE id = #{id} AND version = #{version}
+    </update>
+
+    <select id="selectExpiredOrders" resultMap="OrderMap">
+        SELECT * FROM `order` 
+        WHERE status = 1 AND expire_time &lt; NOW() 
+        ORDER BY expire_time 
+        LIMIT #{limit}
     </select>
 
-    <!-- 查询用户指定优惠券的领取次数 -->
-    <select id="countUserCouponsByVirtualId" resultType="int">
+    <select id="selectByRequestId" resultMap="OrderMap">
+        SELECT * FROM `order` WHERE request_id = #{requestId}
+    </select>
+
+    <!-- 添加唯一性约束检查查询，用于防止重复秒杀 -->
+    <select id="checkDuplicateSeckill" resultType="int">
         SELECT COUNT(*) FROM `order`
-        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2)
     </select>
 
 </mapper>

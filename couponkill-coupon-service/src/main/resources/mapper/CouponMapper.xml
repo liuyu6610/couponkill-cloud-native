@@ -39,25 +39,46 @@
     </delete>
 
     <select id="selectAvailableCoupons" resultMap="CouponMap">
-        SELECT * FROM coupon WHERE status = 1 AND create_time >= DATE_SUB(NOW(), INTERVAL valid_days DAY) GROUP BY id
+        SELECT * FROM coupon 
+        WHERE status = 1 AND create_time >= DATE_SUB(NOW(), INTERVAL valid_days DAY) 
+        GROUP BY id, shard_index
+        ORDER BY create_time DESC
+        LIMIT 1000
     </select>
 
     <select id="selectAll" resultMap="CouponMap">
-        SELECT * FROM coupon GROUP BY id
+        SELECT * FROM coupon 
+        GROUP BY id, shard_index
+        ORDER BY create_time DESC
+        LIMIT 1000
     </select>
 
     <select id="selectById" resultMap="CouponMap">
-        SELECT * FROM coupon WHERE id = #{id} GROUP BY id
+        SELECT * FROM coupon 
+        WHERE id = #{id} 
+        GROUP BY id, shard_index
+        LIMIT 1
     </select>
 
-    <!-- 根据优惠券ID查询所有分片 -->
+    <!-- 根据优惠券ID查询所有分片，优化查询性能 -->
     <select id="selectByCouponId" resultMap="CouponMap">
-        SELECT * FROM coupon WHERE id = #{couponId} ORDER BY shard_index
+        SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
+               per_user_limit, total_stock, seckill_total_stock, remaining_stock,
+               seckill_remaining_stock, status, create_time, update_time, version
+        FROM coupon 
+        WHERE id = #{couponId} 
+        ORDER BY shard_index
     </select>
 
     <!-- 查询所有优惠券的主分片（shard_index=0）用于预热 -->
     <select id="selectMainShardsForCache" resultMap="CouponMap">
-        SELECT * FROM coupon WHERE shard_index = 0
+        SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
+               per_user_limit, total_stock, seckill_total_stock, remaining_stock,
+               seckill_remaining_stock, status, create_time, update_time, version
+        FROM coupon 
+        WHERE shard_index = 0 AND status = 1
+        ORDER BY create_time DESC
+        LIMIT 1000
     </select>
 
     <update id="updateStockByShardIndex">
@@ -66,6 +87,7 @@
             version = version + 1,
             update_time = NOW()
         WHERE id = #{couponId} AND shard_index = #{shardIndex} AND version = #{version}
+          AND seckill_remaining_stock + #{change} >= 0
     </update>
 
     <update id="updateStock">
@@ -74,11 +96,14 @@
             version = version + 1,
             update_time = NOW()
         WHERE id = #{couponId} AND version = #{version}
+          AND remaining_stock + #{change} >= 0
     </update>
 
     <select id="selectExpiredCoupons" resultMap="CouponMap">
         SELECT * FROM coupon
-        WHERE status = 1 AND create_time &lt;= #{expireTime} GROUP BY id
+        WHERE status = 1 AND create_time &lt;= #{expireTime} 
+        GROUP BY id, shard_index
+        LIMIT 1000
     </select>
 
     <update id="updateCouponStatus">

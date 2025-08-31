@@ -1,66 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.aliyun.seckill.couponkilluserservice.mapper.UserMapper">
 
-    <resultMap id="UserResultMap" type="com.aliyun.seckill.common.pojo.User">
-        <id property="id" column="id"/>
-        <result property="username" column="username"/>
-        <result property="password" column="password"/>
-        <result property="phone" column="phone"/>
-        <result property="email" column="email"/>
-        <result property="status" column="status"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
-        <result property="lastActiveTime" column="last_active_time"/>
+    <resultMap id="UserMap" type="com.aliyun.seckill.common.pojo.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="last_active_time" property="lastActiveTime"/>
+    </resultMap>
+
+    <resultMap id="UserCouponCountMap" type="com.aliyun.seckill.common.pojo.UserCouponCount">
+        <id column="user_id" property="userId"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="seckill_count" property="seckillCount"/>
+        <result column="normal_count" property="normalCount"/>
+        <result column="expired_count" property="expiredCount"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="version" property="version"/>
     </resultMap>
 
     <!-- 根据用户名查询用户 -->
-    <select id="selectByUsername" resultMap="UserResultMap">
+    <select id="selectByUsername" resultMap="UserMap">
         SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
         FROM `user`
         WHERE username = #{username}
     </select>
 
-    <!-- 插入用户 -->
-    <insert id="insertUser" parameterType="com.aliyun.seckill.common.pojo.User">
-        INSERT INTO `user`(id, username, password, phone, email, status, create_time, update_time)
-        VALUES(#{id}, #{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})
-    </insert>
+    <!-- 根据用户名查询用户（登录用） -->
+    <select id="selectByUsernameAndPassword" resultMap="UserMap">
+        SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
+        FROM `user`
+        WHERE username = #{username}
+    </select>
 
     <!-- 根据ID查询用户 -->
-    <select id="selectById" resultMap="UserResultMap">
+    <select id="selectById" resultMap="UserMap">
         SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
         FROM `user`
         WHERE id = #{userId}
     </select>
 
-    <!-- 根据ID查询用户（通过id参数） -->
-    <select id="selectUserById" resultMap="UserResultMap">
+    <!-- 根据ID查询用户 -->
+    <select id="selectUserById" resultMap="UserMap">
         SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
         FROM `user`
         WHERE id = #{id}
     </select>
 
-    <!-- 根据用户名和密码查询用户（登录用） -->
-    <select id="selectByUsernameAndPassword" resultMap="UserResultMap">
-        SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
-        FROM `user`
-        WHERE username = #{username} AND password = #{password}
-    </select>
+    <!-- 插入用户 -->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user`(username, password, phone, email, status, create_time, update_time)
+        VALUES(#{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})
+    </insert>
 
     <!-- 查询失效用户 -->
-    <select id="selectInactiveUsers" resultMap="UserResultMap">
+    <select id="selectInactiveUsers" resultMap="UserMap">
         SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time
         FROM `user`
-        WHERE last_active_time <![CDATA[<]]> #{inactiveThreshold} OR (last_active_time IS NULL AND update_time <![CDATA[<]]> #{inactiveThreshold})
+        WHERE last_active_time &lt; #{inactiveThreshold} OR (last_active_time IS NULL AND update_time &lt; #{inactiveThreshold})
     </select>
 
     <!-- 更新用户最后活跃时间 -->
     <update id="updateUserLastActiveTime">
-        UPDATE `user`
-        SET last_active_time = #{lastActiveTime}, update_time = #{lastActiveTime}
-        WHERE id = #{userId}
+        UPDATE `user` SET last_active_time = #{lastActiveTime}, update_time = #{lastActiveTime} WHERE id = #{userId}
     </update>
+
+    <insert id="insert">
+        INSERT INTO user (username, password, phone, email, status, create_time, update_time)
+        VALUES (#{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="selectAll" resultMap="UserMap">
+        SELECT * FROM user 
+        WHERE status = 1 
+        ORDER BY create_time DESC 
+        LIMIT 1000
+    </select>
+
+    <update id="updateLastActiveTime">
+        UPDATE user 
+        SET last_active_time = #{lastActiveTime}, update_time = NOW() 
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE user 
+        SET password = #{password}, update_time = NOW() 
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectUserCouponCount" resultMap="UserCouponCountMap">
+        SELECT * FROM user_coupon_count WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertUserCouponCount">
+        INSERT INTO user_coupon_count (user_id, total_count, seckill_count, normal_count, expired_count, update_time, version)
+        VALUES (#{userId}, #{totalCount}, #{seckillCount}, #{normalCount}, #{expiredCount}, NOW(), 0)
+        ON DUPLICATE KEY UPDATE 
+            total_count = #{totalCount},
+            seckill_count = #{seckillCount},
+            normal_count = #{normalCount},
+            expired_count = #{expiredCount},
+            update_time = NOW(),
+            version = version + 1
+    </insert>
+
+    <update id="updateUserCouponCount">
+        UPDATE user_coupon_count
+        SET total_count = #{totalCount},
+            seckill_count = #{seckillCount},
+            normal_count = #{normalCount},
+            expired_count = #{expiredCount},
+            update_time = NOW(),
+            version = version + 1
+        WHERE user_id = #{userId} AND version = #{version}
+    </update>
+
+    <select id="checkUserExists" resultType="int">
+        SELECT COUNT(*) FROM user WHERE id = #{userId} AND status = 1
+    </select>
 
 </mapper>

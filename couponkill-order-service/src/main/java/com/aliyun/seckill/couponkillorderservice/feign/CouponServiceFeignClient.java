@@ -4,8 +4,6 @@ package com.aliyun.seckill.couponkillorderservice.feign;
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.config.FeignConfig;
 import com.aliyun.seckill.common.pojo.Coupon;
-import com.aliyun.seckill.common.pojo.EnterSeckillResp;
-import com.aliyun.seckill.common.pojo.SeckillResultResp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpStatus;
@@ -25,17 +23,20 @@ public interface CouponServiceFeignClient {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     ApiResponse<Coupon> getCouponById(@PathVariable("id") Long id);
+    
     @PostMapping("/api/v1/coupon/deduct/{id}")
     ApiResponse<Boolean> deductStock(@PathVariable("id") Long id);
 
     @PostMapping("/api/v1/coupon/increase/{id}")
     ApiResponse<Boolean> increaseStock(@PathVariable("id") Long id);
 
-    @PostMapping("/api/v1/coupon/deduct-with-shard-id/{id}")
+    @PostMapping(value = "/api/v1/coupon/deduct-with-shard-id/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
     ApiResponse<String> deductStockWithShardId(@PathVariable("id") Long id);
 
-    @PostMapping("/api/v1/coupon/compensation")
-    ApiResponse<Void> createCompensationCoupon(@RequestBody Coupon compensationCoupon);
+    @PostMapping(value = "/api/v1/coupon/compensation", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    ApiResponse<Coupon> createCompensationCoupon(@RequestBody Coupon compensationCoupon);
 
     @Slf4j
     @Component
@@ -46,7 +47,7 @@ public interface CouponServiceFeignClient {
             log.error("调用 getCouponById 失败，couponId: {}", id);
             return ApiResponse.fail(500, "服务暂时不可用");
         }
-
+        
         @Override
         public ApiResponse<Boolean> deductStock(Long id) {
             log.error("调用 deductStock 失败，couponId: {}", id);
@@ -66,7 +67,7 @@ public interface CouponServiceFeignClient {
         }
 
         @Override
-        public ApiResponse<Void> createCompensationCoupon(Coupon compensationCoupon) {
+        public ApiResponse<Coupon> createCompensationCoupon(Coupon compensationCoupon) {
             log.error("调用 createCompensationCoupon 失败");
             return ApiResponse.fail(500, "服务暂时不可用");
         }
