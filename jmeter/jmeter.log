@@ -1,0 +1,261 @@
+2025-09-01 19:48:38,966 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2025-09-01 19:48:38,998 INFO o.a.j.JMeter: Loading user properties from: user.properties
+2025-09-01 19:48:38,998 INFO o.a.j.JMeter: Loading system properties from: system.properties
+2025-09-01 19:48:38,999 INFO o.a.j.JMeter: Loading additional properties from: D:\couponkill\couponkill-cloud-native\jmeter\performance.properties
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: Version 5.6.3
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: java.version=21.0.8
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: os.name=Windows 11
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: os.arch=amd64
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: os.version=10.0
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: file.encoding=UTF-8
+2025-09-01 19:48:39,007 INFO o.a.j.JMeter: java.awt.headless=true
+2025-09-01 19:48:39,008 INFO o.a.j.JMeter: Max memory     =4294967296
+2025-09-01 19:48:39,008 INFO o.a.j.JMeter: Available Processors =16
+2025-09-01 19:48:39,018 INFO o.a.j.JMeter: Default Locale=English (EN)
+2025-09-01 19:48:39,018 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2025-09-01 19:48:39,018 INFO o.a.j.JMeter: JMeterHome=D:\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3
+2025-09-01 19:48:39,019 INFO o.a.j.JMeter: user.dir  =D:\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin
+2025-09-01 19:48:39,019 INFO o.a.j.JMeter: PWD       =D:\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin
+2025-09-01 19:48:39,021 INFO o.a.j.JMeter: IP: 10.172.93.245 Name: LAPTOP-BKGK3GOA FullName: LAPTOP-BKGK3GOA
+2025-09-01 19:48:39,035 INFO o.a.j.s.FileServer: Default base='D:\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin'
+2025-09-01 19:48:39,036 INFO o.a.j.s.FileServer: Set new base='D:\couponkill\couponkill-cloud-native\jmeter'
+2025-09-01 19:48:39,238 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2025-09-01 19:48:39,269 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2025-09-01 19:48:39,272 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2025-09-01 19:48:39,276 INFO o.a.j.s.SaveService: Loading file: D:\couponkill\couponkill-cloud-native\jmeter\test_plan.jmx
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2025-09-01 19:48:39,326 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2025-09-01 19:48:39,366 INFO o.a.j.JMeter: Creating summariser <summary>
+2025-09-01 19:48:39,379 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2025-09-01 19:48:39,379 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-09-01 19:48:39,379 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-09-01 19:48:39,385 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2025-09-01 19:48:39,385 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2025-09-01 19:48:39,454 INFO o.a.j.JMeter: Running test (1756727319454)
+2025-09-01 19:48:39,473 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Seckill Thread Group
+2025-09-01 19:48:39,473 INFO o.a.j.e.StandardJMeterEngine: Starting 200 threads for group Seckill Thread Group.
+2025-09-01 19:48:39,473 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2025-09-01 19:48:39,474 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=200 ramp-up=30 delayedStart=false
+2025-09-01 19:48:39,578 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2025-09-01 19:48:39,578 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2025-09-01 19:48:39,755 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-1
+2025-09-01 19:48:39,762 INFO o.a.j.s.FileServer: Stored: D:\couponkill\couponkill-cloud-native\testToken\generate_tokens\user_tokens.csv Alias: D:\couponkill\couponkill-cloud-native\testToken\generate_tokens\user_tokens.csv@false
+2025-09-01 19:48:39,889 WARN o.a.j.p.h.s.HTTPHCAbstractImpl: You're using property 'httpclient.timeout' that will soon be deprecated for HttpClient3.1, you should either set timeout in HTTP Request GUI, HTTP Request Defaults or set http.socket.timeout in httpclient.parameters
+2025-09-01 19:48:39,889 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = LAPTOP-BKGK3GOA
+2025-09-01 19:48:39,897 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 3
+2025-09-01 19:48:39,899 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2025-09-01 19:48:39,899 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
+2025-09-01 19:48:39,899 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2025-09-01 19:48:39,899 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2025-09-01 19:48:39,900 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-2
+2025-09-01 19:48:40,051 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-3
+2025-09-01 19:48:40,199 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-4
+2025-09-01 19:48:40,350 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-5
+2025-09-01 19:48:40,500 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-6
+2025-09-01 19:48:40,650 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-7
+2025-09-01 19:48:40,797 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-8
+2025-09-01 19:48:40,951 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-9
+2025-09-01 19:48:41,098 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-10
+2025-09-01 19:48:41,248 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-11
+2025-09-01 19:48:41,403 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-12
+2025-09-01 19:48:41,562 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-13
+2025-09-01 19:48:41,695 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-14
+2025-09-01 19:48:41,853 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-15
+2025-09-01 19:48:41,995 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-16
+2025-09-01 19:48:42,162 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-17
+2025-09-01 19:48:42,300 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-18
+2025-09-01 19:48:42,451 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-19
+2025-09-01 19:48:42,594 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-20
+2025-09-01 19:48:42,740 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-21
+2025-09-01 19:48:42,893 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-22
+2025-09-01 19:48:43,039 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-23
+2025-09-01 19:48:43,188 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-24
+2025-09-01 19:48:43,341 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-25
+2025-09-01 19:48:43,491 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-26
+2025-09-01 19:48:43,637 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-27
+2025-09-01 19:48:43,787 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-28
+2025-09-01 19:48:43,935 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-29
+2025-09-01 19:48:44,099 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-30
+2025-09-01 19:48:44,235 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-31
+2025-09-01 19:48:44,386 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-32
+2025-09-01 19:48:44,536 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-33
+2025-09-01 19:48:44,685 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-34
+2025-09-01 19:48:44,833 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-35
+2025-09-01 19:48:44,982 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-36
+2025-09-01 19:48:45,134 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-37
+2025-09-01 19:48:45,283 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-38
+2025-09-01 19:48:45,432 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-39
+2025-09-01 19:48:45,583 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-40
+2025-09-01 19:48:45,731 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-41
+2025-09-01 19:48:45,881 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-42
+2025-09-01 19:48:46,031 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-43
+2025-09-01 19:48:46,181 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-44
+2025-09-01 19:48:46,331 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-45
+2025-09-01 19:48:46,478 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-46
+2025-09-01 19:48:46,628 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-47
+2025-09-01 19:48:46,775 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-48
+2025-09-01 19:48:46,925 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-49
+2025-09-01 19:48:47,073 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-50
+2025-09-01 19:48:47,226 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-51
+2025-09-01 19:48:47,375 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-52
+2025-09-01 19:48:47,525 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-53
+2025-09-01 19:48:47,675 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-54
+2025-09-01 19:48:47,823 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-55
+2025-09-01 19:48:47,974 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-56
+2025-09-01 19:48:48,123 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-57
+2025-09-01 19:48:48,273 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-58
+2025-09-01 19:48:48,421 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-59
+2025-09-01 19:48:48,572 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-60
+2025-09-01 19:48:48,722 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-61
+2025-09-01 19:48:48,871 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-62
+2025-09-01 19:48:49,019 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-63
+2025-09-01 19:48:49,168 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-64
+2025-09-01 19:48:49,319 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-65
+2025-09-01 19:48:49,465 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-66
+2025-09-01 19:48:49,617 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-67
+2025-09-01 19:48:49,766 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-68
+2025-09-01 19:48:49,915 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-69
+2025-09-01 19:48:50,064 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-70
+2025-09-01 19:48:50,217 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-71
+2025-09-01 19:48:50,363 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-72
+2025-09-01 19:48:50,515 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-73
+2025-09-01 19:48:50,665 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-74
+2025-09-01 19:48:50,815 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-75
+2025-09-01 19:48:50,962 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-76
+2025-09-01 19:48:51,111 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-77
+2025-09-01 19:48:51,262 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-78
+2025-09-01 19:48:51,411 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-79
+2025-09-01 19:48:51,562 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-80
+2025-09-01 19:48:51,712 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-81
+2025-09-01 19:48:51,860 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-82
+2025-09-01 19:48:52,011 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-83
+2025-09-01 19:48:52,159 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-84
+2025-09-01 19:48:52,309 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-85
+2025-09-01 19:48:52,460 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-86
+2025-09-01 19:48:52,608 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-87
+2025-09-01 19:48:52,758 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-88
+2025-09-01 19:48:52,907 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-89
+2025-09-01 19:48:53,060 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-90
+2025-09-01 19:48:53,206 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-91
+2025-09-01 19:48:53,353 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-92
+2025-09-01 19:48:53,500 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-93
+2025-09-01 19:48:53,648 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-94
+2025-09-01 19:48:53,800 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-95
+2025-09-01 19:48:53,949 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-96
+2025-09-01 19:48:54,097 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-97
+2025-09-01 19:48:54,247 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-98
+2025-09-01 19:48:54,398 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-99
+2025-09-01 19:48:54,546 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-100
+2025-09-01 19:48:54,699 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-101
+2025-09-01 19:48:54,845 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-102
+2025-09-01 19:48:54,995 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-103
+2025-09-01 19:48:55,145 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-104
+2025-09-01 19:48:55,295 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-105
+2025-09-01 19:48:55,446 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-106
+2025-09-01 19:48:55,595 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-107
+2025-09-01 19:48:55,742 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-108
+2025-09-01 19:48:55,892 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-109
+2025-09-01 19:48:56,044 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-110
+2025-09-01 19:48:56,192 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-111
+2025-09-01 19:48:56,342 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-112
+2025-09-01 19:48:56,491 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-113
+2025-09-01 19:48:56,641 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-114
+2025-09-01 19:48:56,791 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-115
+2025-09-01 19:48:56,939 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-116
+2025-09-01 19:48:57,091 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-117
+2025-09-01 19:48:57,242 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-118
+2025-09-01 19:48:57,390 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-119
+2025-09-01 19:48:57,539 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-120
+2025-09-01 19:48:57,691 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-121
+2025-09-01 19:48:57,836 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-122
+2025-09-01 19:48:57,988 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-123
+2025-09-01 19:48:58,136 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-124
+2025-09-01 19:48:58,286 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-125
+2025-09-01 19:48:58,433 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-126
+2025-09-01 19:48:58,583 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-127
+2025-09-01 19:48:58,730 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-128
+2025-09-01 19:48:58,880 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-129
+2025-09-01 19:48:59,030 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-130
+2025-09-01 19:48:59,179 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-131
+2025-09-01 19:48:59,328 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-132
+2025-09-01 19:48:59,479 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-133
+2025-09-01 19:48:59,627 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-134
+2025-09-01 19:48:59,779 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-135
+2025-09-01 19:48:59,929 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-136
+2025-09-01 19:49:00,049 INFO o.a.j.r.Summariser: summary + 308757 in 00:00:21 = 14994.0/s Avg:     4 Min:     0 Max:   105 Err: 243133 (78.75%) Active: 136 Started: 136 Finished: 0
+2025-09-01 19:49:00,076 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-137
+2025-09-01 19:49:00,225 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-138
+2025-09-01 19:49:00,376 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-139
+2025-09-01 19:49:00,527 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-140
+2025-09-01 19:49:00,675 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-141
+2025-09-01 19:49:00,824 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-142
+2025-09-01 19:49:00,974 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-143
+2025-09-01 19:49:01,126 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-144
+2025-09-01 19:49:01,274 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-145
+2025-09-01 19:49:01,423 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-146
+2025-09-01 19:49:01,573 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-147
+2025-09-01 19:49:01,722 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-148
+2025-09-01 19:49:01,872 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-149
+2025-09-01 19:49:02,023 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-150
+2025-09-01 19:49:02,172 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-151
+2025-09-01 19:49:02,319 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-152
+2025-09-01 19:49:02,471 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-153
+2025-09-01 19:49:02,620 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-154
+2025-09-01 19:49:02,770 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-155
+2025-09-01 19:49:02,920 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-156
+2025-09-01 19:49:03,068 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-157
+2025-09-01 19:49:03,218 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-158
+2025-09-01 19:49:03,369 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-159
+2025-09-01 19:49:03,519 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-160
+2025-09-01 19:49:03,668 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-161
+2025-09-01 19:49:03,819 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-162
+2025-09-01 19:49:03,965 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-163
+2025-09-01 19:49:04,115 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-164
+2025-09-01 19:49:04,266 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-165
+2025-09-01 19:49:04,414 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-166
+2025-09-01 19:49:04,563 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-167
+2025-09-01 19:49:04,713 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-168
+2025-09-01 19:49:04,864 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-169
+2025-09-01 19:49:05,016 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-170
+2025-09-01 19:49:05,162 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-171
+2025-09-01 19:49:05,312 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-172
+2025-09-01 19:49:05,472 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-173
+2025-09-01 19:49:05,612 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-174
+2025-09-01 19:49:05,763 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-175
+2025-09-01 19:49:05,909 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-176
+2025-09-01 19:49:06,060 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-177
+2025-09-01 19:49:06,210 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-178
+2025-09-01 19:49:06,357 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-179
+2025-09-01 19:49:06,511 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-180
+2025-09-01 19:49:06,660 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-181
+2025-09-01 19:49:06,815 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-182
+2025-09-01 19:49:06,958 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-183
+2025-09-01 19:49:07,109 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-184
+2025-09-01 19:49:07,254 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-185
+2025-09-01 19:49:07,405 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-186
+2025-09-01 19:49:07,558 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-187
+2025-09-01 19:49:07,708 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-188
+2025-09-01 19:49:07,857 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-189
+2025-09-01 19:49:08,007 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-190
+2025-09-01 19:49:08,155 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-191
+2025-09-01 19:49:08,306 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-192
+2025-09-01 19:49:08,456 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-193
+2025-09-01 19:49:08,605 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-194
+2025-09-01 19:49:08,755 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-195
+2025-09-01 19:49:08,903 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-196
+2025-09-01 19:49:09,055 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-197
+2025-09-01 19:49:09,203 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-198
+2025-09-01 19:49:09,352 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-199
+2025-09-01 19:49:09,501 INFO o.a.j.t.JMeterThread: Thread started: Seckill Thread Group 1-200
+2025-09-01 19:49:30,000 INFO o.a.j.r.Summariser: summary + 482796 in 00:00:30 = 16117.9/s Avg:    11 Min:     0 Max:   105 Err: 374980 (77.67%) Active: 200 Started: 200 Finished: 0
+2025-09-01 19:49:30,002 INFO o.a.j.r.Summariser: summary = 791553 in 00:00:51 = 15660.1/s Avg:     8 Min:     0 Max:   105 Err: 618113 (78.09%)
+2025-09-01 19:50:00,000 INFO o.a.j.r.Summariser: summary + 484780 in 00:00:30 = 16159.3/s Avg:    12 Min:     2 Max:   119 Err: 374973 (77.35%) Active: 200 Started: 200 Finished: 0
+2025-09-01 19:50:00,001 INFO o.a.j.r.Summariser: summary = 1276333 in 00:01:21 = 15846.0/s Avg:    10 Min:     0 Max:   119 Err: 993086 (77.81%)
+2025-09-01 19:50:09,823 INFO o.a.j.r.ResultCollector: Shutdown hook started
+2025-09-01 19:50:09,825 INFO o.a.j.r.ResultCollector: Shutdown hook ended

@@ -16,7 +16,7 @@ import java.util.Base64;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:secret}")
+    @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong}")
     private String secret;
 
     private String encodedSecret;
@@ -82,4 +82,3 @@ public class JwtUtil {
         }
     }
 }
-

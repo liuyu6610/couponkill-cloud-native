@@ -21,25 +21,6 @@ spring:
             refresh: true
         refresh-enabled: true
         refresh-interval: 3000  # 配置刷新间隔，单位毫秒
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    # 增加连接池配置
-    lettuce:
-      pool:
-        max-active: 32
-        max-idle: 16
-        min-idle: 8
-        max-wait: 2000ms
-    timeout: 2000ms
-  # 增加数据库连接池配置
-  datasource:
-    hikari:
-      maximum-pool-size: 50
-      minimum-idle: 10
-      connection-timeout: 3000
-      idle-timeout: 600000
-      max-lifetime: 1800000
 
 # ShardingSphere配置
 shardingsphere:
