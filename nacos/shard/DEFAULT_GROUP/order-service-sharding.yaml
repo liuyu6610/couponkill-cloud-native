@@ -1,0 +1,81 @@
+dataSources:
+  order-db-0:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_0?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  order-db-1:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_1?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  order-db-2:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_2?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  order-db-3:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/order_db_3?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+
+rules:
+- !SHARDING
+  tables:
+    order:
+      actualDataNodes: order-db-$->{0..3}.order_$->{0..15}
+      databaseStrategy:
+        standard:
+          shardingColumn: user_id
+          shardingAlgorithmName: order-db-inline
+      tableStrategy:
+        standard:
+          shardingColumn: user_id
+          shardingAlgorithmName: order-table-inline
+  shardingAlgorithms:
+    order-db-inline:
+      type: INLINE
+      props:
+        algorithm-expression: order-db-$->{user_id % 4}
+    order-table-inline:
+      type: INLINE
+      props:
+        algorithm-expression: order_$->{user_id % 16}
+  keyGenerators:
+    snowflake:
+      type: SNOWFLAKE
+      props:
+        worker-id: 1
+        data-center-id: 1
+
+props:
+  sql-show: false
+  query-with-cipher-column: false
+  sql-comment-parse-enabled: true
+  max-connections-size-per-query: 8
+  check-table-metadata-enabled: false

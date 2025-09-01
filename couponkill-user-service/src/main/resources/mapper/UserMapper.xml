@@ -53,9 +53,9 @@
     </select>
 
     <!-- 插入用户 -->
-    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO `user`(username, password, phone, email, status, create_time, update_time)
-        VALUES(#{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})
+    <insert id="insertUser">
+        INSERT INTO `user`(id, username, password, phone, email, status, create_time, update_time)
+        VALUES(#{id}, #{username}, #{password}, #{phone}, #{email}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
     <!-- 查询失效用户 -->

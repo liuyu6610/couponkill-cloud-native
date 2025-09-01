@@ -1,0 +1,95 @@
+dataSources:
+  coupon-db-0:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_0?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  coupon-db-1:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_1?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  coupon-db-2:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_2?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  coupon-db-3:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/coupon_db_3?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+
+rules:
+  - !SHARDING
+    tables:
+      coupon:
+        actualDataNodes: coupon-db-$->{0..3}.coupon_$->{0..15}
+        databaseStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-table-inline
+      stock_log:
+        actualDataNodes: coupon-db-$->{0..3}.stock_log_$->{0..15}
+        databaseStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: stock-log-table-inline
+    shardingAlgorithms:
+      coupon-db-inline:
+        type: INLINE
+        props:
+          algorithm-expression: coupon-db-$->{(int)(shard_index / 16) % 4}
+      coupon-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: coupon_$->{shard_index % 16}
+      stock-log-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: stock_log_$->{shard_index % 16}
+    keyGenerators:
+      snowflake:
+        type: SNOWFLAKE
+        props:
+          worker-id: 1
+          data-center-id: 1
+
+props:
+  sql-show: false
+  query-with-cipher-column: false
+  sql-comment-parse-enabled: true
+  max-connections-size-per-query: 8
+  check-table-metadata-enabled: false

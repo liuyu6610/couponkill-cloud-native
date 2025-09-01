@@ -1,0 +1,62 @@
+dataSources:
+  user-db-0:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+  user-db-1:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: master0
+    password: Yu20040925@
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 3000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 20
+    minimumIdle: 5
+
+rules:
+- !SHARDING
+  tables:
+    user:
+      actualDataNodes: user-db-$->{0..1}.user
+      databaseStrategy:
+        standard:
+          shardingColumn: id
+          shardingAlgorithmName: user-db-inline
+    user_coupon_count:
+      actualDataNodes: user-db-$->{0..1}.user_coupon_count
+      databaseStrategy:
+        standard:
+          shardingColumn: user_id
+          shardingAlgorithmName: user-coupon-count-db-inline
+  shardingAlgorithms:
+    user-db-inline:
+      type: INLINE
+      props:
+        algorithm-expression: user-db-$->{id % 2}
+    user-coupon-count-db-inline:
+      type: INLINE
+      props:
+        algorithm-expression: user-db-$->{user_id % 2}
+  keyGenerators:
+    snowflake:
+      type: SNOWFLAKE
+      props:
+        worker-id: 1
+        data-center-id: 1
+
+props:
+  sql-show: false
+  sql-trace: false
+  query-with-cipher-column: false
+  sql-comment-parse-enabled: true
+  max-connections-size-per-query: 8
+  check-table-metadata-enabled: false

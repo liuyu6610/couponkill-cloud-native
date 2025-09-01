@@ -26,10 +26,12 @@ public class UserController {
 
     @Operation(summary = "用户登录", description = "用户登录接口")
     @PostMapping("/login")
+    @ResponseBody
     public ApiResponse<Map<String, Object>> login(
             @Parameter(description = "用户名") @RequestParam String username,
             @Parameter(description = "密码") @RequestParam String password) {
-        return ApiResponse.success( userService.login(username, password));
+        Map<String, Object> loginResult = userService.login(username, password);
+        return ApiResponse.success(loginResult);
     }
 
     @Operation(summary = "用户注册", description = "用户注册接口")
