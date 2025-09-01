@@ -2,12 +2,21 @@
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.4.1">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="CouponKill_Seckill_Test" enabled="true">
-      <stringProp name="TestPlan.comments">秒杀系统性能测试计划</stringProp>
+      <stringProp name="TestPlan.comments">秒杀系统性能测试计划（专注于单个coupon）</stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="用户定义的变量" enabled="true">
-        <collectionProp name="Arguments.arguments"/>
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="couponId" elementType="Argument">
+            <stringProp name="Argument.value">10</stringProp> <!-- 固定秒杀商品ID -->
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="serverPort" elementType="Argument">
+            <stringProp name="Argument.value">80</stringProp> <!-- 服务端口，可根据实际修改 -->
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
       </elementProp>
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
@@ -16,27 +25,42 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">-1</stringProp>
+          <stringProp name="LoopController.loops">-1</stringProp> <!-- 配合调度器持续运行 -->
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1000</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">30</stringProp>
+        <stringProp name="ThreadGroup.num_threads">1000</stringProp> <!-- 并发用户数 -->
+        <stringProp name="ThreadGroup.ramp_time">30</stringProp> <!-- 梯度启动时间 -->
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
-        <stringProp name="ThreadGroup.duration">300</stringProp>
+        <stringProp name="ThreadGroup.duration">600</stringProp> <!-- 测试持续时间（秒） -->
         <stringProp name="ThreadGroup.delay"></stringProp>
-        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp> <!-- 每次迭代使用新用户数据 -->
       </ThreadGroup>
       <hashTree>
+        <!-- CSV数据配置：读取用户ID和Token -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="User Tokens CSV" enabled="true">
+          <stringProp name="filename">user_tokens.csv</stringProp> <!-- 改为相对路径（与jmx同目录） -->
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="delimiter">,</stringProp>
+          <boolProp name="quotedData">false</boolProp> <!-- 关闭引号解析（默认CSV格式无需引号） -->
+          <boolProp name="recycle">true</boolProp> <!-- 数据循环使用 -->
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">userId,token</stringProp> <!-- 与CSV表头对应 -->
+          <boolProp name="ignoreFirstLine">true</boolProp> <!-- 忽略表头行 -->
+          <boolProp name="shareMode">shareMode.all</boolProp> <!-- 所有线程共享数据，避免重复 -->
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- 秒杀请求配置 -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Seckill Request" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="请求参数" enabled="true">
             <collectionProp name="Arguments.arguments">
               <elementProp name="userId" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">${userId}</stringProp>
+                <stringProp name="Argument.value">${userId}</stringProp> <!-- 从CSV获取用户ID -->
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
               <elementProp name="couponId" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">10</stringProp>
+                <stringProp name="Argument.value">${couponId}</stringProp> <!-- 使用固定变量 -->
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
@@ -49,12 +73,12 @@
               </elementProp>
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">Authorization</stringProp>
-                <stringProp name="Header.value">Bearer ${token}</stringProp>
+                <stringProp name="Header.value">Bearer ${token}</stringProp> <!-- 从CSV获取Token -->
               </elementProp>
             </collectionProp>
           </elementProp>
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
-          <stringProp name="HTTPSampler.port">80</stringProp>
+          <stringProp name="HTTPSampler.port">${serverPort}</stringProp> <!-- 使用变量端口 -->
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
           <stringProp name="HTTPSampler.path">/api/v1/order/seckill</stringProp>
@@ -63,26 +87,27 @@
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           <stringProp name="HTTPSampler.connect_timeout">5000</stringProp>
           <stringProp name="HTTPSampler.response_timeout">10000</stringProp>
           <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
           <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
         </HTTPSamplerProxy>
-        <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="User Tokens CSV" enabled="true">
-          <stringProp name="filename">D:\couponkill\couponkill-cloud-native\testToken\generate_tokens\user_tokens.csv</stringProp>
-          <stringProp name="fileEncoding">UTF-8</stringProp>
-          <stringProp name="delimiter">,</stringProp>
-          <boolProp name="quotedData">true</boolProp>
-          <boolProp name="recycle">true</boolProp>
-          <boolProp name="stopThread">false</boolProp>
-          <stringProp name="variableNames">userId,token</stringProp>
-          <boolProp name="ignoreFirstLine">true</boolProp>
-          <boolProp name="shareMode">shareMode.thread</boolProp>
-        </CSVDataSet>
-        <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="false">
+        <hashTree>
+          <!-- 响应断言：验证秒杀结果 -->
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="秒杀结果断言" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="Assertion.test_string">秒杀成功</stringProp>
+              <stringProp name="Assertion.test_string">200</stringProp> <!-- 假设成功状态码为200 -->
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <stringProp name="Assertion.success_pattern">contains</stringProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+        <!-- 结果监听器：启用查看结果树（方便调试401问题） -->
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -103,9 +128,9 @@
               <samplerData>false</samplerData>
               <xml>false</xml>
               <fieldNames>true</fieldNames>
-              <responseHeaders>false</responseHeaders>
-              <requestHeaders>false</requestHeaders>
-              <responseDataOnError>false</responseDataOnError>
+              <responseHeaders>true</responseHeaders> <!-- 启用响应头查看，便于调试401 -->
+              <requestHeaders>true</requestHeaders> <!-- 启用请求头查看，验证Token是否携带 -->
+              <responseDataOnError>true</responseDataOnError> <!-- 错误时显示响应数据 -->
               <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
               <assertionsResultsToSave>0</assertionsResultsToSave>
               <bytes>true</bytes>
@@ -119,6 +144,8 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
+
+        <!-- 聚合报告：保存测试结果 -->
         <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
