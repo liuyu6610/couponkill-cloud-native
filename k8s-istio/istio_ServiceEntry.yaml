@@ -1,0 +1,92 @@
+# ServiceEntry配置，支持外部服务访问
+# ServiceEntry 用于将外部服务添加到 Istio 的内部服务注册表中
+---
+# 外部API服务的ServiceEntry配置
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  # ServiceEntry 的名称
+  name: external-apis
+  # ServiceEntry 所在的命名空间
+  namespace: couponkill
+spec:
+  # 外部主机列表
+  hosts:
+  # 阿里巴巴API
+  - "api.alibaba.com"
+  # 阿里云CDN API
+  - "api.alicdn.com"
+  # 阿里云OSS服务
+  - "oss.aliyuncs.com"
+  # 端口列表
+  ports:
+  # HTTPS端口
+  - number: 443
+    # 端口名称
+    name: https
+    # 协议类型
+    protocol: HTTPS
+  # HTTP端口
+  - number: 80
+    # 端口名称
+    name: http
+    # 协议类型
+    protocol: HTTP
+  # 位置，MESH_EXTERNAL 表示这些主机在服务网格外部
+  location: MESH_EXTERNAL
+  # 解析方式，DNS 表示通过DNS解析主机名
+  resolution: DNS
+
+---
+# 外部数据库服务的ServiceEntry配置
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  # ServiceEntry 的名称
+  name: external-databases
+  # ServiceEntry 所在的命名空间
+  namespace: couponkill
+spec:
+  # 外部主机列表
+  hosts:
+  # 阿里云RDS MySQL数据库
+  - "rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com"
+  # 端口列表
+  ports:
+  # MySQL端口
+  - number: 3306
+    # 端口名称
+    name: tcp
+    # 协议类型
+    protocol: TCP
+  # 位置，MESH_EXTERNAL 表示这些主机在服务网格外部
+  location: MESH_EXTERNAL
+  # 解析方式，DNS 表示通过DNS解析主机名
+  resolution: DNS
+
+---
+# 外部Redis服务的ServiceEntry配置
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  # ServiceEntry 的名称
+  name: external-redis
+  # ServiceEntry 所在的命名空间
+  namespace: couponkill
+spec:
+  # 外部主机列表
+  hosts:
+  # Redis服务器IP地址
+  - "r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com"
+  # 端口列表
+  ports:
+  # Redis端口
+  - number: 6379
+    # 端口名称
+    name: redis
+    # 协议类型
+    protocol: TCP
+  # 位置，MESH_EXTERNAL 表示这些主机在服务网格外部
+  location: MESH_EXTERNAL
+  # 解析方式，NONE 表示没有解析方式（使用IP地址）
+  resolution: DNS

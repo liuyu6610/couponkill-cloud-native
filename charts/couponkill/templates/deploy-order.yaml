@@ -12,10 +12,11 @@ spec:
   template:
     metadata: {labels: {app: {{ .Values.services.order.name }}}}
     spec:
+      serviceAccountName: {{ .Values.serviceAccount0.name }}
       containers:
         - name: app
           # 定义容器使用的镜像，包含注册表地址和标签
-          image: "{{ .Values.image.registry }}/{{ .Values.services.order.image.name }}:{{ .Values.services.order.image.tag }}"
+          image: "{{ .Values.image.registry }}:{{ .Values.services.order.image.name }}}"
           # 指定容器暴露的端口号
           ports: [{containerPort: {{ .Values.services.order.port }} }]
           # 配置就绪探针，用于检测应用是否准备好接收流量

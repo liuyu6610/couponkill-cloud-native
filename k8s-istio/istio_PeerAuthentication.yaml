@@ -1,0 +1,31 @@
+# PeerAuthentication配置，定义服务间通信的认证策略
+# PeerAuthentication 用于配置工作负载之间的双向 TLS 设置
+---
+# 在 istio-system 命名空间中设置默认的 PeerAuthentication 策略
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  # PeerAuthentication 的名称
+  name: default
+  # PeerAuthentication 所在的命名空间
+  namespace: istio-system
+spec:
+  # 双向 TLS 设置
+  mtls:
+    # 模式，STRICT 表示所有客户端都必须使用双向 TLS 连接
+    mode: STRICT
+
+---
+# 在 couponkill 命名空间中设置默认的 PeerAuthentication 策略
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  # PeerAuthentication 的名称
+  name: default
+  # PeerAuthentication 所在的命名空间
+  namespace: couponkill
+spec:
+  # 双向 TLS 设置
+  mtls:
+    # 模式，STRICT 表示所有客户端都必须使用双向 TLS 连接
+    mode: STRICT

@@ -1,0 +1,242 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: couponkill
+  labels:
+    name: couponkill
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+  namespace: couponkill
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJjcnBpLW41cnVtcGp3YnFpbm96NGMubmhzLmNuLWhhbmd6aG91LnBlcnNvbmFsLmNyLmFsaXl1bmNzLmNvbS90aGV0ZXN0c3BhY2Vmb3Jkb2NrZXIvbXktZG9ja2VyIjp7InVzZXJuYW1lIjoiYWRtaW4iLCJwYXNzd29yZCI6IjFmMmQxZTJlNjdkZiIsImF1dGgiOiJYV1pqY21WMExtTnZiUzkxYzI4dlkyOXRMM0J5YjJwbFkzUkFabTl5YlM5a1pYWXZkMjl5WkE9PSJ9fX0=
+---
+# 创建一个多容器的pod包含项目的所有业务服务镜像
+apiVersion: v1
+kind: Pod
+metadata:
+  name: couponkill-pod
+  namespace: couponkill
+  labels:
+    app: couponkill
+spec:
+  imagePullSecrets:
+    - name: mysecret
+  containers:
+    # 网关模块
+    - name: couponkill-gateway
+      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:gateway
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - containerPort: 8080
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: NACOS_SERVER_ADDR
+          value: "software-service:8848"
+        - name: NACOS_NAMESPACE
+          value: "public"
+        - name: JWT_SECRET
+          value: "secret"
+      livenessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+
+    # 订单模块
+    - name: couponkill-order
+      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:order
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "500m"
+        limits:
+          memory: "512Mi"
+          cpu: "1000m"
+      ports:
+        - containerPort: 8082
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: SERVER_PORT
+          value: "8082"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: NACOS_SERVER_ADDR
+          value: "software-service:8848"
+        - name: NACOS_NAMESPACE
+          value: "public"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://storage-service:3306/couponkill?useSSL=false&serverTimezone=UTC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "123456"
+        - name: SPRING_REDIS_HOST
+          value: "storage-service"
+        - name: SPRING_REDIS_PORT
+          value: "6379"
+        - name: ROCKETMQ_NAMESRV_ADDR
+          value: "software-service:9876"
+        - name: JWT_SECRET
+          value: "secret"
+      livenessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8082
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8082
+        initialDelaySeconds: 10
+        periodSeconds: 5
+
+    # 优惠券模块
+    - name: couponkill-coupon
+      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:coupon
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "500m"
+        limits:
+          memory: "512Mi"
+          cpu: "1000m"
+      ports:
+        - containerPort: 8081
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: SERVER_PORT
+          value: "8081"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: NACOS_SERVER_ADDR
+          value: "software-service:8848"
+        - name: NACOS_NAMESPACE
+          value: "public"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://storage-service:3306/couponkill?useSSL=false&serverTimezone=UTC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "123456"
+        - name: SPRING_REDIS_HOST
+          value: "storage-service"
+        - name: SPRING_REDIS_PORT
+          value: "6379"
+        - name: ROCKETMQ_NAMESRV_ADDR
+          value: "software-service:9876"
+      livenessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8081
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8081
+        initialDelaySeconds: 10
+        periodSeconds: 5
+
+    # 用户模块
+    - name: couponkill-user
+      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:user
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "500m"
+        limits:
+          memory: "512Mi"
+          cpu: "1000m"
+      ports:
+        - containerPort: 8083
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: SERVER_PORT
+          value: "8083"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: NACOS_SERVER_ADDR
+          value: "software-service:8848"
+        - name: NACOS_NAMESPACE
+          value: "public"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://storage-service:3306/couponkill?useSSL=false&serverTimezone=UTC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "123456"
+        - name: SPRING_REDIS_HOST
+          value: "storage-service"
+        - name: SPRING_REDIS_PORT
+          value: "6379"
+        - name: JWT_SECRET
+          value: "secret"
+      livenessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8083
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8083
+        initialDelaySeconds: 10
+        periodSeconds: 5
+
+    # go服务模块
+    - name: couponkill-go
+      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:seckill-go
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "500m"
+        limits:
+          memory: "512Mi"
+          cpu: "1000m"
+      ports:
+        - containerPort: 8090
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: PORT
+          value: "8090"
+        - name: REDIS_ADDR
+          value: "storage-service:6379"
+        - name: MYSQL_DSN
+          value: "root:123456@tcp(storage-service:3306)/couponkill"
+        - name: ROCKET_MQ
+          value: "software-service:9876"
+        - name: NACOS_ADDR
+          value: "software-service:8848"
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8090
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8090
+        initialDelaySeconds: 10
+        periodSeconds: 5

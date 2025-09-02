@@ -1,16 +1,24 @@
 # AuthorizationPolicy配置，定义服务访问的授权策略
+# AuthorizationPolicy 支持对网格中工作负载的访问控制
 ---
 # 允许入口网关访问所有服务
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: allow-ingress
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
+  # 第一条规则
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
 
 ---
@@ -18,18 +26,29 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: allow-internal-services
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）列表
         principals:
+        # 订单服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        # 优惠券服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-coupon-service"
+        # 用户服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-user-service"
+        # Go服务的服务账户
         - "cluster.local/ns/couponkill/sa/seckill-go"
+        # 入口网关服务账户
         - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
 
 ---
@@ -37,21 +56,35 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: seckill-go-policy
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 选择器，指定此策略适用的Pod
   selector:
+    # 匹配标签
     matchLabels:
+      # 应用于具有 app: seckill-go 标签的Pod
       app: seckill-go
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）列表
         principals:
+        # 订单服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        # 入口网关服务账户
         - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+    # 条件列表
     when:
+    # 请求头条件
     - key: request.headers[x-api-key]
+      # 允许的值列表
       values: ["seckill-api-key"]
 
 ---
@@ -59,19 +92,31 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: order-service-policy
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 选择器，指定此策略适用的Pod
   selector:
+    # 匹配标签
     matchLabels:
+      # 应用于具有 app: couponkill-order-service 标签的Pod
       app: couponkill-order-service
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）列表
         principals:
+        # 用户服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-user-service"
+        # Go服务的服务账户
         - "cluster.local/ns/couponkill/sa/seckill-go"
+        # 入口网关服务账户
         - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
 
 ---
@@ -79,19 +124,31 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: coupon-service-policy
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 选择器，指定此策略适用的Pod
   selector:
+    # 匹配标签
     matchLabels:
+      # 应用于具有 app: couponkill-coupon-service 标签的Pod
       app: couponkill-coupon-service
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）列表
         principals:
+        # 订单服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        # Go服务的服务账户
         - "cluster.local/ns/couponkill/sa/seckill-go"
+        # 入口网关服务账户
         - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
 
 ---
@@ -99,16 +156,27 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  # AuthorizationPolicy 的名称
   name: user-service-policy
+  # AuthorizationPolicy 所在的命名空间
   namespace: couponkill
 spec:
+  # 选择器，指定此策略适用的Pod
   selector:
+    # 匹配标签
     matchLabels:
+      # 应用于具有 app: couponkill-user-service 标签的Pod
       app: couponkill-user-service
+  # 动作，ALLOW 表示允许匹配的请求
   action: ALLOW
+  # 规则列表
   rules:
   - from:
+    # 来源列表
     - source:
+        # 允许的主体（服务账户）列表
         principals:
+        # 订单服务的服务账户
         - "cluster.local/ns/couponkill/sa/couponkill-order-service"
+        # 入口网关服务账户
         - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"

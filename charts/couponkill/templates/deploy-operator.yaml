@@ -30,8 +30,8 @@ spec:
             - /manager
           args:
             - --leader-elect
-            - --health-probe-bind-address=:{{ .Values.services.operator.port }}
-          image: "{{ .Values.image.registry }}/{{ .Values.services.operator.image.name }}:{{ .Values.services.operator.image.tag }}"
+            - --health-probe-bind-address=:{{ .Values.services.operator.port | quote }}
+          image: "{{ .Values.image.registry }}:{{ .Values.services.operator.image.name }}"
           name: manager
           securityContext:
             allowPrivilegeEscalation: false

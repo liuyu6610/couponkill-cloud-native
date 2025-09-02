@@ -147,3 +147,119 @@ image:
   registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
   # 镜像标签
   tag: latest
+# 服务账户配置
+serviceAccount0:
+  name: couponkill-order-service
+  namespace: couponkill
+serviceAccount1:
+  name: couponkill-coupon-service
+  namespace: couponkill
+serviceAccount2:
+    name: couponkill-user-service
+    namespace: couponkill
+serviceAccount3:
+    name: seckill-go
+    namespace: couponkill
+serviceAccount4:
+    name: gateway
+    namespace: couponkill
+
+# 微服务配置列表
+services:
+  # Gateway服务配置
+  gateway:
+    name: couponkill-gateway  # 服务名称
+    port: 8080  # 服务端口
+    replicas: 1  # 初始副本
+    image:
+      name: "gateway"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 5  # 最大副本数
+      cpu: 70  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=500 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=500 -Dserver.tomcat.max-connections=20000"
+
+  # Go秒杀服务配置
+  go:
+    name: seckill-go-svc
+    port: 8090
+    replicas: 2
+    image: 
+      name: "seckill-go"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 5  # 最大副本数
+      cpu: 70  # CPU使用率触发阈值(百分比)
+    # Go运行时优化参数
+    goOpts:
+      gc: 20
+      maxProcs: 4
+
+  # 优惠券服务配置
+  coupon:
+    name: couponkill-coupon-service
+    port: 8081
+    replicas: 2
+    image:
+      name: "coupon"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 4  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=300 -Dserver.tomcat.min-spare-threads=30 -Dserver.tomcat.accept-count=200 -Dserver.tomcat.max-connections=8000"
+
+  # 订单服务配置
+  order:
+    name: couponkill-order-service
+    port: 8082
+    replicas: 2
+    image:
+      name: "order"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 4  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=400 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=300 -Dserver.tomcat.max-connections=10000"
+
+  # 用户服务配置
+  user:
+    name: couponkill-user-service
+    port: 8083
+    replicas: 1
+    image:
+      name: "user"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 3  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=200 -Dserver.tomcat.min-spare-threads=20 -Dserver.tomcat.accept-count=100 -Dserver.tomcat.max-connections=5000"
+
+  # operator配置
+  operator:
+    name: couponkill-operator
+    port: 8084
+    replicas: 1
+    image:
+      name: "operator"
+    # Go运行时优化参数
+    goOpts:
+      gc: 20
+      maxProcs: 4

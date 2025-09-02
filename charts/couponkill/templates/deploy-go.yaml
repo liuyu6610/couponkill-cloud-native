@@ -33,9 +33,10 @@ spec:
         prometheus.io/port: "{{ .Values.services.go.port }}"
         prometheus.io/path: "/metrics"
     spec:
+      serviceAccountName: {{ .Values.serviceAccount3.name }}
       containers:
         - name: app
-          image: "{{ .Values.image.registry }}/{{ .Values.services.go.image.name }}:{{ .Values.services.go.image.tag }}"
+          image: "{{ .Values.image.registry }}:{{ .Values.services.go.image.name }}"
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.services.go.port }}

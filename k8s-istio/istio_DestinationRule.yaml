@@ -1,0 +1,212 @@
+# 为所有服务创建DestinationRule，配置流量策略和故障处理规则
+# DestinationRule 定义了在路由发生后应用于服务流量的策略
+---
+# Go服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: seckill-go-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: seckill-go-svc.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 100
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 50
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 10
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+    # 负载均衡器设置
+    loadBalancer:
+      # 负载均衡算法，LEAST_REQUEST表示最少请求算法
+      simple: LEAST_REQUEST
+
+---
+# 订单服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: order-service-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: couponkill-order-service.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 200
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 100
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 20
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+    # 负载均衡器设置
+    loadBalancer:
+      # 负载均衡算法，LEAST_REQUEST表示最少请求算法
+      simple: LEAST_REQUEST
+
+---
+# 优惠券服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: coupon-service-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: couponkill-coupon-service.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 150
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 75
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 15
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+    # 负载均衡器设置
+    loadBalancer:
+      # 负载均衡算法，LEAST_REQUEST表示最少请求算法
+      simple: LEAST_REQUEST
+
+---
+# 用户服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: user-service-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: couponkill-user-service.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 100
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 50
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 10
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+    # 负载均衡器设置
+    loadBalancer:
+      # 负载均衡算法，LEAST_REQUEST表示最少请求算法
+      simple: LEAST_REQUEST
+
+---
+# 网关服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: gateway-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: couponkill-gateway.istio-system.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 500
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 200
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 50
+    # TLS设置
+    tls:
+      # TLS模式，DISABLE表示禁用TLS
+      mode: DISABLE

@@ -41,5 +41,12 @@ spec:
         # 金丝雀版本路由配置，权重默认为0
         - destination: {host: {{ .Values.services.order.name }}, subset: canary, port: {number: 80}}
           weight: {{ default 0 .Values.canary.order.weightCanary }}
+    #go服务路由规则：处理其他API请求
+    - name: go-route
+      match: [{uri: {prefix: "seckill"}}]
+      route:
+        # 稳定版本路由配置，权重默认为100
+        - destination: {host: {{ .Values.services.go.name }}, port: {number: 80}}
+          weight: {{ default 100 .Values.canary.go.weightStable }}
 {{- end }}
 

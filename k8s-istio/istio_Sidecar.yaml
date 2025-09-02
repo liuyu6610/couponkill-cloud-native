@@ -1,0 +1,61 @@
+# Sidecar资源配置，优化服务间通信
+# Sidecar 资源提供了一种方式来微调 Istio sidecar 代理的配置
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  # Sidecar 资源的名称
+  name: default
+  # Sidecar 资源所在的命名空间
+  namespace: couponkill
+spec:
+  # 出站流量配置
+  egress:
+  # 允许访问的主机列表
+  - hosts:
+    # 允许访问当前命名空间中的所有服务
+    - "./*"
+    # 允许访问 istio-system 命名空间中的所有服务
+    - "istio-system/*"
+  # 入站流量配置
+  ingress:
+  # Go服务端口配置
+  - port:
+      # 端口号
+      number: 8090
+      # 协议类型
+      protocol: HTTP
+      # 端口名称
+      name: seckill-go
+    # 默认端点，将流量转发到本地的8090端口
+    defaultEndpoint: 0.0.0.0:8090
+  # 订单服务端口配置
+  - port:
+      # 端口号
+      number: 8082
+      # 协议类型
+      protocol: HTTP
+      # 端口名称
+      name: order-service
+    # 默认端点，将流量转发到本地的8082端口
+    defaultEndpoint: 0.0.0.0:8082
+  # 优惠券服务端口配置
+  - port:
+      # 端口号
+      number: 8081
+      # 协议类型
+      protocol: HTTP
+      # 端口名称
+      name: coupon-service
+    # 默认端点，将流量转发到本地的8081端口
+    defaultEndpoint: 0.0.0.0:8081
+  # 用户服务端口配置
+  - port:
+      # 端口号
+      number: 8083
+      # 协议类型
+      protocol: HTTP
+      # 端口名称
+      name: user-service
+    # 默认端点，将流量转发到本地的8083端口
+    defaultEndpoint: 0.0.0.0:8083

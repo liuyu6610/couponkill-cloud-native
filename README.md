@@ -4,15 +4,26 @@
 
 CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专为秋招展示而设计。该系统具备高可用性、可扩展性和弹性伸缩能力，能够应对秒杀场景下的流量峰值。
 
+## 补充说明
+
+开发的过程中有随便试试的基础版本，但是由于时间原因，没有继续开发，所以现在的版本是一个基础版本。对于前端在k8s-istio设置了完整的规则包含core,helm一
+键部署没有使用自定义的istio,如果想要使用自定义的istio,只需要改动一下即可，二者是兼容的，本人已经测试过，helm新增了serviceAccount，
+并绑定了istio的角色，这样就可以使用自定义的istio了。一键部署不需要那么复杂的istio就简化了.
+
+监控功能和keda建议不要全部署在couponkill空间，并且都需要提前部署好，否则会导致部署失败。
+非必须的功能有很多，比如istio,监控功能，operator,sentinel-dashboard,prometheus,kafka
+
+还有简单般的k8s-nothing的版本，只有最最基本的版本，就是项目需要的各种配置没有任何其他额外功能。
+
 ## 技术栈
 
 开发语言: Java、Go
 容器编排: Kubernetes
 服务网格: Istio
-CI/CD: Jenkins
+CI/CD: Jenkins和云效
 服务注册与发现: Nacos
 配置中心: Nacos
-分布式事务: Seata
+分布式事务: Seata（最开始使用了之后引入分库分表去除了，shardingSphere自带的有事务模式）
 流量控制: Sentinel
 消息中间件: RocketMQ
 缓存: Redis (阿里云 Redis 服务)
@@ -72,7 +83,7 @@ CI/CD: Jenkins
 
 ### Go与Java协同处理
 - Java服务处理复杂业务逻辑，提供稳定可靠的服务
-- Go服务处理高并发场景下的简单逻辑，发挥Go语言高并发优势
+- Go服务处理高并发场景下的和java模块创建订单的全部流程，包括库存扣减、订单创建等，发挥Go语言高并发优势
 - 通过Nacos实现服务发现和服务配置的统一管理
 - 实现智能负载分配，当Java服务达到处理能力上限时，自动将额外请求路由到Go服务
 - 通过RocketMQ实现服务间异步通信，降低服务间耦合度
@@ -81,11 +92,12 @@ CI/CD: Jenkins
 
 ### 环境要求
 
-- Kubernetes 1.27+（推荐使用kubekey安装）
-- Helm 3.0+
-- Jenkins 2.3+（可选，更推荐相关产品，如阿里云的云效，现在相关产品很完善并且可以利用可视化界面进行配置优化）
-- Docker 20.10+
-- kubectl 1.27+
+- Kubernetes:1.27+（推荐使用kubekey安装）
+- Helm:3.0+
+- istio: 1.18.0
+- Jenkins:2.3+（可选，更推荐相关产品，如阿里云的云效，现在相关产品很完善并且可以利用可视化界面进行配置优化）
+- Docker:20.10+
+- kubectl:1.27+
 ### 部署步骤
 
 #### 一键部署（推荐）
@@ -379,7 +391,7 @@ helm upgrade couponkill-canary ./charts/couponkill --namespace couponkill -f ./c
 
 ## CI/CD 流程
 
-项目使用 Jenkins 进行持续集成和持续部署。Jenkinsfile 定义了完整的构建、测试、打包和部署流程。
+项目使用 云效的devops 进行持续集成和持续部署。并且利用可视化改进jenkins的配置， 定义了完整的构建、测试、打包和部署流程。
 
 主要步骤包括：
 1. 并行构建所有服务

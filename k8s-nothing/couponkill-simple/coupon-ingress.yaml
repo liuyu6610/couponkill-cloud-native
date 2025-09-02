@@ -1,0 +1,77 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: couponkill-ingress
+  namespace: couponkill
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # 网关路由 - 处理所有API请求
+          - path: /api/v1/user(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8080
+          - path: /api/v1/order(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8080
+          - path: /api/v1/coupon(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8080
+          - path: /seckill(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8080
+          # 直接访问各服务端点（用于测试和调试）
+          - path: /gateway
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8080
+          - path: /user
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8083
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8082
+          - path: /coupon
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8081
+          - path: /go
+            pathType: Prefix
+            backend:
+              service:
+                name: couponkill-service
+                port:
+                  number: 8090
