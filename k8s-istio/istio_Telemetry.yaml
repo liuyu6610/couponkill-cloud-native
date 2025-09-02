@@ -1,0 +1,223 @@
+# Telemetry配置，定义服务网格的遥测策略
+# Telemetry 用于配置遥测系统如何收集和报告网格中的遥测数据
+---
+# 网格默认遥测配置
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  # Telemetry 资源的名称
+  name: mesh-default
+  # Telemetry 资源所在的命名空间
+  namespace: istio-system
+spec:
+  # 访问日志配置
+  accessLogging:
+    # 提供者列表
+    - providers:
+      # 使用 Envoy 提供者
+      - name: envoy
+  # 指标配置
+  metrics:
+    # 提供者列表
+    - providers:
+      # 使用 Prometheus 提供者
+      - name: prometheus
+      # 报告间隔
+      reportingInterval: 10s
+
+---
+# CouponKill 命名空间遥测配置
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  # Telemetry 资源的名称
+  name: couponkill-telemetry
+  # Telemetry 资源所在的命名空间
+  namespace: couponkill
+spec:
+  # 选择器，指定此遥测配置适用的Pod
+  selector:
+    # 匹配标签
+    matchLabels:
+      # 应用于具有 app: seckill-go 标签的Pod
+      app: seckill-go
+  # 访问日志配置
+  accessLogging:
+    # 提供者列表
+    - providers:
+      # 使用 Envoy 提供者
+      - name: envoy
+      # 过滤器配置
+      filter:
+        # 表达式，仅记录响应码大于等于400的请求
+        expression: response.code >= 400
+  # 指标配置
+  metrics:
+    # 提供者列表
+    - providers:
+      # 使用 Prometheus 提供者
+      - name: prometheus
+      # 覆盖配置
+      overrides:
+      # 标签覆盖列表
+      - tagOverrides:
+          # 响应码标签
+          response_code:
+            # 值表达式
+            value: "string(response.code)"
+          # 请求操作标签
+          request_operation:
+            # 值表达式
+            value: "request.headers['x-request-operation']"
+      # 报告间隔
+      reportingInterval: 5s
+---
+# 订单服务遥测配置
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  # Telemetry 资源的名称
+  name: order-service-telemetry
+  # Telemetry 资源所在的命名空间
+  namespace: couponkill
+spec:
+  # 选择器，指定此遥测配置适用的Pod
+  selector:
+    # 匹配标签
+    matchLabels:
+      # 应用于具有 app: couponkill-order-service 标签的Pod
+      app: couponkill-order-service
+  # 访问日志配置
+  accessLogging:
+    # 提供者列表
+    - providers:
+      # 使用 Envoy 提供者
+      - name: envoy
+      # 过滤器配置
+      filter:
+        # 表达式，仅记录响应码大于等于400的请求
+        expression: response.code >= 400
+  # 指标配置
+  metrics:
+    # 提供者列表
+    - providers:
+      # 使用 Prometheus 提供者
+      - name: prometheus
+      # 覆盖配置
+      overrides:
+      # 标签覆盖列表
+      - tagOverrides:
+          # 响应码标签
+          response_code:
+            # 值表达式
+            value: "string(response.code)"
+          # 请求操作标签
+          request_operation:
+            # 值表达式
+            value: "request.headers['x-request-operation']"
+      # 报告间隔
+      reportingInterval: 5s
+
+---
+# 优惠券服务遥测配置
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  # Telemetry 资源的名称
+  name: coupon-service-telemetry
+  # Telemetry 资源所在的命名空间
+  namespace: couponkill
+spec:
+  # 选择器，指定此遥测配置适用的Pod
+  selector:
+    # 匹配标签
+    matchLabels:
+      # 应用于具有 app: couponkill-coupon-service 标签的Pod
+      app: couponkill-coupon-service
+  # 访问日志配置
+  accessLogging:
+    # 提供者列表
+    - providers:
+      # 使用 Envoy 提供者
+      - name: envoy
+      # 过滤器配置
+      filter:
+        # 表达式，仅记录响应码大于等于400的请求
+        expression: response.code >= 400
+  # 指标配置
+  metrics:
+    # 提供者列表
+    - providers:
+      # 使用 Prometheus 提供者
+      - name: prometheus
+      # 覆盖配置
+      overrides:
+      # 标签覆盖列表
+      - tagOverrides:
+          # 响应码标签
+          response_code:
+            # 值表达式
+            value: "string(response.code)"
+          # 请求操作标签
+          request_operation:
+            # 值表达式
+            value: "request.headers['x-request-operation']"
+      # 报告间隔
+      reportingInterval: 5s
+
+---
+# 用户服务遥测配置
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  # Telemetry 资源的名称
+  name: user-service-telemetry
+  # Telemetry 资源所在的命名空间
+  namespace: couponkill
+spec:
+  # 选择器，指定此遥测配置适用的Pod
+  selector:
+    # 匹配标签
+    matchLabels:
+      # 应用于具有 app: couponkill-user-service 标签的Pod
+      app: couponkill-user-service
+  # 访问日志配置
+  accessLogging:
+    # 提供者列表
+    - providers:
+      # 使用 Envoy 提供者
+      - name: envoy
+      # 过滤器配置
+      filter:
+        # 表达式，仅记录响应码大于等于400的请求
+        expression: response.code >= 400
+  # 指标配置
+  metrics:
+    # 提供者列表
+    - providers:
+      # 使用 Prometheus 提供者
+      - name: prometheus
+      # 覆盖配置
+      overrides:
+      # 标签覆盖列表
+      - tagOverrides:
+          # 响应码标签
+          response_code:
+            # 值表达式
+            value: "string(response.code)"
+          # 请求操作标签
+          request_operation:
+            # 值表达式
+            value: "request.headers['x-request-operation']"
+#  5.1 response_code标签
+#  默认含义：表示请求的响应状态码（如 200、404、500 等，默认是数字类型）。
+#value: "string(response.code)"：这是一个值表达式，作用是将响应码从数字类型转换为字符串类型。
+#  表达式解析：response.code是 Istio 内置的属性，表示原始响应码（数字）；string()是类型转换函数，将数字转为字符串。
+#  实际效果：在 Prometheus 中，response_code标签会以字符串形式存储（如 "200"、"500"），更便于按状态码字符串进行查询（例如筛选所有 "5xx" 错误）。
+#  5.2 request_operation标签
+#  自定义含义：表示请求的业务操作类型（如 “创建订单”“查询优惠券” 等，需业务方在请求头中传递）。
+#value: "request.headers['x-request-operation']"：这是一个值表达式，作用是从请求头中提取指定字段的值作为标签。
+#  表达式解析：request.headers是 Istio 内置的属性，表示请求头的键值对；['x-request-operation']表示提取请求头中键为x-request-operation的值。
+#实际效果：如果业务请求中包含x-request-operation: create_order的请求头，那么指标的request_operation标签值就是create_order，可用于按操作类型统计指标（例如统计 “创建订单” 操作的错误率）。
+      # 报告间隔
+      reportingInterval: 5s

@@ -27,10 +27,10 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">-1</stringProp> <!-- 配合调度器持续运行 -->
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1000</stringProp> <!-- 并发用户数 -->
-        <stringProp name="ThreadGroup.ramp_time">30</stringProp> <!-- 梯度启动时间 -->
+        <stringProp name="ThreadGroup.num_threads">500</stringProp> <!-- 并发用户数 -->
+        <stringProp name="ThreadGroup.ramp_time">10</stringProp> <!-- 梯度启动时间 -->
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
-        <stringProp name="ThreadGroup.duration">600</stringProp> <!-- 测试持续时间（秒） -->
+        <stringProp name="ThreadGroup.duration">300</stringProp> <!-- 测试持续时间（秒） -->
         <stringProp name="ThreadGroup.delay"></stringProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp> <!-- 每次迭代使用新用户数据 -->
       </ThreadGroup>
@@ -45,7 +45,7 @@
           <boolProp name="stopThread">false</boolProp>
           <stringProp name="variableNames">userId,token</stringProp> <!-- 与CSV表头对应 -->
           <boolProp name="ignoreFirstLine">true</boolProp> <!-- 忽略表头行 -->
-          <boolProp name="shareMode">shareMode.all</boolProp> <!-- 所有线程共享数据，避免重复 -->
+          <boolProp name="shareMode">shareMode.thread</boolProp> <!-- 每个线程使用独立数据 -->
         </CSVDataSet>
         <hashTree/>
 

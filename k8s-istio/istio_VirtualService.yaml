@@ -1,0 +1,290 @@
+# VirtualService配置，定义服务网格中的路由规则和服务访问策略
+# VirtualService 实际上将流量路由到一个或多个目标服务
+---
+# Go服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: seckill-go-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  # "*" 表示匹配所有主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  # 这里应用到 istio-system 命名空间中的 couponkill-gateway
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 第一个匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /seckill 开头的请求都会匹配此规则
+            prefix: /seckill
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            # 这是 Kubernetes 服务的完全限定域名格式
+            host: seckill-go-svc.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8090
+      # 重试策略
+      retries:
+        # 重试次数
+        attempts: 3
+        # 每次重试的超时时间
+        perTryTimeout: 2s
+        # 重试条件，当遇到这些错误时会触发重试
+        retryOn: gateway-error,connect-failure,refused-stream
+      # 请求超时时间
+      timeout: 5s
+      # 故障注入（用于测试）
+      fault:
+        # 延迟注入
+        delay:
+          # 延迟注入的百分比
+          percentage:
+            value: 0.1
+          # 固定延迟时间
+          fixedDelay: 5s
+        # 中止注入
+        abort:
+          # 中止注入的百分比
+          percentage:
+            value: 0.1
+          # HTTP 状态码
+          httpStatus: 400
+
+---
+# 订单服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: order-service-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /order 开头的请求都会匹配此规则
+            prefix: /order
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-order-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8082
+      # 重试策略
+      retries:
+        # 重试次数
+        attempts: 2
+        # 每次重试的超时时间
+        perTryTimeout: 3s
+        # 重试条件
+        retryOn: gateway-error,connect-failure,refused-stream
+      # 请求超时时间
+      timeout: 10s
+
+---
+# 优惠券服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: coupon-service-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /api/v1/coupon 开头的请求都会匹配此规则
+            prefix: /api/v1/coupon
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-coupon-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8081
+      # 重试策略
+      retries:
+        # 重试次数
+        attempts: 2
+        # 每次重试的超时时间
+        perTryTimeout: 3s
+        # 重试条件
+        retryOn: gateway-error,connect-failure,refused-stream
+      # 请求超时时间
+      timeout: 15s
+
+---
+# 用户服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: user-service-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /api/v1/user 开头的请求都会匹配此规则
+            prefix: /api/v1/user
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-user-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8083
+      # 重试策略
+      retries:
+        # 重试次数
+        attempts: 2
+        # 每次重试的超时时间
+        perTryTimeout: 3s
+        # 重试条件
+        retryOn: gateway-error,connect-failure,refused-stream
+      # 请求超时时间
+      timeout: 15s
+
+---
+# 内部服务间通信的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: internal-services-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的内部服务主机
+  hosts:
+    # Go服务内部主机
+    - seckill-go-svc.couponkill.svc.cluster.local
+    # 订单服务内部主机
+    - couponkill-order-service.couponkill.svc.cluster.local
+    # 优惠券服务内部主机
+    - couponkill-coupon-service.couponkill.svc.cluster.local
+    # 用户服务内部主机
+    - couponkill-user-service.couponkill.svc.cluster.local
+  # HTTP 路由规则列表
+  http:
+    # Go服务内部路由
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /seckill 开头的请求都会匹配此规则
+            prefix: /seckill
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: seckill-go-svc.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8090
+      # 请求超时时间
+      timeout: 5s
+
+    # 订单服务内部路由
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /order 开头的请求都会匹配此规则
+            prefix: /order
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-order-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8082
+      # 请求超时时间
+      timeout: 10s
+
+    # 优惠券服务内部路由
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /api/v1/coupon 开头的请求都会匹配此规则
+            prefix: /api/v1/coupon
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-coupon-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8081
+      # 请求超时时间
+      timeout: 15s
+
+    # 用户服务内部路由
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /api/v1/user 开头的请求都会匹配此规则
+            prefix: /api/v1/user
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: couponkill-user-service.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8083
+      # 请求超时时间
+      timeout: 15s

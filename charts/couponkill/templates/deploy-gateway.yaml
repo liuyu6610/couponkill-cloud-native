@@ -25,9 +25,10 @@ spec:
         prometheus.io/port: "{{ .Values.services.gateway.port }}"
         prometheus.io/path: "/actuator/prometheus"
     spec:
+      serviceAccountName: {{ .Values.serviceAccount4.name }}
       containers:
         - name: app
-          image: "{{ .Values.image.registry }}/{{ .Values.services.gateway.image.name }}:{{ .Values.services.gateway.image.tag }}"
+          image: "{{ .Values.image.registry }}:{{ .Values.services.gateway.image.name }}"
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.services.gateway.port }}

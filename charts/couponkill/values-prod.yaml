@@ -348,6 +348,122 @@ nacos:
             sql-show: true
             query-with-cipher-column: false
             sql-comment-parse-enabled: true
+    collaboration:
+      dataId: service-collaboration.yaml
+      group: DEFAULT_GROUP
+      content: |
+        collaboration:
+          java-service-url: "http://couponkill-service:8080"
+          go-service-url: "http://seckill-go-svc:8090"
+          java-qps-threshold: 1000
+          go-enabled: true
+          fallback-to-go: true
+    middleware:
+      dataId: middleware-cluster-config.yaml
+      group: DEFAULT_GROUP
+      content: |
+        middleware:
+          mysql:
+            cluster:
+              enabled: false
+              nodes: []
+            replication:
+              enabled: false
+              master:
+                host: ""
+                port: 3306
+              slaves: []
+          redis:
+            cluster:
+              enabled: false
+              nodes: []
+            sentinel:
+              enabled: false
+              masterName: "mymaster"
+              nodes: []
+              password: ""
+          rocketmq:
+            cluster:
+              enabled: false
+              nameServer: []
+          kafka:
+            cluster:
+              enabled: false
+              brokers: []
+    gateway:
+      dataId: gateway-routes.yaml
+      group: DEFAULT_GROUP
+      content: |
+        spring:
+          cloud:
+            gateway:
+              routes:
+                - id: user-service
+                  uri: http://couponkill-service:8083
+                  predicates:
+                    - Path=/api/v1/user/**
+                  filters:
+                    - StripPrefix=3
+                - id: order-service
+                  uri: http://couponkill-service:8082
+                  predicates:
+                    - Path=/api/v1/order/**
+                  filters:
+                    - StripPrefix=3
+                - id: coupon-service
+                  uri: http://couponkill-service:8081
+                  predicates:
+                    - Path=/api/v1/coupon/**
+                  filters:
+                    - StripPrefix=3
+                - id: go-service
+                  uri: http://seckill-go-svc:8090
+                  predicates:
+                    - Path=/seckill/**
+                  filters:
+                    - StripPrefix=1
+    go:
+      dataId: go-service-dev.yaml
+      group: DEFAULT_GROUP
+      content: |
+        server:
+          port: 8090
+
+        seckill:
+          max-concurrency: 2000
+          redis-key-prefix: "seckill:"
+          valid-days: 7
+          redis:
+            stock-key-prefix: "coupon:stock:"
+
+        mysql:
+          dataSources:
+            order-db-0:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-1:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-2:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-3:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_3?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-0:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-1:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-2:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-3:
+              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local
+
+        data.redis:
+          host: "r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com:6379"
+          username: "master0"
+          password: "Yu20040925@"
+          db: 0
+
+        nacos:
+          server-addr: "nacos:8848"
+          namespace-id: "120"
 
 # Sentinel配置
 sentinel:
@@ -383,7 +499,6 @@ services:
     replicas: 2  # 初始副本数
     image:
       name: "gateway"
-      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
@@ -401,7 +516,6 @@ services:
     replicas: 3
     image: 
       name: "seckill-go"
-      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
@@ -420,7 +534,6 @@ services:
     replicas: 3
     image:
       name: "coupon"
-      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
@@ -438,7 +551,6 @@ services:
     replicas: 3
     image:
       name: "order"
-      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
@@ -456,7 +568,6 @@ services:
     replicas: 2
     image:
       name: "user"
-      tag: "v1.0.0"
     # 水平自动扩缩容配置
     hpa:
       enabled: true  # 是否启用HPA
@@ -474,7 +585,6 @@ services:
     replicas: 1
     image:
       name: "operator"
-      tag: "v1.0.0"
     # Go运行时优化参数
     goOpts:
       gc: 20

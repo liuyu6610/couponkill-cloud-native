@@ -147,3 +147,497 @@ image:
   registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
   # 镜像标签
   tag: latest
+# 服务账户配置
+serviceAccount0:
+  name: couponkill-order-service
+  namespace: couponkill
+serviceAccount1:
+  name: couponkill-coupon-service
+  namespace: couponkill
+serviceAccount2:
+    name: couponkill-user-service
+    namespace: couponkill
+serviceAccount3:
+    name: seckill-go
+    namespace: couponkill
+serviceAccount4:
+    name: gateway
+    namespace: couponkill
+
+# 微服务配置列表
+services:
+  # Gateway服务配置
+  gateway:
+    name: couponkill-gateway  # 服务名称
+    port: 8080  # 服务端口
+    replicas: 1  # 初始副本
+    image:
+      name: "gateway"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 5  # 最大副本数
+      cpu: 70  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=500 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=500 -Dserver.tomcat.max-connections=20000"
+
+  # Go秒杀服务配置
+  go:
+    name: seckill-go-svc
+    port: 8090
+    replicas: 2
+    image: 
+      name: "seckill-go"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 5  # 最大副本数
+      cpu: 70  # CPU使用率触发阈值(百分比)
+    # Go运行时优化参数
+    goOpts:
+      gc: 20
+      maxProcs: 4
+
+  # 优惠券服务配置
+  coupon:
+    name: couponkill-coupon-service
+    port: 8081
+    replicas: 2
+    image:
+      name: "coupon"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 4  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=300 -Dserver.tomcat.min-spare-threads=30 -Dserver.tomcat.accept-count=200 -Dserver.tomcat.max-connections=8000"
+
+  # 订单服务配置
+  order:
+    name: couponkill-order-service
+    port: 8082
+    replicas: 2
+    image:
+      name: "order"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 2  # 最小副本数
+      maxReplicas: 4  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=400 -Dserver.tomcat.min-spare-threads=50 -Dserver.tomcat.accept-count=300 -Dserver.tomcat.max-connections=10000"
+
+  # 用户服务配置
+  user:
+    name: couponkill-user-service
+    port: 8083
+    replicas: 1
+    image:
+      name: "user"
+    # 水平自动扩缩容配置
+    hpa:
+      enabled: true  # 是否启用HPA
+      minReplicas: 1  # 最小副本数
+      maxReplicas: 3  # 最大副本数
+      cpu: 60  # CPU使用率触发阈值(百分比)
+    # JVM优化参数
+    jvmOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseLargePages"
+    threadPoolOpts: "-Dserver.tomcat.max-threads=200 -Dserver.tomcat.min-spare-threads=20 -Dserver.tomcat.accept-count=100 -Dserver.tomcat.max-connections=5000"
+
+  # operator配置
+  operator:
+    name: couponkill-operator
+    port: 8084
+    replicas: 1
+    image:
+      name: "operator"
+    # Go运行时优化参数
+    goOpts:
+      gc: 20
+      maxProcs: 4
+
+# Nacos配置
+nacos:
+  enabled: true
+  name: nacos
+  image:
+    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+    tag: nacos-server
+    pullPolicy: IfNotPresent
+  replicas: 1
+  service:
+    port: 8848
+  storage:
+    type: mysql
+    mysql:
+      host: mysql
+      port: 3306
+      user: root
+      password: root
+      database: nacos
+  config:
+    # Nacos初始配置
+    common:
+      dataId: common.yaml
+      group: DEFAULT_GROUP
+      content: |
+        spring:
+          data:
+            redis:
+              host: redis-master
+              port: 6379
+              lettuce:
+                pool:
+                  max-active: 50
+                  max-idle: 20
+                  min-idle: 5
+                  max-wait: 2000ms
+          cloud:
+            sentinel:
+              transport:
+                dashboard: sentinel-dashboard:8080
+                port: 8719
+              eager: true
+            nacos:
+              discovery:
+                server-addr: nacos:8848
+          datasource:
+            url: jdbc:mysql://mysql:3306/couponkill?useSSL=false&serverTimezone=UTC
+            username: root
+            password: root
+            driver-class-name: com.mysql.cj.jdbc.Driver
+        rocketmq:
+          name-server: rocketmq-namesrv:9876
+          producer:
+            group: common-producer-group
+            send-message-timeout: 3000
+            retry-times-when-send-failed: 1
+            max-message-size: 4096
+        thread-pool:
+          async:
+            core-pool-size: 16
+            max-pool-size: 32
+            queue-capacity: 200
+            keep-alive-seconds: 60
+            rejected-policy: CALLER_RUNS
+          order:
+            core-pool-size: 20
+            max-pool-size: 40
+            queue-capacity: 500
+            thread-name-prefix: "order-async-"
+            keep-alive-seconds: 60
+            rejected-policy: CALLER_RUNS
+    # 各个服务的分库分表配置
+    sharding:
+      user:
+        dataId: user-service-sharding.yaml
+        group: DEFAULT_GROUP
+        content: |
+          dataSources:
+            user-db-0:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            user-db-1:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+          rules:
+          - !SHARDING
+            tables:
+              user:
+                actualDataNodes: user-db-$->{0..1}.user
+                databaseStrategy:
+                  standard:
+                    shardingColumn: id
+                    shardingAlgorithmName: user-db-inline
+              user_coupon_count:
+                actualDataNodes: user-db-$->{0..1}.user_coupon_count
+                databaseStrategy:
+                  standard:
+                    shardingColumn: user_id
+                    shardingAlgorithmName: user-coupon-count-db-inline
+            shardingAlgorithms:
+              user-db-inline:
+                type: INLINE
+                props:
+                  algorithm-expression: user-db-$->{id % 2}
+              user-coupon-count-db-inline:
+                type: INLINE
+                props:
+                  algorithm-expression: user-db-$->{user_id % 2}
+            keyGenerators:
+              snowflake:
+                type: SNOWFLAKE
+                props:
+                  worker-id: 1
+                  data-center-id: 1
+          props:
+            sql-show: true
+            sql-trace: true
+            query-with-cipher-column: false
+            sql-comment-parse-enabled: true
+      order:
+        dataId: order-service-sharding.yaml
+        group: DEFAULT_GROUP
+        content: |
+          dataSources:
+            order-db-0:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/order_db_0?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            order-db-1:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/order_db_1?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            order-db-2:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/order_db_2?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            order-db-3:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/order_db_3?charset=utf8mb4&parseTime=True&loc=Local
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+          rules:
+          - !SHARDING
+            tables:
+              order:
+                actualDataNodes: order-db-$->{0..3}.order_$->{0..15}
+                databaseStrategy:
+                  standard:
+                    shardingColumn: user_id
+                    shardingAlgorithmName: order-db-inline
+                tableStrategy:
+                  standard:
+                    shardingColumn: user_id
+                    shardingAlgorithmName: order-table-inline
+            shardingAlgorithms:
+              order-db-inline:
+                type: INLINE
+                props:
+                  algorithm-expression: order-db-$->{user_id % 4}
+              order-table-inline:
+                type: INLINE
+                props:
+                  algorithm-expression: order_$->{user_id % 16}
+            keyGenerators:
+              snowflake:
+                type: SNOWFLAKE
+                props:
+                  worker-id: 1
+                  data-center-id: 1
+          props:
+            sql-show: true
+            query-with-cipher-column: false
+            sql-comment-parse-enabled: true
+      coupon:
+        dataId: coupon-service-sharding.yaml
+        group: DEFAULT_GROUP
+        content: |
+          dataSources:
+            coupon-db-0:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_0?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            coupon-db-1:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_1?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            coupon-db-2:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_2?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+            coupon-db-3:
+              driverClassName: com.mysql.cj.jdbc.Driver
+              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_3?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+              username: root
+              password: root
+              dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+          rules:
+            - !SHARDING
+              tables:
+                coupon:
+                  actualDataNodes: coupon-db-$->{0..3}.coupon_$->{0..15}
+                  databaseStrategy:
+                    standard:
+                      shardingColumn: shard_index
+                      shardingAlgorithmName: coupon-db-inline
+                  tableStrategy:
+                    standard:
+                      shardingColumn: shard_index
+                      shardingAlgorithmName: coupon-table-inline
+                stock_log:
+                  actualDataNodes: coupon-db-$->{0..3}.stock_log_$->{0..15}
+                  databaseStrategy:
+                    standard:
+                      shardingColumn: shard_index
+                      shardingAlgorithmName: coupon-db-inline
+                  tableStrategy:
+                    standard:
+                      shardingColumn: shard_index
+                      shardingAlgorithmName: stock-log-table-inline
+              shardingAlgorithms:
+                coupon-db-inline:
+                  type: INLINE
+                  props:
+                    algorithm-expression: coupon-db-$->{(int)(shard_index / 16) % 4}
+                coupon-table-inline:
+                  type: INLINE
+                  props:
+                    algorithm-expression: coupon_$->{shard_index % 16}
+                stock-log-table-inline:
+                  type: INLINE
+                  props:
+                    algorithm-expression: stock_log_$->{shard_index % 16}
+              keyGenerators:
+                snowflake:
+                  type: SNOWFLAKE
+                  props:
+                    worker-id: 1
+                    data-center-id: 1
+          props:
+            sql-show: true
+            query-with-cipher-column: false
+            sql-comment-parse-enabled: true
+    collaboration:
+      dataId: service-collaboration.yaml
+      group: DEFAULT_GROUP
+      content: |
+        collaboration:
+          java-service-url: "http://couponkill-service:8080"
+          go-service-url: "http://seckill-go-svc:8090"
+          java-qps-threshold: 1000
+          go-enabled: true
+          fallback-to-go: true
+    middleware:
+      dataId: middleware-cluster-config.yaml
+      group: DEFAULT_GROUP
+      content: |
+        middleware:
+          mysql:
+            cluster:
+              enabled: false
+              nodes: []
+            replication:
+              enabled: false
+              master:
+                host: ""
+                port: 3306
+              slaves: []
+          redis:
+            cluster:
+              enabled: false
+              nodes: []
+            sentinel:
+              enabled: false
+              masterName: "mymaster"
+              nodes: []
+              password: ""
+          rocketmq:
+            cluster:
+              enabled: false
+              nameServer: []
+          kafka:
+            cluster:
+              enabled: false
+              brokers: []
+    gateway:
+      dataId: gateway-routes.yaml
+      group: DEFAULT_GROUP
+      content: |
+        spring:
+          cloud:
+            gateway:
+              routes:
+                - id: user-service
+                  uri: http://couponkill-service:8083
+                  predicates:
+                    - Path=/api/v1/user/**
+                  filters:
+                    - StripPrefix=3
+                - id: order-service
+                  uri: http://couponkill-service:8082
+                  predicates:
+                    - Path=/api/v1/order/**
+                  filters:
+                    - StripPrefix=3
+                - id: coupon-service
+                  uri: http://couponkill-service:8081
+                  predicates:
+                    - Path=/api/v1/coupon/**
+                  filters:
+                    - StripPrefix=3
+                - id: go-service
+                  uri: http://seckill-go-svc:8090
+                  predicates:
+                    - Path=/seckill/**
+                  filters:
+                    - StripPrefix=1
+    go:
+      dataId: go-service-dev.yaml
+      group: DEFAULT_GROUP
+      content: |
+        server:
+          port: 8090
+
+        seckill:
+          max-concurrency: 2000
+          redis-key-prefix: "seckill:"
+          valid-days: 7
+          redis:
+            stock-key-prefix: "coupon:stock:"
+
+        mysql:
+          dataSources:
+            order-db-0:
+              dsn: "root:root@tcp(mysql:3306)/order_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-1:
+              dsn: "root:root@tcp(mysql:3306)/order_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-2:
+              dsn: "root:root@tcp(mysql:3306)/order_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+            order-db-3:
+              dsn: "root:root@tcp(mysql:3306)/order_db_3?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-0:
+              dsn: "root:root@tcp(mysql:3306)/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-1:
+              dsn: "root:root@tcp(mysql:3306)/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-2:
+              dsn: "root:root@tcp(mysql:3306)/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local"
+            coupon-db-3:
+              dsn: "root:root@tcp(mysql:3306)/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local
+
+        data.redis:
+          host: "redis-master:6379"
+          username: ""
+          password: ""
+          db: 0
+
+        nacos:
+          server-addr: "nacos:8848"
+          namespace-id: "120"

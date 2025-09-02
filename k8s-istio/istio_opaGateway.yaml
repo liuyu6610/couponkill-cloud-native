@@ -1,0 +1,115 @@
+# Gateway策略配置，支持流量管理和安全控制
+# 使用 EnvoyFilter 来定制 Envoy 代理的配置
+---
+# 网关限流配置
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  # EnvoyFilter 的名称
+  name: gateway-ratelimit
+  # EnvoyFilter 所在的命名空间
+  namespace: istio-system
+spec:
+  # 工作负载选择器，指定此配置适用的Pod
+  workloadSelector:
+    # 标签匹配
+    labels:
+      # 选择具有 istio: ingressgateway 标签的Pod
+      istio: ingressgateway
+  # 配置补丁列表
+  configPatches:
+  # 应用到HTTP过滤器
+  - applyTo: HTTP_FILTER
+    # 匹配条件
+    match:
+      # 上下文，GATEWAY 表示这是网关上下文
+      context: GATEWAY
+      # 监听器配置
+      listener:
+        # 过滤链配置
+        filterChain:
+          # 过滤器配置
+          filter:
+            # 过滤器名称
+            name: "envoy.filters.network.http_connection_manager"
+    # 补丁操作
+    patch:
+      # 操作类型，INSERT_BEFORE 表示在匹配的过滤器之前插入
+      operation: INSERT_BEFORE
+      # 值配置
+      value:
+        # 过滤器名称
+        name: envoy.filters.http.ratelimit
+        # 类型化配置
+        typed_config:
+          # 类型URL
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
+          # 域名
+          domain: couponkill
+          # 失败模式拒绝，false 表示即使限流服务不可用也不拒绝请求
+          failure_mode_deny: false
+          # 限流服务配置
+          rate_limit_service:
+            # gRPC服务配置
+            grpc_service:
+              # Envoy gRPC配置
+              envoy_grpc:
+                # 集群名称
+                cluster_name: rate_limit_cluster
+
+---
+# 网关CORS配置
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  # EnvoyFilter 的名称
+  name: gateway-cors
+  # EnvoyFilter 所在的命名空间
+  namespace: istio-system
+spec:
+  # 工作负载选择器，指定此配置适用的Pod
+  workloadSelector:
+    # 标签匹配
+    labels:
+      # 选择具有 istio: ingressgateway 标签的Pod
+      istio: ingressgateway
+  # 配置补丁列表
+  configPatches:
+  # 应用到HTTP路由
+  - applyTo: HTTP_ROUTE
+    # 匹配条件
+    match:
+      # 上下文，GATEWAY 表示这是网关上下文
+      context: GATEWAY
+    # 补丁操作
+    patch:
+      # 操作类型，MERGE 表示合并配置
+      operation: MERGE
+      # 值配置
+      value:
+        # 路由配置
+        route:
+          # CORS配置
+          cors:
+            # 允许的源列表
+            allow_origin:
+            # 允许所有源
+            - "*"
+            # 允许的方法列表
+            allow_methods:
+            # POST方法
+            - POST
+            # GET方法
+            - GET
+            # OPTIONS方法
+            - OPTIONS
+            # PUT方法
+            - PUT
+            # DELETE方法
+            - DELETE
+            # 允许的头部列表
+            allow_headers:
+            # 允许所有头部
+            - "*"
+            # 最大存活时间（秒）
+            max_age: "86400"

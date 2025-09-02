@@ -15,7 +15,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     # 添加配置版本标签，用于配置更新时触发滚动更新
-    config-version: "{{ now | date "20060102150405" }}"
+    config-version: "{{ now | date "20250902150405" }}"
 spec:
   replicas: {{ .Values.services.coupon.replicas }}
   selector: 
@@ -27,11 +27,13 @@ spec:
         app: {{ .Values.services.coupon.name }}
       annotations:
         # 添加配置更新时间戳，用于触发滚动更新
-        config-update-time: "{{ now | date "2006-01-02T15:04:05Z07:00" }}"
+        config-update-time: "{{ now | date "2025-09-02T15:04:05Z07:00" }}"
+
     spec:
+      serviceAccountName: {{ .Values.serviceAccount1.name }}
       containers:
         - name: app
-          image: "{{ .Values.image.registry }}/{{ .Values.services.coupon.image.name }}:{{ .Values.services.coupon.image.tag }}"
+          image: "{{ .Values.image.registry }}:{{ .Values.services.coupon.image.name }}}"
           ports: 
             - containerPort: {{ .Values.services.coupon.port }}
           # 配置就绪探针，检查服务是否准备就绪

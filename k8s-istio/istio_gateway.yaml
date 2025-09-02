@@ -1,0 +1,47 @@
+# Gateway资源定义，用于配置Istio入口网关
+# 该资源创建一个名为couponkill-gateway的网关，监听80和443端口
+# Gateway 描述了在网格边缘运行的负载均衡器，用于接收传入或传出的HTTP/TCP连接
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  # 网关名称
+  name: couponkill-gateway
+  # 网关所在的命名空间，istio-system 是 Istio 控制平面的标准命名空间
+  namespace: istio-system
+spec:
+  # 选择器用于指定此 Gateway 配置应应用于哪些 Envoy 代理
+  # 这里选择所有带有 istio: ingressgateway 标签的 Pod
+  selector:
+    istio: ingressgateway
+  # 服务器列表，定义了网关将监听的端口和协议
+  servers:
+    # HTTP服务器配置
+    - port:
+        # 端口号
+        number: 80
+        # 端口名称，用于标识协议类型
+        name: http
+        # 协议类型，HTTP 表示这是一个 HTTP 端口
+        protocol: HTTP
+      # 主机列表，定义此服务器将接受哪些主机的请求
+      # "*" 表示接受所有主机的请求
+      hosts:
+        - "*"
+    # HTTPS服务器配置
+    - port:
+        # 端口号
+        number: 443
+        # 端口名称，用于标识协议类型
+        name: https
+        # 协议类型，HTTPS 表示这是一个 HTTPS 端口
+        protocol: HTTPS
+      # TLS 配置
+      tls:
+        # TLS 模式，SIMPLE 表示使用服务器端 TLS
+        mode: SIMPLE
+        # TLS 凭据名称，指向包含 TLS 证书和私钥的 Kubernetes Secret
+        credentialName: couponkill-credential
+      # 主机列表，定义此服务器将接受哪些主机的请求
+      # "*" 表示接受所有主机的请求
+      hosts:
+        - "*"

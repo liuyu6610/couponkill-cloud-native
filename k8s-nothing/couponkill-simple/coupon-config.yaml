@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: couponkill-config
+  namespace: couponkill
+data:
+  # Nacos配置
+  common.yaml: |
+    spring:
+      cloud:
+        nacos:
+          discovery:
+            server-addr: software-service:8848
+          config:
+            server-addr: software-service:8848
+    rocketmq:
+      name-server: software-service:9876
+
+  # 网关路由配置
+  gateway-routes.yaml: |
+    spring:
+      cloud:
+        gateway:
+          routes:
+            - id: user-service
+              uri: http://couponkill-service:8083
+              predicates:
+                - Path=/api/v1/user/**
+              filters:
+                - StripPrefix=3
+            - id: order-service
+              uri: http://couponkill-service:8082
+              predicates:
+                - Path=/api/v1/order/**
+              filters:
+                - StripPrefix=3
+            - id: coupon-service
+              uri: http://couponkill-service:8081
+              predicates:
+                - Path=/api/v1/coupon/**
+              filters:
+                - StripPrefix=3
+            - id: go-service
+              uri: http://couponkill-service:8090
+              predicates:
+                - Path=/seckill/**
+              filters:
+                - StripPrefix=1
+
+  # 分片配置
+  user-service-sharding.yaml: |
+    dataSources:
+      user-db-0:
+        driverClassName: com.mysql.cj.jdbc.Driver
+        jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
+        username: root
+        password: "123456"
+    rules:
+    - !SHARDING
+      tables:
+        user:
+          actualDataNodes: user-db-0.user
+        user_coupon_count:
+          actualDataNodes: user-db-0.user_coupon_count
+
+  coupon-service-sharding.yaml: |
+    dataSources:
+      coupon-db-0:
+        driverClassName: com.mysql.cj.jdbc.Driver
+        jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
+        username: root
+        password: "123456"
+    rules:
+      - !SHARDING
+        tables:
+          coupon:
+            actualDataNodes: coupon-db-0.coupon_$->{0..3}
+            tableStrategy:
+              standard:
+                shardingColumn: id
+                shardingAlgorithmName: coupon-table-inline
+          stock_log:
+            actualDataNodes: coupon-db-0.stock_log_$->{0..3}
+            tableStrategy:
+              standard:
+                shardingColumn: id
+                shardingAlgorithmName: stock-log-table-inline
+        shardingAlgorithms:
+          coupon-table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: coupon_$->{id % 4}
+          stock-log-table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: stock_log_$->{id % 4}
+
+  order-service-sharding.yaml: |
+    dataSources:
+      order-db-0:
+        driverClassName: com.mysql.cj.jdbc.Driver
+        jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
+        username: root
+        password: "123456"
+    rules:
+    - !SHARDING
+      tables:
+        order:
+          actualDataNodes: order-db-0.order_$->{0..3}
+          tableStrategy:
+            standard:
+              shardingColumn: user_id
+              shardingAlgorithmName: order-table-inline
+      shardingAlgorithms:
+        order-table-inline:
+          type: INLINE
+          props:
+            algorithm-expression: order_$->{user_id % 4}
