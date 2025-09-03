@@ -26,11 +26,11 @@ spec:
                   echo "Checking for configuration updates..."
                   
                   # 检查并更新 common.yaml 配置
-                  COMMON_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.common.dataId }}&group={{ .Values.nacos.config.common.group }}")
+                  COMMON_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.common.dataId }}&group={{ .Values.nacos.config.common.group }}")
                   EXPECTED_COMMON_CONFIG="{{ .Values.nacos.config.common.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$COMMON_CONFIG" != "$EXPECTED_COMMON_CONFIG" ]; then
                     echo "Updating common.yaml configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId={{ .Values.nacos.config.common.dataId }}" \
                       -d "group={{ .Values.nacos.config.common.group }}" \
                       --data-urlencode "content={{ .Values.nacos.config.common.content }}" \
@@ -38,11 +38,11 @@ spec:
                   fi
                   
                   # 检查并更新用户服务分库分表配置
-                  USER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.user.dataId }}&group={{ .Values.nacos.config.sharding.user.group }}")
+                  USER_SHARDING_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.user.dataId }}&group={{ .Values.nacos.config.sharding.user.group }}")
                   EXPECTED_USER_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.user.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$USER_SHARDING_CONFIG" != "$EXPECTED_USER_SHARDING_CONFIG" ]; then
                     echo "Updating user service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId={{ .Values.nacos.config.sharding.user.dataId }}" \
                       -d "group={{ .Values.nacos.config.sharding.user.group }}" \
                       --data-urlencode "content={{ .Values.nacos.config.sharding.user.content }}" \
@@ -50,11 +50,11 @@ spec:
                   fi
                   
                   # 检查并更新订单服务分库分表配置
-                  ORDER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.order.dataId }}&group={{ .Values.nacos.config.sharding.order.group }}")
+                  ORDER_SHARDING_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.order.dataId }}&group={{ .Values.nacos.config.sharding.order.group }}")
                   EXPECTED_ORDER_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.order.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$ORDER_SHARDING_CONFIG" != "$EXPECTED_ORDER_SHARDING_CONFIG" ]; then
                     echo "Updating order service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId={{ .Values.nacos.config.sharding.order.dataId }}" \
                       -d "group={{ .Values.nacos.config.sharding.order.group }}" \
                       --data-urlencode "content={{ .Values.nacos.config.sharding.order.content }}" \
@@ -62,11 +62,11 @@ spec:
                   fi
                   
                   # 检查并更新优惠券服务分库分表配置
-                  COUPON_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.coupon.dataId }}&group={{ .Values.nacos.config.sharding.coupon.group }}")
+                  COUPON_SHARDING_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.coupon.dataId }}&group={{ .Values.nacos.config.sharding.coupon.group }}")
                   EXPECTED_COUPON_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.coupon.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$COUPON_SHARDING_CONFIG" != "$EXPECTED_COUPON_SHARDING_CONFIG" ]; then
                     echo "Updating coupon service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId={{ .Values.nacos.config.sharding.coupon.dataId }}" \
                       -d "group={{ .Values.nacos.config.sharding.coupon.group }}" \
                       --data-urlencode "content={{ .Values.nacos.config.sharding.coupon.content }}" \
@@ -74,11 +74,11 @@ spec:
                   fi
                   
                   # 检查并更新Go服务协同配置
-                  COLLABORATION_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=service-collaboration.yaml&group=DEFAULT_GROUP")
+                  COLLABORATION_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=service-collaboration.yaml&group=DEFAULT_GROUP")
                   EXPECTED_COLLABORATION_CONFIG="{{ .Values.nacos.config.collaboration.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$COLLABORATION_CONFIG" != "$EXPECTED_COLLABORATION_CONFIG" ]; then
                     echo "Updating service collaboration configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId=service-collaboration.yaml" \
                       -d "group=DEFAULT_GROUP" \
                       --data-urlencode "content={{ .Values.nacos.config.collaboration.content }}" \
@@ -87,11 +87,11 @@ spec:
                   
                   # 检查并更新中间件集群配置
                   echo "Checking current middleware configuration..."
-                  MIDDLEWARE_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
+                  MIDDLEWARE_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
                   EXPECTED_MIDDLEWARE_CONFIG="{{ .Values.nacos.config.middleware.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$MIDDLEWARE_CONFIG" != "$EXPECTED_MIDDLEWARE_CONFIG" ]; then
                     echo "Current middleware configuration differs from expected. Updating..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId=middleware-cluster-config.yaml" \
                       -d "group=DEFAULT_GROUP" \
                       --data-urlencode "content={{ .Values.nacos.config.middleware.content }}" \
@@ -100,7 +100,7 @@ spec:
                     if [ $UPDATE_STATUS -eq 0 ]; then
                       echo "Middleware configuration updated successfully."
                       # Optional: Verify the update
-                      UPDATED_MIDDLEWARE_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
+                      UPDATED_MIDDLEWARE_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
                       if [ "$UPDATED_MIDDLEWARE_CONFIG" == "$EXPECTED_MIDDLEWARE_CONFIG" ]; then
                         echo "Verification: Middleware configuration matches expected content."
                       else
@@ -114,11 +114,11 @@ spec:
                   fi
                   
                   # 检查并更新网关路由配置
-                  GATEWAY_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=gateway-routes.yaml&group=DEFAULT_GROUP")
+                  GATEWAY_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=gateway-routes.yaml&group=DEFAULT_GROUP")
                   EXPECTED_GATEWAY_CONFIG="{{ .Values.nacos.config.gateway.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$GATEWAY_CONFIG" != "$EXPECTED_GATEWAY_CONFIG" ]; then
                     echo "Updating gateway routes configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId=gateway-routes.yaml" \
                       -d "group=DEFAULT_GROUP" \
                       --data-urlencode "content={{ .Values.nacos.config.gateway.content }}" \
@@ -126,11 +126,11 @@ spec:
                   fi
                   
                   # 检查并更新Go服务配置
-                  GO_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.go.dataId }}&group={{ .Values.nacos.config.go.group }}")
+                  GO_CONFIG=$(curl -s -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.go.dataId }}&group={{ .Values.nacos.config.go.group }}")
                   EXPECTED_GO_CONFIG="{{ .Values.nacos.config.go.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
                   if [ "$GO_CONFIG" != "$EXPECTED_GO_CONFIG" ]; then
                     echo "Updating Go service configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    curl -X POST -k "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                       -d "dataId={{ .Values.nacos.config.go.dataId }}" \
                       -d "group={{ .Values.nacos.config.go.group }}" \
                       --data-urlencode "content={{ .Values.nacos.config.go.content }}" \

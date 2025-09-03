@@ -5,10 +5,32 @@ metadata:
   name: example-seckill
   namespace: {{ .Values.namespace }}
 spec:
-  couponId: 1001
-  startTime: "2025-09-01T00:00:00Z"
-  endTime: "2025-09-01T02:00:00Z"
-  totalStock: 1000
-  concurrencyLimit: 100
-  rateLimit: 500
+  services:
+    goService:
+      enabled: true
+      replicas: 2
+    couponService:
+      enabled: true
+      replicas: 2
+    orderService:
+      enabled: true
+      replicas: 2
+    userService:
+      enabled: true
+      replicas: 1
+    gatewayService:
+      enabled: true
+      replicas: 1
+  scaling:
+    hpa:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    keda:
+      enabled: false
+  monitoring:
+    enabled: true
+    prometheusEnabled: true
+    grafanaEnabled: true
 {{- end }}

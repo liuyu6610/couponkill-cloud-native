@@ -33,7 +33,7 @@ spec:
         prometheus.io/port: "{{ .Values.services.go.port }}"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: {{ .Values.serviceAccount3.name }}
+      serviceAccountName: {{ .Values.serviceAccount0.name }}
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.go.image.name }}"

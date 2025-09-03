@@ -12,7 +12,7 @@ data:
     {{- if .Values.nacos.cluster.config.serverAddr }}
     {{ .Values.nacos.cluster.config.serverAddr | quote }}
     {{- else }}
-    {{- range $i, $e := until (.Values.nacos.cluster.replicas | int) }}
+    {{- range $i, $e := until (int .Values.nacos.cluster.replicas) }}
     {{ $.Values.nacos.name }}-{{ $i }}.{{ $.Values.nacos.name }}-headless:{{ $.Values.nacos.service.port }}
     {{- end }}
     {{- end }}
@@ -92,7 +92,7 @@ spec:
             - name: NACOS_SERVERS
               value: "{{ .Values.nacos.cluster.config.serverAddr }}"
             {{- else }}
-            {{- range $i, $e := until (.Values.nacos.cluster.replicas | int) }}
+            {{- range $i, $e := until (int .Values.nacos.cluster.replicas) }}
             - name: NACOS_SERVER_{{ add $i 1 }}
               value: "http://{{ $.Values.nacos.name }}-{{ $i }}.{{ $.Values.nacos.name }}-headless:{{ $.Values.nacos.service.port }}"
             {{- end }}

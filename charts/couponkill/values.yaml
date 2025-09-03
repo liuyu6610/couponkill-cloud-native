@@ -147,3 +147,60 @@ image:
   registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
   # 镜像标签
   tag: latest
+# Nacos配置
+nacos:
+  enabled: true
+  name: nacos
+  image:
+    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+    tag: nacos-server
+    pullPolicy: IfNotPresent
+  replicas: 1
+  cluster:
+    enabled: false
+    replicas: 3
+    config:
+      serverAddr: ""
+  service:
+    port: 8848
+  storage:
+    type: mysql
+    mysql:
+      host: mysql
+      port: 3306
+      user: root
+      password: root
+      database: nacos
+# 服务账户配置
+serviceAccount0:
+  name: seckill-go
+serviceAccount1:
+  name: couponkill-coupon-service
+serviceAccount2:
+  name: couponkill-order-service
+serviceAccount3:
+  name: couponkill-user-service
+serviceAccount4:
+  name: couponkill-gateway-service
+
+# KEDA配置
+keda:
+  enabled: false
+  kafka:
+    bootstrapServers: "kafka:9092"
+    go:
+      enabled: false
+      deploymentName: "seckill-go-svc"
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      consumerGroup: "seckill-go-group"
+      topic: "seckill_order_create"
+      lagThreshold: "5"
+    order:
+      enabled: false
+      deploymentName: "couponkill-order-service"
+      minReplicaCount: 2
+      maxReplicaCount: 10
+      consumerGroup: "seckill-order-group"
+      topic: "seckill_order_create"
+      lagThreshold: "10"
