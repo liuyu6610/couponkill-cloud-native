@@ -28,6 +28,9 @@ spec:
       annotations:
         # 添加配置更新时间戳，用于触发滚动更新
         config-update-time: "{{ now | date "2025-09-02T15:04:05Z07:00" }}"
+        # 添加Nacos配置检查注解，用于实现零停机配置更新
+        nacos-config-checksum: "{{ .Values.nacos.config.sharding.coupon.content | sha256sum }}"
+        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
 
     spec:
       serviceAccountName: {{ .Values.serviceAccount1.name }}
@@ -49,75 +52,38 @@ spec:
             httpGet:
               path: /actuator/health
               port: {{ .Values.services.coupon.port }}
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          # 配置环境变量，用于连接中间件
           env:
-            # 设置 Redis 主机地址
-            - name: REDIS_HOST
-              value: "redis"
-            {{- if .Values.rocketmq.enabled }}
-            - name: ROCKET_MQ
-              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
-            {{- else }}
-            - name: KAFKA
-              value: "broker:9092"
-            {{- end }}
-            {{- if .Values.nacos.enabled }}
-            {{- if .Values.nacos.cluster.enabled }}
-            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
-              value: "{{ .Values.nacos.name }}-headless:{{ .Values.nacos.service.port }}"
-            {{- else }}
+            # Nacos配置
             - name: SPRING_CLOUD_NACOS_SERVER-ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
-            {{- end }}
-            {{- end }}
-            {{- if .Values.sentinel.enabled }}
-            - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
-              value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
-            {{- end }}
-            # JVM优化参数
-            {{- if .Values.services.coupon.jvmOpts }}
-            - name: JAVA_OPTS
-              value: "{{ .Values.services.coupon.jvmOpts }}"
-            {{- end }}
-            {{- if .Values.services.coupon.threadPoolOpts }}
-            - name: THREAD_POOL_OPTS
-              value: "{{ .Values.services.coupon.threadPoolOpts }}"
-            {{- end }}
-            # 添加配置刷新环境变量
-            - name: SPRING_CLOUD_NACOS_CONFIG_REFRESH_ENABLED
-              value: "true"
-            - name: SPRING_CLOUD_NACOS_CONFIG_REFRESH_INTERVAL
-              value: "3000"
-            # 数据库连接池配置
-            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
-              value: "20"
-            - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
-              value: "5"
-            - name: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
-              value: "30000"
-            - name: SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT
-              value: "600000"
-            - name: SPRING_DATASOURCE_HIKARI_MAX_LIFETIME
-              value: "1800000"
-            # 启用ShardingSphere动态配置
-            - name: SHARDINGSPHERE_PROPS_SQL_SHOW
-              value: "true"
-            - name: SHARDINGSPHERE_PROPS_SQL_TRACE
-              value: "true"
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            # MySQL集群配置
+            - name: MYSQL_CLUSTER_ENABLED
+              value: "{{ .Values.mysql.cluster.enabled | default "false" }}"
+            - name: MYSQL_CLUSTER_TYPE
+              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
+            # Redis集群配置
+            - name: REDIS_CLUSTER_ENABLED
+              value: "{{ .Values.redis.cluster.enabled | default "false" }}"
+            - name: REDIS_CLUSTER_TYPE
+              value: "{{ .Values.redis.cluster.type | default "standalone" }}"
+            # RocketMQ集群配置
+            - name: ROCKETMQ_CLUSTER_ENABLED
+              value: "{{ .Values.rocketmq.cluster.enabled | default "false" }}"
           # 资源限制
           resources:
             requests:
-              memory: "2Gi"
-              cpu: "1"
+              memory: "512Mi"
+              cpu: "250m"
             limits:
-              memory: "4Gi"
-              cpu: "2"
-          # 挂载配置卷
-          volumeMounts:
-            - name: config-volume
-              mountPath: /app/config
+              memory: "1Gi"
+              cpu: "500m"
       volumes:
         - name: config-volume
           emptyDir: {}

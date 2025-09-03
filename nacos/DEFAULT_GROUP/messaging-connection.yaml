@@ -1,0 +1,72 @@
+# 消息队列连接配置
+messaging:
+  connection:
+    # RocketMQ配置
+    rocketmq:
+      # 生产者配置
+      producer:
+        group: default-producer-group
+        send-message-timeout: 3000
+        retry-times-when-send-failed: 2
+        retry-times-when-send-async-failed: 2
+        max-message-size: 4096
+        compress-msg-body-over-howmuch: 4096
+        retry-another-broker-when-not-store-ok: true
+        send-latency-fault-enable: true
+        
+      # 消费者配置
+      consumer:
+        group: default-consumer-group
+        consume-thread-min: 20
+        consume-thread-max: 64
+        consume-message-batch-max-size: 1
+        pull-batch-size: 32
+        pull-interval: 0
+        consume-timeout: 15
+        consume-from-where: CONSUME_FROM_FIRST_OFFSET
+        consume-timestamp: 
+        adjust-thread-pool-nums-threshold: 100000
+        max-reconsume-times: 3
+        
+      # 客户端配置
+      client:
+        client-ip: 
+        instance-name: DEFAULT
+        unit-name: 
+        vip-channel-enabled: false
+        use-tls: false
+        access-key: 
+        secret-key: 
+        enable-msg-trace: true
+        customize-trace-topic: 
+        tls-enable: false
+        
+      # 名称服务器配置
+      namesrv:
+        addr: rocketmq-namesrv:9876
+        
+      # 主题配置
+      topic:
+        default: default-topic
+        retry: %RETRY%default-consumer-group
+        dlq: %DLQ%default-consumer-group
+        
+      # 消费负载均衡配置
+      loadbalance:
+        allocate-message-queue-strategy: AVG
+        message-model: CLUSTERING
+        consume-type: CONSUME_PASSIVELY
+        consume-from-where: CONSUME_FROM_FIRST_OFFSET
+        
+      # 故障转移配置
+      failover:
+        enabled: true
+        retry-count: 3
+        retry-interval: 1000
+        timeout: 5000
+        
+      # 监控配置
+      monitoring:
+        enabled: true
+        slow-operation-threshold: 1000
+        log-slow-operations: true

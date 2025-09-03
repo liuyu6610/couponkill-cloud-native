@@ -1,0 +1,114 @@
+# ServiceMonitor资源配置，用于跨命名空间监控couponkill服务
+# 这些资源将部署在monitoring命名空间中，监控couponkill命名空间中的服务
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-go-monitor
+  namespace: monitoring  # 监控组件所在的命名空间
+  labels:
+    app: couponkill
+    release: prometheus
+spec:
+  # 指定要监控哪个命名空间中的服务
+  namespaceSelector:
+    matchNames:
+      - couponkill  # 被监控服务所在的命名空间
+  # 选择要监控的服务
+  selector:
+    matchLabels:
+      app: seckill-go  # Go服务的标签
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-user-monitor
+  namespace: monitoring
+  labels:
+    app: couponkill-user
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - couponkill
+  selector:
+    matchLabels:
+      app: couponkill-user-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-order-monitor
+  namespace: monitoring
+  labels:
+    app: couponkill-order
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - couponkill
+  selector:
+    matchLabels:
+      app: couponkill-order-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-coupon-monitor
+  namespace: monitoring
+  labels:
+    app: couponkill-coupon
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - couponkill
+  selector:
+    matchLabels:
+      app: couponkill-coupon-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill-gateway-monitor
+  namespace: monitoring
+  labels:
+    app: couponkill-gateway
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - couponkill
+  selector:
+    matchLabels:
+      app: couponkill-gateway
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s

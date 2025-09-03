@@ -1,0 +1,176 @@
+# 中间件集群配置
+middleware:
+  # 集群全局配置
+  cluster:
+    enabled: false
+    mode: auto  # auto, manual
+    
+  # 数据库集群配置
+  database:
+    mysql:
+      # 集群类型: standalone, master-slave, group-replication, innodb-cluster
+      type: standalone
+      standalone:
+        host: mysql
+        port: 3306
+        username: root
+        password: root
+      master-slave:
+        master:
+          host: mysql-master
+          port: 3306
+          username: root
+          password: root
+        slaves:
+          - host: mysql-slave-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-slave-1
+            port: 3306
+            username: root
+            password: root
+      group-replication:
+        nodes:
+          - host: mysql-gr-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-gr-1
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-gr-2
+            port: 3306
+            username: root
+            password: root
+      innodb-cluster:
+        nodes:
+          - host: mysql-innodb-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-innodb-1
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-innodb-2
+            port: 3306
+            username: root
+            password: root
+            
+  # 缓存集群配置
+  cache:
+    redis:
+      # 集群类型: standalone, master-slave, sentinel, cluster
+      type: standalone
+      standalone:
+        host: redis-master
+        port: 6379
+        password: ""
+        database: 0
+      master-slave:
+        master:
+          host: redis-master
+          port: 6379
+          password: ""
+        slaves:
+          - host: redis-slave-0
+            port: 6379
+            password: ""
+          - host: redis-slave-1
+            port: 6379
+            password: ""
+      sentinel:
+        master-name: mymaster
+        sentinels:
+          - host: redis-sentinel-0
+            port: 26379
+          - host: redis-sentinel-1
+            port: 26379
+          - host: redis-sentinel-2
+            port: 26379
+        password: ""
+        database: 0
+      cluster:
+        nodes:
+          - host: redis-node-0
+            port: 6379
+          - host: redis-node-1
+            port: 6379
+          - host: redis-node-2
+            port: 6379
+          - host: redis-node-3
+            port: 6379
+          - host: redis-node-4
+            port: 6379
+          - host: redis-node-5
+            port: 6379
+        password: ""
+        max-redirects: 3
+        
+  # 消息队列集群配置
+  messaging:
+    rocketmq:
+      # 集群类型: standalone, cluster
+      type: standalone
+      standalone:
+        name-server: rocketmq-namesrv:9876
+      cluster:
+        name-servers:
+          - rocketmq-namesrv-0:9876
+          - rocketmq-namesrv-1:9876
+          - rocketmq-namesrv-2:9876
+        broker-clusters:
+          - name: DefaultCluster
+            brokers:
+              - broker-master-0:10911
+              - broker-slave-0:10911
+              - broker-master-1:10911
+              - broker-slave-1:10911
+              
+  # 配置中心集群配置
+  config:
+    nacos:
+      # 集群类型: standalone, cluster
+      type: standalone
+      standalone:
+        server-addr: nacos:8848
+      cluster:
+        server-addrs:
+          - nacos-0:8848
+          - nacos-1:8848
+          - nacos-2:8848
+        namespace: couponkill
+          
+  # 服务注册发现集群配置
+  registry:
+    nacos:
+      # 集群类型: standalone, cluster
+      type: standalone
+      standalone:
+        server-addr: nacos:8848
+      cluster:
+        server-addrs:
+          - nacos-0:8848
+          - nacos-1:8848
+          - nacos-2:8848
+        namespace: couponkill
+        
+  # 负载均衡配置
+  loadbalancer:
+    strategy: ROUND_ROBIN  # ROUND_ROBIN, RANDOM, WEIGHT
+    retry:
+      enabled: true
+      max-attempts: 3
+      backoff:
+        enabled: true
+        multiplier: 2.0
+        max-interval: 10000
+        
+  # 故障转移配置
+  failover:
+    enabled: true
+    timeout: 5000
+    retry-count: 3
+    retry-interval: 1000

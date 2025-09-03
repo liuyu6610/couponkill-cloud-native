@@ -1,0 +1,102 @@
+server:
+  port: 80  # 网关端口
+  netty:
+    connection-timeout: 5000
+    response-timeout: 10000
+
+spring:
+  application:
+    name: couponkill-gateway
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+    sentinel:
+      filter:
+        enabled: true
+      transport:
+        dashboard: sentinel-dashboard:8080
+        port: 8719
+      eager: true
+      scg:
+        fallback:
+          mode: response
+          response-status: 429
+          response-body: "Too Many Requests"
+      datasource:
+        ds1:
+          nacos:
+            server-addr: ${spring.cloud.nacos.server-addr}
+            dataId: couponkill-gateway-sentinel
+            groupId: SENTINEL_GROUP
+            rule-type: flow
+    gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10000
+        pool:
+          type: elastic
+          max-idle-time: 10000
+          max-life-time: 10000
+      routes:
+        - id: user-service
+          uri: lb://couponkill-user-service
+          predicates:
+            - Path=/api/v1/user/**
+          filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: user-service
+                fallbackUri: forward:/fallback/user
+
+        - id: coupon-service
+          uri: lb://couponkill-coupon-service
+          predicates:
+            - Path=/api/v1/coupon/**
+          filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: coupon-service
+                fallbackUri: forward:/fallback/coupon
+
+        - id: order-service
+          uri: lb://couponkill-order-service
+          predicates:
+            - Path=/order/**,/api/v1/order/**,/seckill/**
+          filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: order-service
+                fallbackUri: forward:/fallback/order
+
+        - id: seckill-go-service
+          uri: lb://seckill-go-svc
+          predicates:
+            - Path=/seckill/go/**
+          filters:
+            - StripPrefix=1
+            - name: Sentinel
+              args:
+                resourceName: seckill-go-service
+                fallbackUri: forward:/fallback/seckill
+
+# JWT配置
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+
+# 网关集群配置
+gateway:
+  cluster:
+    # 是否启用网关集群模式
+    enabled: false
+    # 网关实例列表
+    instances:
+      - couponkill-gateway-0.couponkill-gateway-headless:80
+      - couponkill-gateway-1.couponkill-gateway-headless:80
+      - couponkill-gateway-2.couponkill-gateway-headless:80
+    # 负载均衡策略
+    load-balancer:
+      strategy: ROUND_ROBIN

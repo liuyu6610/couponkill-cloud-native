@@ -20,18 +20,166 @@ CI/CD: Jenkins
 自动扩缩容: KEDA
 监控: 自定义 Operator
 
-## 架构图
+## 系统架构
+
+CouponKill 采用微服务架构，将复杂的业务逻辑拆分为多个独立的服务，每个服务专注于特定的业务功能。系统整体架构如下：
 
 ![架构图.png](docs/%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              客户端/UI                                      │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────────┐
+│                              API 网关                                       │
+│                        (Spring Cloud Gateway)                               │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────────┐
+│                           服务网格 (Istio)                                 │
+├────────────────────────────────────┼────────────────────────────────────────┤
+│  用户服务    优惠券服务    订单服务    Go秒杀服务    网关服务    Operator   │
+│                                                                            │
+│  ├── 用户管理                                                              │
+│  ├── 认证授权                                                              │
+│  └── 用户优惠券统计                           ┌─────────────────────────┐  │
+│                                              │    高性能秒杀处理       │  │
+│  ├── 优惠券管理                              │    (Go语言实现)         │  │
+│  ├── 秒杀活动管理                            └────────────▲────────────┘  │
+│  └── 库存管理                                            │               │
+│                                                           │               │
+│  ├── 订单创建与管理                                   RocketMQ            │
+│  ├── 订单状态跟踪                              (异步消息处理)             │
+│  └── 订单查询                                          │               │
+│                                                        ▼               │
+│  ├── 自定义资源定义(CRD)                   ┌─────────────────────────┐  │
+│  ├── 控制器逻辑                            │   自动扩缩容(KEDA)      │  │
+│  ├── 部署管理                              │   监控与运维            │  │
+│  └── 自动扩缩容策略                        └─────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────────┐
+│                           中间件与基础设施                                 │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌──────────────┐ │
+│  │   Nacos       │  │   Sentinel    │  │   Seata       │  │   Redis      │ │
+│  │ 服务注册发现   │  │ 流量控制      │  │ 分布式事务    │  │   缓存       │ │
+│  │ 配置管理      │  │ 熔断降级      │  │               │  │              │ │
+│  └───────────────┘  └───────────────┘  └───────────────┘  └──────────────┘ │
+│                                                                            │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌──────────────┐ │
+│  │   RocketMQ    │  │   MySQL       │  │   Prometheus  │  │   Grafana    │ │
+│  │ 消息队列      │  │ 关系型数据库   │  │   监控        │  │   可视化     │ │
+│  │ 异步处理      │  │ 数据持久化    │  │               │  │              │ │
+│  └───────────────┘  └───────────────┘  └───────────────┘  └──────────────┘ │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## 核心服务
 
-- **couponkill-coupon-service**: 优惠券管理服务
-- **couponkill-order-service**: 订单服务
-- **couponkill-user-service**: 用户服务
-- **couponkill-go-service**: 基于 Go 的秒杀核心处理服务
-- **couponkill-gateway**: 网关服务
-- **couponkill-operator**: 自定义 Kubernetes Operator，用于管理整个秒杀系统的部署和自动扩缩容
+### 用户服务 (couponkill-user-service)
+- 用户注册、登录、信息管理
+- 用户权限认证与授权
+- 用户优惠券统计与管理
+
+### 优惠券服务 (couponkill-coupon-service)
+- 优惠券创建、查询、更新
+- 秒杀活动管理
+- 库存管理与扣减
+- 优惠券发放与使用规则控制
+
+### 订单服务 (couponkill-order-service)
+- 订单创建与管理
+- 订单状态跟踪与查询
+- 与优惠券服务协同处理优惠券使用
+
+### Go秒杀服务 (seckill-go-service)
+- 高性能秒杀请求处理
+- 使用Go语言实现，充分发挥并发优势
+- 与Java服务协同工作，实现混合架构
+
+### 网关服务 (couponkill-gateway)
+- 统一入口，请求路由与负载均衡
+- JWT认证鉴权
+- 限流与熔断降级
+
+### Operator服务 (couponkill-operator)
+- 自定义Kubernetes控制器
+- 管理整个秒杀系统的部署和自动扩缩容
+- 监控系统状态并提供运维支持
+
+## CouponKill Operator
+
+CouponKill Operator 是一个基于 Kubernetes Operator 模式的自定义控制器，用于管理和自动化部署 CouponKill 秒杀系统。它通过自定义资源定义 (CRD) 提供了一种声明式的方式来管理整个秒杀系统的部署、配置和运维。
+
+### 功能特性
+
+1. **声明式部署管理**
+   - 通过 Seckill 自定义资源 (CR) 声明式地定义和管理整个秒杀系统
+   - 自动创建和管理所有微服务的 Deployment 和 Service
+   - 支持独立启用或禁用特定服务
+
+2. **自动扩缩容**
+   - 支持 HorizontalPodAutoscaler (HPA) 自动扩缩容
+   - 集成 KEDA 实现基于 Kafka 消费者延迟的自动扩缩容
+   - 可配置最小和最大副本数以及目标 CPU 使用率
+
+3. **监控集成**
+   - 集成 Prometheus 和 Grafana 监控
+   - 提供系统状态监控和指标收集
+   - 支持自定义监控配置
+
+4. **配置管理**
+   - 统一管理所有服务的配置参数
+   - 支持环境变量、ConfigMap 和 Secret 配置
+   - 提供灵活的资源配置选项
+
+### 工作原理
+
+CouponKill Operator 遵循 Kubernetes Operator 模式，通过监听 Seckill 自定义资源的变化来协调集群状态：
+
+1. **资源监听**: Operator 监听 Seckill 资源的创建、更新和删除事件
+2. **状态协调**: 当检测到资源变化时，触发 Reconcile 循环
+3. **资源创建**: 根据 Seckill 资源的配置创建相应的 Kubernetes 资源 (Deployment、Service、HPA 等)
+4. **状态更新**: 持续监控所管理资源的状态并更新 Seckill 资源状态
+5. **垃圾回收**: 当 Seckill 资源被删除时，自动清理相关资源
+
+### 使用方法
+
+创建一个 Seckill 资源来部署整个秒杀系统：
+
+```yaml
+apiVersion: ops.couponkill.io/v1
+kind: Seckill
+metadata:
+  name: couponkill-sample
+  namespace: couponkill
+spec:
+  services:
+    goService:
+      enabled: true
+      image: "seckill-go:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+    # 其他服务配置...
+  scaling:
+    hpa:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  monitoring:
+    enabled: true
+    prometheusEnabled: true
+```
+
+详细使用说明请参考 [CouponKill Operator README](couponkill-operator/README.md)。
 
 ## 高并发优化策略
 
@@ -77,6 +225,90 @@ CI/CD: Jenkins
 - 实现智能负载分配，当Java服务达到处理能力上限时，自动将额外请求路由到Go服务
 - 通过RocketMQ实现服务间异步通信，降低服务间耦合度
 
+## 零停机集群切换
+
+CouponKill 系统支持中间件的零停机集群切换功能，可以在不中断服务的情况下动态切换中间件的部署模式（单节点/集群）。
+
+### 支持的中间件集群模式
+
+1. **MySQL**
+   - 单节点模式 (Standalone)
+   - 主从复制模式 (Master-Slave)
+   - Group Replication 模式
+   - InnoDB Cluster 模式
+
+2. **Redis**
+   - 单节点模式 (Standalone)
+   - 主从复制模式 (Master-Slave)
+   - 哨兵模式 (Sentinel)
+   - Redis Cluster 模式
+
+3. **RocketMQ**
+   - 单节点模式 (Standalone)
+   - 集群模式 (Cluster)
+
+### 零停机切换机制
+
+1. **配置驱动**: 所有中间件的集群配置都通过 Nacos 配置中心管理，而非硬编码在 Helm Charts 中
+2. **动态感知**: 应用通过监听 Nacos 配置变化，动态调整中间件连接方式
+3. **平滑过渡**: 在切换过程中，系统会确保现有连接正常处理完毕后再建立新连接
+4. **回滚保护**: 支持配置切换失败时的自动回滚机制
+
+### 切换步骤
+
+1. 在 Nacos 中更新中间件配置（如 mysql-cluster.yaml）
+2. 将对应中间件的 enabled 设置为 true，并配置集群节点信息
+3. 应用会自动从 Nacos 获取新配置并切换到集群模式
+4. 系统持续监控切换过程，确保服务不中断
+
+## Istio服务网格
+
+CouponKill 系统支持 Istio 服务网格，提供流量管理、安全控制、可观察性等高级功能。
+
+### 基础Istio功能
+
+在 Helm Charts 中启用 `istio.enabled: true` 可以部署基础的 Istio 功能，包括：
+- 自动注入 Envoy sidecar 代理
+- 基本的流量路由和负载均衡
+- 服务间 mTLS 加密通信
+- 基础的监控指标收集
+
+### 高级Istio功能
+
+项目还提供了位于 [k8s-istio](k8s-istio) 目录下的完整 Istio 配置，包含以下高级功能：
+
+1. **细粒度流量管理**
+   - VirtualService：精确控制服务路由规则
+   - DestinationRule：配置流量策略和故障处理
+   - Gateway：管理入口流量
+
+2. **安全控制**
+   - AuthorizationPolicy：服务访问授权控制
+   - PeerAuthentication：服务间认证策略
+   - ServiceEntry：管理对外部服务的访问
+
+3. **可观察性**
+   - Telemetry：自定义遥测配置
+   - Sidecar：优化服务间通信
+
+4. **高级网络功能**
+   - EnvoyFilter：自定义 Envoy 代理配置
+   - 故障注入和延迟注入测试
+
+### 部署高级Istio功能
+
+要部署完整的 Istio 功能，请执行以下步骤：
+
+```bash
+# 部署基础Istio组件（如果尚未部署）
+# 参考Helm Charts中的istio.enabled=true配置
+
+# 部署高级Istio配置
+kubectl apply -f k8s-istio/
+```
+
+这将应用所有高级 Istio 配置，包括细粒度的流量管理、安全策略和可观察性配置。
+
 ## 快速开始
 
 ### 环境要求
@@ -86,6 +318,7 @@ CI/CD: Jenkins
 - Jenkins 2.3+（可选，更推荐相关产品，如阿里云的云效，现在相关产品很完善并且可以利用可视化界面进行配置优化）
 - Docker 20.10+
 - kubectl 1.27+
+
 ### 部署步骤
 
 #### 一键部署（推荐）
@@ -364,6 +597,11 @@ helm upgrade couponkill-canary ./charts/couponkill --namespace couponkill -f ./c
    - 检查镜像仓库地址和标签是否正确
    - 确认流量权重配置是否合理
    - 查看 Istio 配置是否正确应用
+
+5. 零停机切换失败
+   - 检查 Nacos 配置是否正确
+   - 确认中间件集群配置是否正确
+   - 查看应用日志确认切换过程中的错误信息
 
 ### 访问服务
 

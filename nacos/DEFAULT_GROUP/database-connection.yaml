@@ -1,0 +1,66 @@
+# 数据库连接配置
+database:
+  connection:
+    # 连接池配置
+    pool:
+      max-active: 100
+      max-idle: 20
+      min-idle: 5
+      initial-size: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+      log-abandoned: true
+      
+    # 事务配置
+    transaction:
+      isolation-level: READ_COMMITTED
+      timeout: 30
+      rollback-on-commit-failure: true
+      
+    # SQL配置
+    sql:
+      show-sql: false
+      format-sql: false
+      use-sql-comments: false
+      
+    # 连接配置
+    connection:
+      auto-commit: true
+      catalog: console
+      schema: 
+      network-timeout: 30000
+      holdability: HOLD_CURSORS_OVER_COMMIT
+      
+    # 驱动配置
+    driver:
+      class-name: com.mysql.cj.jdbc.Driver
+      url-params: "useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      
+    # SSL配置
+    ssl:
+      enabled: false
+      keystore:
+      keystore-password:
+      truststore:
+      truststore-password:
+      
+    # 故障转移配置
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 5000
+      
+    # 监控配置
+    monitoring:
+      enabled: true
+      slow-sql-threshold: 1000
+      log-slow-sql: true
+      log-all-sql: false

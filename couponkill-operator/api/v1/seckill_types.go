@@ -1,4 +1,3 @@
-// api/v1/seckill_types.go
 package v1
 
 import (

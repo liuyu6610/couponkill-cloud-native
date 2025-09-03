@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// 生成Go端唯一订单ID（与Java端区分）
 type GoOrderIDGenerator struct {
 	mu       sync.Mutex
 	workerID int64

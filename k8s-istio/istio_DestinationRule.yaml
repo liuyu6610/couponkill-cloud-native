@@ -191,7 +191,7 @@ metadata:
   namespace: couponkill
 spec:
   # 目标主机，指定此规则适用的服务
-  host: couponkill-gateway.istio-system.svc.cluster.local
+  host: couponkill-gateway.couponkill.svc.cluster.local
   # 流量策略
   trafficPolicy:
     # 连接池设置
@@ -210,3 +210,126 @@ spec:
     tls:
       # TLS模式，DISABLE表示禁用TLS
       mode: DISABLE
+
+---
+# Nacos服务的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: nacos-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: nacos.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 100
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 50
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 10
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+
+---
+# Sentinel Dashboard的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: sentinel-dashboard-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: sentinel-dashboard.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 100
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 50
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 10
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL
+
+---
+# RocketMQ Name Server的DestinationRule配置
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  # DestinationRule 的名称
+  name: rocketmq-namesrv-dr
+  # DestinationRule 所在的命名空间
+  namespace: couponkill
+spec:
+  # 目标主机，指定此规则适用的服务
+  host: rocketmq-namesrv.couponkill.svc.cluster.local
+  # 流量策略
+  trafficPolicy:
+    # 连接池设置
+    connectionPool:
+      # TCP连接设置
+      tcp:
+        # 最大连接数
+        maxConnections: 100
+      # HTTP连接设置
+      http:
+        # HTTP1最大待处理请求数
+        http1MaxPendingRequests: 50
+        # 每个连接的最大请求数
+        maxRequestsPerConnection: 10
+    # 异常点检测（熔断器）
+    outlierDetection:
+      # 连续错误数阈值
+      consecutiveErrors: 5
+      # 检查间隔
+      interval: 10s
+      # 基础驱逐时间
+      baseEjectionTime: 30s
+      # 最大驱逐百分比
+      maxEjectionPercent: 50
+    # TLS设置
+    tls:
+      # TLS模式，ISTIO_MUTUAL表示使用Istio双向TLS
+      mode: ISTIO_MUTUAL

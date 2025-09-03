@@ -1,0 +1,89 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: couponkill-order-service
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+    # 添加负载均衡配置
+    loadbalancer:
+      retry:
+        enabled: true
+        max-retries-on-next-service-instance: 1
+  datasource:
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# Feign配置
+feign:
+  client:
+    config:
+      coupon-service:
+        connectTimeout: 1000
+        readTimeout: 5000
+      default:
+        connectTimeout: 1000
+        readTimeout: 5000
+  compression:
+    request:
+      enabled: true
+      min-request-size: 2048
+    response:
+      enabled: true
+  httpclient:
+    enabled: true
+    max-connections: 3000
+    max-connections-per-route: 1500
+    connection-timeout: 2000
+    connection-timer-repeat: 3000
+
+# 负载均衡配置
+ribbon:
+  ConnectTimeout: 2000
+  ReadTimeout: 5000
+  MaxAutoRetries: 0
+  MaxAutoRetriesNextServer: 1
+
+# RocketMQ 配置
+rocketmq:
+  name-server: rocketmq-namesrv:9876
+  producer:
+    group: order-service-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+  consumer:
+    group:
+      seckill-result: seckill-order-result-group
+  topic:
+    seckill-order-result: seckill_order_result  # 修改为下划线
+    seckill-order-create: seckill_order_create  # 修改为下划线
+    seckill-compensation: seckill_compensation  # 修改为下划线
+
+# 秒杀相关配置
+couponkill:
+  seckill:
+    cooldown-seconds: 0
+    deduct-ttl-seconds: 300
+    compensation-amount: 10.0
+
+# 订单服务集群配置
+order:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 集群节点列表
+    nodes:
+      - couponkill-order-service-0.couponkill-order-service-headless:8082
+      - couponkill-order-service-1.couponkill-order-service-headless:8082
+      - couponkill-order-service-2.couponkill-order-service-headless:8082
+    # 分布式锁配置
+    lock:
+      timeout: 5000
+      retries: 3

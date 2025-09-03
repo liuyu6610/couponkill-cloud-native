@@ -1,0 +1,38 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: couponkill-user-service
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+
+user:
+  cache:
+    expire: 3600  # 用户信息缓存3600秒
+  # 登录相关配置
+  login:
+    token-expire: 86400  # JWT令牌过期时间（秒）
+
+# JWT配置
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+  expiration: 86400000 # 24小时，单位毫秒
+
+# 用户服务集群配置
+user:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 集群节点列表
+    nodes:
+      - couponkill-user-service-0.couponkill-user-service-headless:8081
+      - couponkill-user-service-1.couponkill-user-service-headless:8081
+      - couponkill-user-service-2.couponkill-user-service-headless:8081
+    # 会话同步配置
+    session:
+      sync:
+        enabled: true
+        timeout: 3000

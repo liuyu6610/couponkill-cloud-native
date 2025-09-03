@@ -1,0 +1,34 @@
+service协同:
+  java:
+    qps-threshold: 2500
+  go:
+    enabled: true
+    url: http://seckill-go-svc:8083
+  fallback-to-go: true
+  seckill-cooldown: 1
+  compensation-coupon:
+    amount: 5
+    valid-days: 1
+
+# 服务协作集群配置
+collaboration:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # Java服务集群配置
+    java:
+      nodes:
+        - couponkill-user-service-0.couponkill-user-service-headless:8081
+        - couponkill-user-service-1.couponkill-user-service-headless:8081
+        - couponkill-coupon-service-0.couponkill-coupon-service-headless:8080
+        - couponkill-coupon-service-1.couponkill-coupon-service-headless:8080
+        - couponkill-order-service-0.couponkill-order-service-headless:8082
+        - couponkill-order-service-1.couponkill-order-service-headless:8082
+    # Go服务集群配置
+    go:
+      nodes:
+        - seckill-go-0.seckill-go-headless:8083
+        - seckill-go-1.seckill-go-headless:8083
+    # 负载均衡策略
+    load-balancer:
+      strategy: ROUND_ROBIN

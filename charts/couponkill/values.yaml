@@ -2,6 +2,7 @@
 # 定义了微服务架构中各个服务的配置信息，包括镜像、服务部署参数、自动扩缩容配置以及服务网格配置
 
 namespace: couponkill  # Kubernetes 命名空间名称
+namespaceMonitor: monitor
 
 # CRD安装选项
 crd:
@@ -23,6 +24,21 @@ db:
   username: root
   password: root
   database: console
+  # 初始化配置
+  init:
+    enabled: false
+    name: db-init
+    image:
+      repository: mysql
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
   # 集群模式配置 (适用于MySQL Group Replication或类似集群方案)
   cluster:
     enabled: false
@@ -33,113 +49,6 @@ db:
     #   - "mysql-node2:3306"
     #   - "mysql-node3:3306"
     nodes: []
-  # 主从复制模式配置
-  replication:
-    enabled: false
-    # 主库配置
-    master:
-      host: ""
-      port: 3306
-    # 从库列表
-    # slaves:
-    #   - host: "mysql-slave1"
-    #     port: 3306
-    #   - host: "mysql-slave2"
-    #     port: 3306
-    slaves: []
-
-# Redis配置 - 支持集群模式和哨兵模式
-redis:
-  # 单节点模式配置
-  host: redis-master
-  port: 6379
-  password: ""
-  database: 0
-  # 集群模式配置 (适用于Redis Cluster)
-  cluster:
-    enabled: false
-    # 节点列表格式: host:port
-    # 示例:
-    # nodes:
-    #   - "redis-node1:6379"
-    #   - "redis-node2:6379"
-    #   - "redis-node3:6379"
-    #   - "redis-node4:6379"
-    #   - "redis-node5:6379"
-    #   - "redis-node6:6379"
-    nodes: []
-  # 哨兵模式配置 (适用于Redis Sentinel)
-  sentinel:
-    enabled: false
-    # 主节点名称
-    masterName: "mymaster"
-    # 哨兵节点列表格式: host:port
-    # 示例:
-    # nodes:
-    #   - "sentinel1:26379"
-    #   - "sentinel2:26379"
-    #   - "sentinel3:26379"
-    nodes: []
-    # 哨兵密码
-    password: ""
-
-# RocketMQ依赖服务配置
-rocketmq:
-  # 是否启用RocketMQ
-  enabled: true
-  # NameServer配置
-  nameServer:
-    # 镜像配置
-    image: 
-      registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      repository: ""
-      tag: rocketmq-namesrv
-    # 副本数
-    replicas: 1
-    # 服务端口
-    ports:
-      - 9876
-    # 资源请求和限制
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
-        memory: "1Gi"
-        cpu: "500m"
-    # 存储配置
-    persistence:
-      enabled: true
-      size: 1Gi
-  # Broker配置
-  broker:
-    # 镜像配置
-    image:
-      registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      repository: ""
-      tag: rocketmq-broker
-    # 副本数
-    replicas: 1
-    # 服务端口
-    ports:
-      - 10909
-      - 10911
-      - 10912
-
-# Kafka配置
-kafka:
-  # Broker地址
-  brokers: "kafka:9092"
-  # 集群模式配置
-  cluster:
-    enabled: false
-    # Broker节点列表格式: host:port
-    # 示例:
-    # brokers:
-    #   - "kafka-broker1:9092"
-    #   - "kafka-broker2:9092"
-    #   - "kafka-broker3:9092"
-    brokers: []
 
 # 镜像配置部分，定义了服务使用的镜像仓库地址和标签
 image:
@@ -147,3 +56,311 @@ image:
   registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
   # 镜像标签
   tag: latest
+
+# 各个微服务配置
+services:
+  # Go 秒杀服务配置
+  go:
+    name: seckill-go
+    port: 8083
+    replicas: 1
+    image:
+      name: "seckill-go"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  # 用户服务配置
+  user:
+    name: couponkill-user-service
+    port: 8081
+    replicas: 1
+    image:
+      name: "user"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  # 优惠券服务配置
+  coupon:
+    name: couponkill-coupon-service
+    port: 8080
+    replicas: 1
+    image:
+      name: "coupon"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  # 订单服务配置
+  order:
+    name: couponkill-order-service
+    port: 8082
+    replicas: 1
+    image:
+      name: "order"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  # 网关服务配置
+  gateway:
+    name: couponkill-gateway
+    port: 8080
+    replicas: 1
+    image:
+      name: "gateway"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+  # Operator配置
+  operator:
+    name: couponkill-operator
+    port: 8084
+    replicas: 1
+    image:
+      name: "operator"
+    hpa:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+
+# RocketMQ配置
+rocketmq:
+  enabled: true
+  name: rocketmq
+  namesrv:
+    replicas: 1
+    port: 9876
+    image:
+      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+      tag: rocketmq-namesrv
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    service:
+      port: 9876
+  broker:
+    replicas: 1
+    image:
+      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+      tag: rocketmq-broker
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1"
+    service:
+      ports:
+        listenPort: 10911
+        haListenPort: 10912
+
+# Redis配置
+redis:
+  enabled: true
+  name: redis
+  master:
+    replicas: 1
+    port: 6379
+    image:
+      repository: redis
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+
+# MySQL配置
+mysql:
+  enabled: true
+  name: mysql
+  port: 3306
+  rootPassword: root
+  database: console
+  image:
+    repository: mysql
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  # MySQL集群配置
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 集群类型: standalone, master-slave, group-replication, innodb-cluster
+    type: standalone
+    # 主从复制配置
+    masterSlave:
+      enabled: false
+      master:
+        host: mysql-master
+        port: 3306
+      slaves:
+        - host: mysql-slave-0
+          port: 3306
+        - host: mysql-slave-1
+          port: 3306
+    # Group Replication配置
+    groupReplication:
+      enabled: false
+      nodes:
+        - host: mysql-gr-0
+          port: 3306
+        - host: mysql-gr-1
+          port: 3306
+        - host: mysql-gr-2
+          port: 3306
+    # InnoDB Cluster配置
+    innodbCluster:
+      enabled: false
+      nodes:
+        - host: mysql-innodb-0
+          port: 3306
+        - host: mysql-innodb-1
+          port: 3306
+        - host: mysql-innodb-2
+          port: 3306
+
+# Nacos配置
+nacos:
+  enabled: true
+  name: nacos
+  image:
+    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+    tag: nacos-server
+    pullPolicy: IfNotPresent
+  replicas: 1
+  cluster:
+    enabled: false
+    replicas: 3
+    config:
+      serverAddr: ""
+  service:
+    port: 8848
+    external:
+      enabled: false
+  config:
+    # Nacos配置加载方式
+    # external 表示从外部源加载配置
+    external:
+      enabled: true
+      # 外部配置源地址
+      url: "https://raw.githubusercontent.com/your-org/couponkill-configs/main/nacos-configs.zip"
+    # 初始化配置
+    init:
+      enabled: true
+      # 初始化脚本
+      script: |
+        #!/bin/sh
+        echo "Initializing Nacos configurations from external source..."
+  configWatcher:
+    enabled: true
+    name: nacos-config-watcher
+    schedule: "*/5 * * * *"
+    image:
+      repository: curlimages/curl
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+  storage:
+    type: mysql
+    mysql:
+      host: mysql
+      port: 3306
+      user: root
+      password: root
+      database: nacos
+      
+# Sentinel配置
+sentinel:
+  enabled: false
+  name: sentinel
+  dashboard:
+    replicas: 1
+    service:
+      port: 8080
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+# 服务账户配置
+serviceAccount0:
+  name: seckill-go
+serviceAccount1:
+  name: couponkill-coupon-service
+serviceAccount2:
+  name: couponkill-order-service
+serviceAccount3:
+  name: couponkill-user-service
+serviceAccount4:
+  name: couponkill-gateway-service
+
+# KEDA配置
+keda:
+  enabled: false
+  kafka:
+    bootstrapServers: "kafka:9092"
+    goEdge:
+      enabled: false
+      deploymentName: "seckill-go-svc"
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      consumerGroup: "seckill-go-group"
+      topic: "seckill_order_create"
+      lagThreshold: "5"
+    order:
+      enabled: false
+      deploymentName: "couponkill-order-service"
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      consumerGroup: "order-create"
+      topic: "seckill_order_create"
+      lagThreshold: "5"
+
+# 监控配置
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+
+# Istio配置
+istio:
+  enabled: false
+  gateway:
+    name: couponkill-gateway
+    host: couponkill.example.com
+    port: 80

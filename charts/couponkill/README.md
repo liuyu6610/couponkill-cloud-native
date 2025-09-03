@@ -4,6 +4,15 @@ CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专
 
 ## 功能特性
 
+### 微服务架构
+基于 Spring Cloud Alibaba 和 Go 语言构建的微服务架构，包含以下核心服务：
+- 用户服务 (couponkill-user-service)
+- 优惠券服务 (couponkill-coupon-service)
+- 订单服务 (couponkill-order-service)
+- Go 秒杀服务 (seckill-go-service)
+- 网关服务 (couponkill-gateway)
+- 自定义 Operator (couponkill-operator)
+
 ### 服务网格支持 (Istio)
 Chart支持Istio服务网格，提供流量管理、安全性和可观察性功能。
 
@@ -55,12 +64,45 @@ Nacos支持外部访问，可通过LoadBalancer服务从集群外部访问Nacos�
 
 ![架构图.png](../../docs/%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
+## 部署架构
+
+CouponKill Helm Chart 采用模块化设计，可以根据需要启用或禁用特定组件：
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            CouponKill Chart                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  核心服务模块                                                               │
+│  ├── 网关服务 (couponkill-gateway)                                          │
+│  ├── 用户服务 (couponkill-user-service)                                     │
+│  ├── 优惠券服务 (couponkill-coupon-service)                                 │
+│  ├── 订单服务 (couponkill-order-service)                                    │
+│  ├── Go秒杀服务 (seckill-go-service)                                        │
+│  └── Operator (couponkill-operator)                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  依赖服务模块 (可选)                                                        │
+│  ├── Nacos (服务注册与配置中心)                                             │
+│  ├── RocketMQ (消息队列)                                                    │
+│  ├── MySQL (关系型数据库)                                                   │
+│  ├── Redis (缓存)                                                           │
+│  └── Sentinel (流量控制)                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  扩展功能模块                                                               │
+│  ├── Istio (服务网格)                                                       │
+│  ├── KEDA (自动扩缩容)                                                      │
+│  ├── Monitoring (监控)                                                      │
+│  └── Examples (示例资源)                                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## 部署
 
 ### 前提条件
 
-- Kubernetes 1.16+
+- Kubernetes 1.27.0+
 - Helm 3.0+
+- istio 1.18.0
+- keda 2.17.0
 
 ### 快速开始
 
@@ -551,6 +593,54 @@ middleware:
    ```
 3. 执行`helm upgrade`更新部署
 4. Nacos会自动切换到集群模式，服务会自动连接到新的集群
+
+## Istio服务网格
+
+CouponKill Helm Chart 支持 Istio 服务网格功能，提供流量管理、安全性和可观察性。
+
+### 基础Istio功能
+
+通过设置 `istio.enabled=true` 启用基础 Istio 功能：
+- 自动注入 Envoy sidecar 代理
+- 基本的流量路由和负载均衡
+- 服务间 mTLS 加密通信
+- 基础的监控指标收集
+
+### 高级Istio功能
+
+项目还提供了位于 [k8s-istio](../../k8s-istio) 目录下的完整 Istio 配置，包含以下高级功能：
+
+1. **细粒度流量管理**
+   - VirtualService：精确控制服务路由规则
+   - DestinationRule：配置流量策略和故障处理
+   - Gateway：管理入口流量
+
+2. **安全控制**
+   - AuthorizationPolicy：服务访问授权控制
+   - PeerAuthentication：服务间认证策略
+   - ServiceEntry：管理对外部服务的访问
+
+3. **可观察性**
+   - Telemetry：自定义遥测配置
+   - Sidecar：优化服务间通信
+
+4. **高级网络功能**
+   - EnvoyFilter：自定义 Envoy 代理配置
+   - 故障注入和延迟注入测试
+
+### 部署高级Istio功能
+
+要部署完整的 Istio 功能，请执行以下步骤：
+
+```bash
+# 部署基础Istio组件（如果尚未部署）
+# 参考Helm Charts中的istio.enabled=true配置
+
+# 部署高级Istio配置
+kubectl apply -f ../../k8s-istio/
+```
+
+这将应用所有高级 Istio 配置，包括细粒度的流量管理、安全策略和可观察性配置。
 
 ## 故障排除
 

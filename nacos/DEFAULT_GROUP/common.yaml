@@ -1,0 +1,96 @@
+spring:
+  data:
+    redis:
+      # 单节点模式配置
+      host: redis-master
+      port: 6379
+      # 集群模式配置（注释掉单节点配置后启用）
+      # cluster:
+      #   nodes: redis-node-0:6379,redis-node-1:6379,redis-node-2:6379
+      #   max-redirects: 3
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 50
+          min-idle: 20
+          max-wait: 2000ms
+
+  cloud:
+    sentinel:
+      transport:
+        dashboard: sentinel-dashboard:8080
+        port: 8719
+      eager: true
+      datasource:
+        ds1:
+          nacos:
+            server-addr: ${spring.cloud.nacos.server-addr}
+            namespace: ${spring.cloud.nacos.namespace}
+            data-id: couponkill-gateway-sentinel
+            data-type: json
+            group: SENTINEL_GROUP
+            rule-type: flow
+
+# RocketMQ配置
+rocketmq:
+  name-server: rocketmq-namesrv:9876
+  # 集群模式配置
+  # name-server: rocketmq-namesrv-0:9876;rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+  producer:
+    group: common-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 1
+    max-message-size: 4096
+    transaction-listener:
+      enabled: true
+
+# 线程池配置
+thread-pool:
+  async:
+    core-pool-size: 50
+    max-pool-size: 100
+    queue-capacity: 500
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS
+  order:
+    core-pool-size: 50
+    max-pool-size: 100
+    queue-capacity: 1000
+    thread-name-prefix: "order-async-"
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS
+
+# 数据库配置
+database:
+  # MySQL主从配置
+  mysql:
+    master:
+      host: mysql-master
+      port: 3306
+      username: root
+      password: root
+    slaves:
+      - host: mysql-slave-0
+        port: 3306
+        username: root
+        password: root
+      - host: mysql-slave-1
+        port: 3306
+        username: root
+        password: root
+
+# 集群配置引用
+cluster:
+  config:
+    # 中间件集群配置
+    middleware: middleware-cluster.yaml
+    # 数据库连接配置
+    database: database-connection.yaml
+    # 缓存连接配置
+    cache: cache-connection.yaml
+    # 消息队列连接配置
+    messaging: messaging-connection.yaml
+    # MySQL集群配置
+    mysql: mysql-cluster.yaml
+    # Redis集群配置
+    redis: redis-cluster.yaml

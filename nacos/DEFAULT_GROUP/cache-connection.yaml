@@ -1,0 +1,63 @@
+# 缓存连接配置
+cache:
+  connection:
+    # 连接配置
+    connection:
+      timeout: 2000
+      connect-timeout: 2000
+      so-keep-alive: true
+      so-tcp-no-delay: true
+      
+    # 连接池配置
+    pool:
+      max-active: 200
+      max-idle: 50
+      min-idle: 10
+      max-wait: 2000
+      time-between-eviction-runs: 30000
+      min-evictable-idle-time: 60000
+      test-while-idle: true
+      test-on-create: false
+      test-on-borrow: false
+      test-on-return: false
+      
+    # 序列化配置
+    serialization:
+      key-serializer: org.springframework.data.redis.serializer.StringRedisSerializer
+      value-serializer: org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+      hash-key-serializer: org.springframework.data.redis.serializer.StringRedisSerializer
+      hash-value-serializer: org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+      
+    # 命令配置
+    command:
+      default-expire-time: 3600
+      use-key-prefix: true
+      key-prefix: "couponkill:"
+      cache-null-values: false
+      
+    # 事务配置
+    transaction:
+      enabled: false
+      timeout: 5000
+      
+    # 发布订阅配置
+    pubsub:
+      enabled: true
+      message-listener-container:
+        task-executor: pubsubTaskExecutor
+        subscription-executor: pubsubSubscriptionExecutor
+        max-concurrency: 10
+        concurrency: 5
+        
+    # 故障转移配置
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 2000
+      
+    # 监控配置
+    monitoring:
+      enabled: true
+      slow-operation-threshold: 1000
+      log-slow-operations: true

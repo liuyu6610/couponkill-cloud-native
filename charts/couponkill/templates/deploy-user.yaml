@@ -32,6 +32,12 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.services.user.port }}"
         prometheus.io/path: "/actuator/prometheus"
+        # Nacos配置检查，用于实现零停机配置更新
+        nacos-config-checksum: "{{ .Values.nacos.config.sharding.user.content | sha256sum }}"
+        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
+        # 动态配置注解
+        config-refresh-interval: "{{ .Values.config.refreshInterval | default "30s" }}"
+        config-checksum: "{{ .Values.dynamic.config | sha256sum }}"
     spec:
       serviceAccountName: {{ .Values.serviceAccount2.name }}
       containers:
@@ -88,14 +94,24 @@ spec:
                   name: jwt-secret
                   key: secret
             # JVM优化参数
-            {{- if .Values.services.user.jvmOpts }}
-            - name: JAVA_OPTS
-              value: "{{ .Values.services.user.jvmOpts }}"
-            {{- end }}
+            - name: JAVA_TOOL_OPTIONS
+              value: "{{ .Values.services.user.jvmOpts | default \"-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=100\" }}"
+            # 线程池优化参数
             {{- if .Values.services.user.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.user.threadPoolOpts }}"
             {{- end }}
+            # 动态配置相关环境变量
+            - name: CONFIG_REFRESH_ENABLED
+              value: "{{ .Values.dynamic.config.enabled | default "true" }}"
+            - name: CONFIG_REFRESH_INTERVAL
+              value: "{{ .Values.dynamic.config.refreshInterval | default "30s" }}"
+            - name: CONFIG_SOURCE_TYPE
+              value: "{{ .Values.dynamic.config.sourceType | default "nacos" }}"
+            - name: CONFIG_SOURCE_URL
+              value: "{{ .Values.dynamic.config.sourceUrl }}"
+            - name: FEATURE_TOGGLE
+              value: "{{ .Values.dynamic.featureToggles | toJson }}"
 ---
 # Service配置：为用户服务提供稳定的网络访问入口
 # 参数说明：

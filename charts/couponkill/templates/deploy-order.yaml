@@ -10,9 +10,14 @@ spec:
   # 选择器用于匹配具有指定标签的 Pod
   selector: {matchLabels: {app: {{ .Values.services.order.name }}}}
   template:
-    metadata: {labels: {app: {{ .Values.services.order.name }}}}
+    metadata: 
+      labels: {app: {{ .Values.services.order.name }}}
+      annotations:
+        # 添加Nacos配置检查注解，用于实现零停机配置更新
+        nacos-config-checksum: "{{ .Values.nacos.config.sharding.order.content | sha256sum }}"
+        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
     spec:
-      serviceAccountName: {{ .Values.serviceAccount0.name }}
+      serviceAccountName: {{ .Values.serviceAccount2.name }}
       containers:
         - name: app
           # 定义容器使用的镜像，包含注册表地址和标签
@@ -34,6 +39,19 @@ spec:
             - name: KAFKA
               value: "broker:9092"
             {{- end }}
+            # MySQL集群配置
+            - name: MYSQL_CLUSTER_ENABLED
+              value: "{{ .Values.mysql.cluster.enabled | default "false" }}"
+            - name: MYSQL_CLUSTER_TYPE
+              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
+            # Redis集群配置
+            - name: REDIS_CLUSTER_ENABLED
+              value: "{{ .Values.redis.cluster.enabled | default "false" }}"
+            - name: REDIS_CLUSTER_TYPE
+              value: "{{ .Values.redis.cluster.type | default "standalone" }}"
+            # RocketMQ集群配置
+            - name: ROCKETMQ_CLUSTER_ENABLED
+              value: "{{ .Values.rocketmq.cluster.enabled | default "false" }}"
             {{- if .Values.nacos.enabled }}
             - name: SPRING_CLOUD_NACOS_SERVER-ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
@@ -47,10 +65,19 @@ spec:
             - name: JAVA_OPTS
               value: "{{ .Values.services.order.jvmOpts }}"
             {{- end }}
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
             {{- if .Values.services.order.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.order.threadPoolOpts }}"
             {{- end }}
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
 ---
 # Service 配置为 order 服务提供稳定的网络访问入口
 # 将内部 Pod 端口映射到集群内的固定端口上

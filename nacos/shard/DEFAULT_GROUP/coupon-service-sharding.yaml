@@ -1,0 +1,153 @@
+# 单节点模式数据源配置
+dataSources:
+  coupon-db-0:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_0?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: root
+    password: root
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 2000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 300
+    minimumIdle: 150
+    leakDetectionThreshold: 60000
+  coupon-db-1:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_1?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: root
+    password: root
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 2000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 300
+    minimumIdle: 150
+    leakDetectionThreshold: 60000
+
+# 集群模式数据源配置（注释掉单节点配置后启用）
+# dataSources:
+#   # 数据库集群0
+#   coupon-db-cluster-0-master:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://coupon-db-cluster-0-master:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 300
+#     minimumIdle: 150
+#   coupon-db-cluster-0-slave-0:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://coupon-db-cluster-0-slave-0:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 300
+#     minimumIdle: 150
+#   # 数据库集群1
+#   coupon-db-cluster-1-master:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://coupon-db-cluster-1-master:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 300
+#     minimumIdle: 150
+#   coupon-db-cluster-1-slave-0:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://coupon-db-cluster-1-slave-0:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 300
+#     minimumIdle: 150
+
+rules:
+  - !SHARDING
+    tables:
+      coupon:
+        actualDataNodes: coupon-db-$->{0..1}.coupon_$->{0..15}
+        databaseStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-table-inline
+      stock_log:
+        actualDataNodes: coupon-db-$->{0..1}.stock_log_$->{0..15}
+        databaseStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: coupon-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: shard_index
+            shardingAlgorithmName: stock-log-table-inline
+    shardingAlgorithms:
+      coupon-db-inline:
+        type: INLINE
+        props:
+          algorithm-expression: coupon-db-$->{(int)(shard_index / 16) % 2}
+      coupon-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: coupon_$->{shard_index % 16}
+      stock-log-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: stock_log_$->{shard_index % 16}
+    keyGenerators:
+      snowflake:
+        type: SNOWFLAKE
+        props:
+          worker-id: 1
+          data-center-id: 1
+
+props:
+  sql-show: false
+  query-with-cipher-column: false
+  sql-comment-parse-enabled: true
+  max-connections-size-per-query: 128
+  check-table-metadata-enabled: false
+
+# 分库分表集群配置
+sharding:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 数据库集群配置
+    databases:
+      # 集群0
+      cluster-0:
+        master: coupon-db-cluster-0-master:3306
+        slaves:
+          - coupon-db-cluster-0-slave-0:3306
+          - coupon-db-cluster-0-slave-1:3306
+      # 集群1
+      cluster-1:
+        master: coupon-db-cluster-1-master:3306
+        slaves:
+          - coupon-db-cluster-1-slave-0:3306
+          - coupon-db-cluster-1-slave-1:3306
+    # 分片策略
+    strategy:
+      database:
+        algorithm: MOD
+        shards: 4
+      table:
+        algorithm: MOD
+        shards: 16

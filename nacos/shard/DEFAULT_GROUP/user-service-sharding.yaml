@@ -1,0 +1,142 @@
+# 单节点模式数据源配置
+dataSources:
+  user-db-0:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: root
+    password: root
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 2000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 200
+    minimumIdle: 100
+    leakDetectionThreshold: 60000
+  user-db-1:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local&rewriteBatchedStatements=true&useServerPrepStmts=true&cachePrepStmts=true&cacheCallableStmts=true&cacheResultSetMetadata=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: root
+    password: root
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    connectionTimeout: 2000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    maximumPoolSize: 200
+    minimumIdle: 100
+    leakDetectionThreshold: 60000
+
+# 集群模式数据源配置（注释掉单节点配置后启用）
+# dataSources:
+#   # 数据库集群0
+#   user-db-cluster-0-master:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://user-db-cluster-0-master:3306/user?charset=utf8mb4&parseTime=True&loc=Local
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 200
+#     minimumIdle: 100
+#   user-db-cluster-0-slave-0:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://user-db-cluster-0-slave-0:3306/user?charset=utf8mb4&parseTime=True&loc=Local
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 200
+#     minimumIdle: 100
+#   # 数据库集群1
+#   user-db-cluster-1-master:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://user-db-cluster-1-master:3306/user?charset=utf8mb4&parseTime=True&loc=Local
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 200
+#     minimumIdle: 100
+#   user-db-cluster-1-slave-0:
+#     driverClassName: com.mysql.cj.jdbc.Driver
+#     jdbcUrl: jdbc:mysql://user-db-cluster-1-slave-0:3306/user?charset=utf8mb4&parseTime=True&loc=Local
+#     username: root
+#     password: root
+#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+#     connectionTimeout: 2000
+#     idleTimeout: 600000
+#     maxLifetime: 1800000
+#     maximumPoolSize: 200
+#     minimumIdle: 100
+
+rules:
+- !SHARDING
+  tables:
+    user:
+      actualDataNodes: user-db-$->{0..1}.user
+      databaseStrategy:
+        standard:
+          shardingColumn: id
+          shardingAlgorithmName: user-db-inline
+    user_coupon_count:
+      actualDataNodes: user-db-$->{0..1}.user_coupon_count
+      databaseStrategy:
+        standard:
+          shardingColumn: user_id
+          shardingAlgorithmName: user-coupon-count-db-inline
+  shardingAlgorithms:
+    user-db-inline:
+      type: INLINE
+      props:
+        algorithm-expression: user-db-$->{id % 2}
+    user-coupon-count-db-inline:
+      type: INLINE
+      props:
+        algorithm-expression: user-db-$->{user_id % 2}
+  keyGenerators:
+    snowflake:
+      type: SNOWFLAKE
+      props:
+        worker-id: 1
+        data-center-id: 1
+
+props:
+  sql-show: false
+  sql-trace: false
+  query-with-cipher-column: false
+  sql-comment-parse-enabled: true
+  max-connections-size-per-query: 32
+  check-table-metadata-enabled: false
+
+# 分库分表集群配置
+sharding:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 数据库集群配置
+    databases:
+      # 集群0
+      cluster-0:
+        master: user-db-cluster-0-master:3306
+        slaves:
+          - user-db-cluster-0-slave-0:3306
+          - user-db-cluster-0-slave-1:3306
+      # 集群1
+      cluster-1:
+        master: user-db-cluster-1-master:3306
+        slaves:
+          - user-db-cluster-1-slave-0:3306
+          - user-db-cluster-1-slave-1:3306
+    # 分片策略
+    strategy:
+      database:
+        algorithm: MOD
+        shards: 4
+      table:
+        algorithm: MOD
+        shards: 16

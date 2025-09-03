@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+# 服务配置
+spring:
+  application:
+    name: couponkill-coupon-service
+  datasource:
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+
+# 优惠券业务配置
+coupon:
+  publish:
+    max-count: 10000  # 单批次最大发布数量
+  cache:
+    preload: true  # 启动时预加载优惠券到缓存
+
+# JWT配置
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+  expiration: 86400000 # 24小时，单位毫秒
+
+# 秒杀配置
+couponkill:
+  seckill:
+    cooldown-seconds: 0
+    deduct-ttl-seconds: 300
+
+# 流量控制配置
+traffic:
+  control:
+    threshold: 2000  # Java服务处理阈值，超过则调用Go服务
+    go-service:
+      enabled: true
+      url: http://seckill-go-svc:8083
+      timeout: 5000
+
+# 集群配置
+cluster:
+  # 是否启用集群模式
+  enabled: false
+  # 集群节点列表
+  nodes:
+    - couponkill-coupon-service-0.couponkill-coupon-service-headless:8080
+    - couponkill-coupon-service-1.couponkill-coupon-service-headless:8080
+    - couponkill-coupon-service-2.couponkill-coupon-service-headless:8080
+  # 集群通信配置
+  communication:
+    timeout: 5000
+    retries: 3

@@ -25,16 +25,51 @@ spec:
             - name: MYSQL_PORT
               value: "{{ .Values.db.port }}"
             - name: MYSQL_USER
-              value: "{{ .Values.db.user }}"
+              value: "{{ .Values.db.username }}"
             - name: MYSQL_PASSWORD
               value: "{{ .Values.db.password }}"
             - name: MYSQL_DATABASE
               value: "{{ .Values.db.database }}"
+            # MySQL集群配置
+            - name: MYSQL_CLUSTER_ENABLED
+              value: "{{ .Values.mysql.cluster.enabled | default false }}"
+            - name: MYSQL_CLUSTER_TYPE
+              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
           command:
             - /bin/sh
             - -c
             - |
               echo "Waiting for MySQL to be ready..."
+              
+              # 检查是否启用集群模式
+              if [ "$MYSQL_CLUSTER_ENABLED" = "true" ]; then
+                echo "MySQL cluster mode enabled, type: $MYSQL_CLUSTER_TYPE"
+                
+                # 根据集群类型连接到相应的MySQL实例
+                case "$MYSQL_CLUSTER_TYPE" in
+                  "master-slave")
+                    echo "Connecting to MySQL master-slave cluster"
+                    MYSQL_HOST="{{ .Values.mysql.cluster.masterSlave.master.host }}"
+                    MYSQL_PORT="{{ .Values.mysql.cluster.masterSlave.master.port }}"
+                    ;;
+                  "group-replication")
+                    echo "Connecting to MySQL group replication cluster"
+                    MYSQL_HOST="{{ .Values.mysql.cluster.groupReplication.nodes[0].host }}"
+                    MYSQL_PORT="{{ .Values.mysql.cluster.groupReplication.nodes[0].port }}"
+                    ;;
+                  "innodb-cluster")
+                    echo "Connecting to MySQL InnoDB cluster"
+                    MYSQL_HOST="{{ .Values.mysql.cluster.innodbCluster.nodes[0].host }}"
+                    MYSQL_PORT="{{ .Values.mysql.cluster.innodbCluster.nodes[0].port }}"
+                    ;;
+                  *)
+                    echo "Unknown cluster type, using default configuration"
+                    ;;
+                esac
+              else
+                echo "Using standalone MySQL configuration"
+              fi
+              
               until mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1"; do
                 sleep 2
               done
@@ -49,222 +84,134 @@ spec:
                 id BIGINT PRIMARY KEY,
                 username VARCHAR(50) NOT NULL UNIQUE,
                 password VARCHAR(100) NOT NULL,
-                phone VARCHAR(20),
                 email VARCHAR(100),
-                status TINYINT DEFAULT 1,
-                create_time DATETIME,
-                update_time DATETIME,
-                last_active_time DATETIME,
-                INDEX idx_username (username),
-                INDEX idx_phone (phone)
+                phone VARCHAR(20),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
               );
               
-              -- 用户优惠券统计表
-              CREATE TABLE IF NOT EXISTS user_coupon_count (
-                user_id BIGINT PRIMARY KEY,
-                total_count INT DEFAULT 0,
-                seckill_count INT DEFAULT 0,
-                normal_count INT DEFAULT 0,
-                expired_count INT DEFAULT 0,
-                update_time DATETIME,
-                version INT DEFAULT 0
-              );
-              
-              -- 订单表 (分表示例)
-              CREATE TABLE IF NOT EXISTS order_0 (
-                id VARCHAR(32) PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                coupon_id BIGINT,
-                virtual_id VARCHAR(50),
-                status TINYINT DEFAULT 1,
-                get_time DATETIME,
-                use_time DATETIME,
-                cancel_time DATETIME,
-                expire_time DATETIME,
-                create_time DATETIME,
-                update_time DATETIME,
-                request_id VARCHAR(50),
-                version INT DEFAULT 0,
-                INDEX idx_user_id (user_id),
-                INDEX idx_create_time (create_time),
-                INDEX idx_status (status)
-              );
-              
-              -- 优惠券表 (分表示例)
-              CREATE TABLE IF NOT EXISTS coupon_0 (
-                id BIGINT NOT NULL,
-                shard_index INT NOT NULL,
+              -- 优惠券表
+              CREATE TABLE IF NOT EXISTS coupon (
+                id BIGINT PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 description TEXT,
-                type TINYINT NOT NULL COMMENT '1-常驻,2-秒抢',
-                face_value DECIMAL(10,2) NOT NULL,
-                min_spend DECIMAL(10,2) NOT NULL,
-                valid_days INT NOT NULL,
-                per_user_limit INT NOT NULL,
-                total_stock INT NOT NULL,
-                seckill_total_stock INT DEFAULT 0,
-                remaining_stock INT NOT NULL,
-                seckill_remaining_stock INT DEFAULT 0,
-                status TINYINT DEFAULT 1,
-                create_time DATETIME,
-                update_time DATETIME,
-                version INT DEFAULT 0,
-                PRIMARY KEY (id, shard_index),
-                INDEX idx_type_status (type, status),
-                INDEX idx_create_time (create_time)
+                discount_type VARCHAR(20) NOT NULL, -- FIXED, PERCENTAGE
+                discount_value DECIMAL(10,2) NOT NULL,
+                min_purchase DECIMAL(10,2) DEFAULT 0,
+                max_discount DECIMAL(10,2),
+                total_quantity INT NOT NULL,
+                available_quantity INT NOT NULL,
+                start_time TIMESTAMP NOT NULL,
+                end_time TIMESTAMP NOT NULL,
+                status VARCHAR(20) DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, EXPIRED
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
               );
               
-              -- 库存日志表 (分表示例)
-              CREATE TABLE IF NOT EXISTS stock_log_0 (
+              -- 用户优惠券表
+              CREATE TABLE IF NOT EXISTS user_coupon (
                 id BIGINT PRIMARY KEY,
+                user_id BIGINT NOT NULL,
                 coupon_id BIGINT NOT NULL,
-                shard_index INT NOT NULL,
-                operation_type TINYINT NOT NULL COMMENT '1-扣减,2-增加',
-                amount INT NOT NULL,
-                create_time DATETIME,
-                INDEX idx_coupon_id (coupon_id),
-                INDEX idx_create_time (create_time)
+                status VARCHAR(20) DEFAULT 'UNUSED', -- UNUSED, USED, EXPIRED
+                received_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                used_time TIMESTAMP NULL,
+                FOREIGN KEY (user_id) REFERENCES user(id),
+                FOREIGN KEY (coupon_id) REFERENCES coupon(id)
               );
               
-              -- 创建其他分表 (简化示例)
-              CREATE TABLE IF NOT EXISTS order_1 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_2 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_3 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_4 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_5 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_6 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_7 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_8 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_9 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_10 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_11 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_12 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_13 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_14 LIKE order_0;
-              CREATE TABLE IF NOT EXISTS order_15 LIKE order_0;
+              -- 订单表
+              CREATE TABLE IF NOT EXISTS `order` (
+                id BIGINT PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                coupon_id BIGINT,
+                total_amount DECIMAL(10,2) NOT NULL,
+                discount_amount DECIMAL(10,2) DEFAULT 0,
+                final_amount DECIMAL(10,2) NOT NULL,
+                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, PAID, CANCELLED, COMPLETED
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user(id),
+                FOREIGN KEY (coupon_id) REFERENCES coupon(id)
+              );
               
-              CREATE TABLE IF NOT EXISTS coupon_1 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_2 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_3 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_4 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_5 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_6 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_7 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_8 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_9 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_10 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_11 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_12 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_13 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_14 LIKE coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_15 LIKE coupon_0;
+              -- 秒杀商品表
+              CREATE TABLE IF NOT EXISTS seckill_item (
+                id BIGINT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                description TEXT,
+                original_price DECIMAL(10,2) NOT NULL,
+                seckill_price DECIMAL(10,2) NOT NULL,
+                total_stock INT NOT NULL,
+                available_stock INT NOT NULL,
+                start_time TIMESTAMP NOT NULL,
+                end_time TIMESTAMP NOT NULL,
+                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, ACTIVE, FINISHED, CLOSED
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+              );
               
-              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_4 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_5 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_6 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_7 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_8 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_9 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_10 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_11 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_12 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_13 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_14 LIKE stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_15 LIKE stock_log_0;
+              -- 秒杀订单表
+              CREATE TABLE IF NOT EXISTS seckill_order (
+                id BIGINT PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                seckill_item_id BIGINT NOT NULL,
+                order_no VARCHAR(50) NOT NULL UNIQUE,
+                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, SUCCESS, CANCELLED
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user(id),
+                FOREIGN KEY (seckill_item_id) REFERENCES seckill_item(id)
+              );
               
-              -- 用户数据库分库分表示例
-              CREATE DATABASE IF NOT EXISTS user_db_0;
-              CREATE DATABASE IF NOT EXISTS user_db_1;
+              -- 库存日志表
+              CREATE TABLE IF NOT EXISTS stock_log (
+                id BIGINT PRIMARY KEY,
+                seckill_item_id BIGINT NOT NULL,
+                quantity INT NOT NULL,
+                operation_type VARCHAR(20) NOT NULL, -- DECREASE, INCREASE
+                order_id BIGINT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (seckill_item_id) REFERENCES seckill_item(id),
+                FOREIGN KEY (order_id) REFERENCES seckill_order(id)
+              );
               
-              USE user_db_0;
-              CREATE TABLE IF NOT EXISTS user LIKE couponkill.user;
-              CREATE TABLE IF NOT EXISTS user_coupon_count LIKE couponkill.user_coupon_count;
+              -- 系统配置表
+              CREATE TABLE IF NOT EXISTS system_config (
+                id BIGINT PRIMARY KEY,
+                config_key VARCHAR(100) NOT NULL UNIQUE,
+                config_value TEXT,
+                description VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+              );
               
-              USE user_db_1;
-              CREATE TABLE IF NOT EXISTS user LIKE couponkill.user;
-              CREATE TABLE IF NOT EXISTS user_coupon_count LIKE couponkill.user_coupon_count;
+              -- 插入默认系统配置
+              INSERT IGNORE INTO system_config (id, config_key, config_value, description) VALUES
+              (1, 'seckill.cooldown.seconds', '0', '秒杀冷却时间（秒）'),
+              (2, 'seckill.deduct.ttl.seconds', '300', '扣减库存的TTL时间（秒）');
               
-              -- 订单数据库分库分表示例
-              CREATE DATABASE IF NOT EXISTS order_db_0;
-              CREATE DATABASE IF NOT EXISTS order_db_1;
-              CREATE DATABASE IF NOT EXISTS order_db_2;
-              CREATE DATABASE IF NOT EXISTS order_db_3;
-              
-              USE order_db_0;
-              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
-              
-              USE order_db_1;
-              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
-              
-              USE order_db_2;
-              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
-              
-              USE order_db_3;
-              CREATE TABLE IF NOT EXISTS order_0 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_1 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_2 LIKE couponkill.order_0;
-              CREATE TABLE IF NOT EXISTS order_3 LIKE couponkill.order_0;
-              
-              -- 优惠券数据库分库分表示例
-              CREATE DATABASE IF NOT EXISTS coupon_db_0;
-              CREATE DATABASE IF NOT EXISTS coupon_db_1;
-              CREATE DATABASE IF NOT EXISTS coupon_db_2;
-              CREATE DATABASE IF NOT EXISTS coupon_db_3;
-              
-              USE coupon_db_0;
-              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
-              
-              USE coupon_db_1;
-              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
-              
-              USE coupon_db_2;
-              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
-              
-              USE coupon_db_3;
-              CREATE TABLE IF NOT EXISTS coupon_0 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_1 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_2 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS coupon_3 LIKE couponkill.coupon_0;
-              CREATE TABLE IF NOT EXISTS stock_log_0 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_1 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_2 LIKE couponkill.stock_log_0;
-              CREATE TABLE IF NOT EXISTS stock_log_3 LIKE couponkill.stock_log_0;
+              -- 创建索引
+              CREATE INDEX idx_user_username ON user(username);
+              CREATE INDEX idx_coupon_status_time ON coupon(status, start_time, end_time);
+              CREATE INDEX idx_user_coupon_user_status ON user_coupon(user_id, status);
+              CREATE INDEX idx_order_user_status ON `order`(user_id, status);
+              CREATE INDEX idx_seckill_item_status_time ON seckill_item(status, start_time, end_time);
+              CREATE INDEX idx_seckill_order_user_item ON seckill_order(user_id, seckill_item_id);
+              CREATE INDEX idx_stock_log_item_operation ON stock_log(seckill_item_id, operation_type);
               
               EOF
               
-              echo "Database initialization completed."
+              echo "Database and tables created successfully."
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
       restartPolicy: OnFailure
 {{- end }}

@@ -1,4 +1,3 @@
-// internal/repository/mysql_repo.go
 package repository
 
 import (

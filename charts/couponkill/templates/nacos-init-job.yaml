@@ -1,11 +1,12 @@
 {{- if .Values.nacos.enabled }}
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.nacos.name }}-init
+  name: nacos-init
   namespace: {{ .Values.namespace }}
   labels:
-    app: {{ .Values.nacos.name }}-init
+    app: nacos-init
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation
@@ -13,208 +14,745 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .Values.nacos.name }}-init
+        app: nacos-init
     spec:
       containers:
         - name: nacos-client
-          image: "{{ .Values.nacos.image.repository }}:{{ .Values.nacos.image.tag }}"
-          imagePullPolicy: {{ .Values.nacos.image.pullPolicy }}
+          image: "{{ .Values.nacos.configWatcher.image.repository }}:{{ .Values.nacos.configWatcher.image.tag }}"
+          imagePullPolicy: {{ .Values.nacos.configWatcher.image.pullPolicy }}
           command:
             - /bin/sh
             - -c
             - |
-              echo "Waiting for Nacos to be ready..."
-              {{- if .Values.nacos.cluster.enabled }}
-              until curl -s http://{{ .Values.nacos.name }}-0.{{ .Values.nacos.name }}-headless:{{ .Values.nacos.service.port }}/nacos/v1/console/health; do
-                sleep 2
+              # 等待 Nacos 服务启动
+              until curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/console/health/liveness" | grep -q "UP"; do
+                echo "Waiting for Nacos to be ready..."
+                sleep 5
               done
+              
+              echo "Nacos is ready. Initializing configurations..."
+              
+              {{- if .Values.nacos.config.external.enabled }}
+              # 从外部源加载配置
+              echo "Loading configurations from external source: {{ .Values.nacos.config.external.url }}"
+              curl -s -L -o /tmp/nacos-configs.zip {{ .Values.nacos.config.external.url }}
+              cd /tmp
+              unzip nacos-configs.zip
+              
+              # 遍历配置文件并导入到Nacos
+              for file in *.yaml *.yml *.json; do
+                if [ -f "$file" ]; then
+                  echo "Importing configuration file: $file"
+                  filename=$(basename "$file")
+                  extension="${filename##*.}"
+                  dataId="${filename}"
+                  group="DEFAULT_GROUP"
+                  
+                  # 根据文件扩展名设置content-type
+                  if [ "$extension" = "yaml" ] || [ "$extension" = "yml" ]; then
+                    contentType="application/yaml"
+                  elif [ "$extension" = "json" ]; then
+                    contentType="application/json"
+                  else
+                    contentType="text/plain"
+                  fi
+                  
+                  # 导入配置到Nacos
+                  curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                    -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8" \
+                    --data-urlencode "dataId=$dataId" \
+                    --data-urlencode "group=$group" \
+                    --data-urlencode "content@./$file" \
+                    -H "contentType: $contentType"
+                fi
+              done
+              
+              echo "Nacos configurations imported successfully from external source."
               {{- else }}
-              until curl -s http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/console/health; do
-                sleep 2
-              done
-              {{- end }}
+              # 使用默认配置初始化
+              echo "Initializing with default configurations..."
               
-              echo "Initializing Nacos configurations..."
-              
-              # 创建common.yaml配置
+              # 创建默认的common.yaml配置
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId={{ .Values.nacos.config.common.dataId }}" \
-                -d "group={{ .Values.nacos.config.common.group }}" \
-                --data-urlencode "content={{ .Values.nacos.config.common.content }}" \
-                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              
-              # 创建用户服务分库分表配置
-              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId={{ .Values.nacos.config.sharding.user.dataId }}" \
-                -d "group={{ .Values.nacos.config.sharding.user.group }}" \
-                --data-urlencode "content={{ .Values.nacos.config.sharding.user.content }}" \
-                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              
-              # 创建订单服务分库分表配置
-              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId={{ .Values.nacos.config.sharding.order.dataId }}" \
-                -d "group={{ .Values.nacos.config.sharding.order.group }}" \
-                --data-urlencode "content={{ .Values.nacos.config.sharding.order.content }}" \
-                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              
-              # 创建优惠券服务分库分表配置
-              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId={{ .Values.nacos.config.sharding.coupon.dataId }}" \
-                -d "group={{ .Values.nacos.config.sharding.coupon.group }}" \
-                --data-urlencode "content={{ .Values.nacos.config.sharding.coupon.content }}" \
-                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              
-              # 创建Go服务协同配置
-              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId=service-collaboration.yaml" \
+                -d "dataId=common.yaml" \
                 -d "group=DEFAULT_GROUP" \
-                --data-urlencode "content={{ .Values.nacos.config.collaboration.content }}" \
+                --data-urlencode "content=spring:
+  data:
+    redis:
+      host: redis-master
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 50
+          min-idle: 20
+          max-wait: 2000ms
+  cloud:
+    sentinel:
+      transport:
+        dashboard: sentinel-dashboard:8080
+        port: 8719
+      eager: true
+      datasource:
+        ds1:
+          nacos:
+            server-addr: \${spring.cloud.nacos.server-addr}
+            namespace: \${spring.cloud.nacos.namespace}
+            data-id: couponkill-gateway-sentinel
+            data-type: json
+            group: SENTINEL_GROUP
+            rule-type: flow
+rocketmq:
+  name-server: rocketmq-namesrv:9876
+  producer:
+    group: common-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 1
+    max-message-size: 4096
+    transaction-listener:
+      enabled: true
+thread-pool:
+  async:
+    core-pool-size: 50
+    max-pool-size: 100
+    queue-capacity: 500
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS
+  order:
+    core-pool-size: 50
+    max-pool-size: 100
+    queue-capacity: 1000
+    thread-name-prefix: order-async-
+    keep-alive-seconds: 60
+    rejected-policy: CALLER_RUNS
+database:
+  mysql:
+    master:
+      host: mysql-master
+      port: 3306
+      username: root
+      password: root
+    slaves:
+      - host: mysql-slave-0
+        port: 3306
+        username: root
+        password: root
+      - host: mysql-slave-1
+        port: 3306
+        username: root
+        password: root
+cluster:
+  config:
+    middleware: middleware-cluster.yaml
+    database: database-connection.yaml
+    cache: cache-connection.yaml
+    messaging: messaging-connection.yaml
+    mysql: mysql-cluster.yaml
+    redis: redis-cluster.yaml" \
+                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
+              
+              # 创建默认的网关配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId=gateway.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://couponkill-user-service
+          predicates:
+            - Path=/api/v1/user/**
+        - id: coupon-service
+          uri: lb://couponkill-coupon-service
+          predicates:
+            - Path=/api/v1/coupon/**
+        - id: order-service
+          uri: lb://couponkill-order-service
+          predicates:
+            - Path=/api/v1/order/**
+        - id: seckill-go-service
+          uri: lb://seckill-go-svc
+          predicates:
+            - Path=/seckill/go/**" \
+                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
+              
+              # 创建MySQL集群配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId=mysql-cluster.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=mysql:
+  cluster:
+    enabled: false
+    master-slave:
+      enabled: false
+      master:
+        host: mysql-master
+        port: 3306
+        username: root
+        password: root
+      slaves:
+        - host: mysql-slave-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-slave-1
+          port: 3306
+          username: root
+          password: root
+    group-replication:
+      enabled: false
+      nodes:
+        - host: mysql-gr-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-gr-1
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-gr-2
+          port: 3306
+          username: root
+          password: root
+    innodb-cluster:
+      enabled: false
+      nodes:
+        - host: mysql-innodb-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-innodb-1
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-innodb-2
+          port: 3306
+          username: root
+          password: root
+    read-write-splitting:
+      enabled: false
+      strategy: ROUND_ROBIN
+      master:
+        host: mysql-master
+        port: 3306
+        username: root
+        password: root
+      slaves:
+        - host: mysql-slave-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-slave-1
+          port: 3306
+          username: root
+          password: root
+    pool:
+      max-active: 100
+      max-idle: 20
+      min-idle: 5
+      initial-size: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 5000" \
+                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
+              
+              # 创建Redis集群配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId=redis-cluster.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=redis:
+  cluster:
+    enabled: false
+    standalone:
+      enabled: true
+      host: redis-master
+      port: 6379
+      password: ''
+      database: 0
+    master-slave:
+      enabled: false
+      master:
+        host: redis-master
+        port: 6379
+        password: ''
+      slaves:
+        - host: redis-slave-0
+          port: 6379
+          password: ''
+        - host: redis-slave-1
+          port: 6379
+          password: ''
+    sentinel:
+      enabled: false
+      master-name: mymaster
+      sentinels:
+        - host: redis-sentinel-0
+          port: 26379
+        - host: redis-sentinel-1
+          port: 26379
+        - host: redis-sentinel-2
+          port: 26379
+      password: ''
+      database: 0
+    redis-cluster:
+      enabled: false
+      nodes:
+        - host: redis-node-0
+          port: 6379
+        - host: redis-node-1
+          port: 6379
+        - host: redis-node-2
+          port: 6379
+        - host: redis-node-3
+          port: 6379
+        - host: redis-node-4
+          port: 6379
+        - host: redis-node-5
+          port: 6379
+      password: ''
+      max-redirects: 3
+    pool:
+      max-active: 200
+      max-idle: 50
+      min-idle: 10
+      max-wait: 2000
+      time-between-eviction-runs: 30000
+      min-evictable-idle-time: 60000
+      test-while-idle: true
+      test-on-create: false
+      test-on-borrow: false
+      test-on-return: false
+    serialization:
+      key-serializer: org.springframework.data.redis.serializer.StringRedisSerializer
+      value-serializer: org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 2000" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
               # 创建中间件集群配置
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId=middleware-cluster-config.yaml" \
+                -d "dataId=middleware-cluster.yaml" \
                 -d "group=DEFAULT_GROUP" \
-                --data-urlencode "content={{ .Values.nacos.config.middleware.content }}" \
+                --data-urlencode "content=middleware:
+  cluster:
+    enabled: false
+    mode: auto
+  database:
+    mysql:
+      type: standalone
+      standalone:
+        host: mysql
+        port: 3306
+        username: root
+        password: root
+      master-slave:
+        master:
+          host: mysql-master
+          port: 3306
+          username: root
+          password: root
+        slaves:
+          - host: mysql-slave-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-slave-1
+            port: 3306
+            username: root
+            password: root
+      group-replication:
+        nodes:
+          - host: mysql-gr-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-gr-1
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-gr-2
+            port: 3306
+            username: root
+            password: root
+      innodb-cluster:
+        nodes:
+          - host: mysql-innodb-0
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-innodb-1
+            port: 3306
+            username: root
+            password: root
+          - host: mysql-innodb-2
+            port: 3306
+            username: root
+            password: root
+  cache:
+    redis:
+      type: standalone
+      standalone:
+        host: redis-master
+        port: 6379
+        password: ''
+        database: 0
+      master-slave:
+        master:
+          host: redis-master
+          port: 6379
+          password: ''
+        slaves:
+          - host: redis-slave-0
+            port: 6379
+            password: ''
+          - host: redis-slave-1
+            port: 6379
+            password: ''
+      sentinel:
+        master-name: mymaster
+        sentinels:
+          - host: redis-sentinel-0
+            port: 26379
+          - host: redis-sentinel-1
+            port: 26379
+          - host: redis-sentinel-2
+            port: 26379
+        password: ''
+        database: 0
+      cluster:
+        nodes:
+          - host: redis-node-0
+            port: 6379
+          - host: redis-node-1
+            port: 6379
+          - host: redis-node-2
+            port: 6379
+          - host: redis-node-3
+            port: 6379
+          - host: redis-node-4
+            port: 6379
+          - host: redis-node-5
+            port: 6379
+        password: ''
+        max-redirects: 3
+  messaging:
+    rocketmq:
+      type: standalone
+      standalone:
+        name-server: rocketmq-namesrv:9876
+      cluster:
+        name-servers:
+          - rocketmq-namesrv-0:9876
+          - rocketmq-namesrv-1:9876
+          - rocketmq-namesrv-2:9876
+        broker-clusters:
+          - name: DefaultCluster
+            brokers:
+              - broker-master-0:10911
+              - broker-slave-0:10911
+              - broker-master-1:10911
+              - broker-slave-1:10911
+  config:
+    nacos:
+      type: standalone
+      standalone:
+        server-addr: nacos:8848
+      cluster:
+        server-addrs:
+          - nacos-0:8848
+          - nacos-1:8848
+          - nacos-2:8848
+        namespace: couponkill
+  registry:
+    nacos:
+      type: standalone
+      standalone:
+        server-addr: nacos:8848
+      cluster:
+        server-addrs:
+          - nacos-0:8848
+          - nacos-1:8848
+          - nacos-2:8848
+        namespace: couponkill
+  loadbalancer:
+    strategy: ROUND_ROBIN
+    retry:
+      enabled: true
+      max-attempts: 3
+      backoff:
+        enabled: true
+        multiplier: 2.0
+        max-interval: 10000
+  failover:
+    enabled: true
+    timeout: 5000
+    retry-count: 3
+    retry-interval: 1000" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 创建网关路由配置
+              # 创建数据库连接配置
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId=gateway-routes.yaml" \
+                -d "dataId=database-connection.yaml" \
                 -d "group=DEFAULT_GROUP" \
-                --data-urlencode "content={{ .Values.nacos.config.gateway.content }}" \
+                --data-urlencode "content=database:
+  connection:
+    pool:
+      max-active: 100
+      max-idle: 20
+      min-idle: 5
+      initial-size: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+      log-abandoned: true
+    transaction:
+      isolation-level: READ_COMMITTED
+      timeout: 30
+      rollback-on-commit-failure: true
+    sql:
+      show-sql: false
+      format-sql: false
+      use-sql-comments: false
+    connection:
+      auto-commit: true
+      catalog: console
+      schema: 
+      network-timeout: 30000
+      holdability: HOLD_CURSORS_OVER_COMMIT
+    driver:
+      class-name: com.mysql.cj.jdbc.Driver
+      url-params: useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    ssl:
+      enabled: false
+      keystore:
+      keystore-password:
+      truststore:
+      truststore-password:
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 5000
+    monitoring:
+      enabled: true
+      slow-sql-threshold: 1000
+      log-slow-sql: true
+      log-all-sql: false" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 创建Go服务配置
+              # 创建缓存连接配置
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId={{ .Values.nacos.config.go.dataId }}" \
-                -d "group={{ .Values.nacos.config.go.group }}" \
-                --data-urlencode "content={{ .Values.nacos.config.go.content }}" \
+                -d "dataId=cache-connection.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=cache:
+  connection:
+    connection:
+      timeout: 2000
+      connect-timeout: 2000
+      so-keep-alive: true
+      so-tcp-no-delay: true
+    pool:
+      max-active: 200
+      max-idle: 50
+      min-idle: 10
+      max-wait: 2000
+      time-between-eviction-runs: 30000
+      min-evictable-idle-time: 60000
+      test-while-idle: true
+      test-on-create: false
+      test-on-borrow: false
+      test-on-return: false
+    serialization:
+      key-serializer: org.springframework.data.redis.serializer.StringRedisSerializer
+      value-serializer: org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+      hash-key-serializer: org.springframework.data.redis.serializer.StringRedisSerializer
+      hash-value-serializer: org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+    command:
+      default-expire-time: 3600
+      use-key-prefix: true
+      key-prefix: couponkill:
+      cache-null-values: false
+    transaction:
+      enabled: false
+      timeout: 5000
+    pubsub:
+      enabled: true
+      message-listener-container:
+        task-executor: pubsubTaskExecutor
+        subscription-executor: pubsubSubscriptionExecutor
+        max-concurrency: 10
+        concurrency: 5
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 2000
+    monitoring:
+      enabled: true
+      slow-operation-threshold: 1000
+      log-slow-operations: true" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              echo "Nacos initialization completed."
+              # 创建消息队列连接配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId=messaging-connection.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=messaging:
+  connection:
+    rocketmq:
+      producer:
+        group: default-producer-group
+        send-message-timeout: 3000
+        retry-times-when-send-failed: 2
+        retry-times-when-send-async-failed: 2
+        max-message-size: 4096
+        compress-msg-body-over-howmuch: 4096
+        retry-another-broker-when-not-store-ok: true
+        send-latency-fault-enable: true
+      consumer:
+        group: default-consumer-group
+        consume-thread-min: 20
+        consume-thread-max: 64
+        consume-message-batch-max-size: 1
+        pull-batch-size: 32
+        pull-interval: 0
+        consume-timeout: 15
+        consume-from-where: CONSUME_FROM_FIRST_OFFSET
+        consume-timestamp: 
+        adjust-thread-pool-nums-threshold: 100000
+        max-reconsume-times: 3
+      client:
+        client-ip: 
+        instance-name: DEFAULT
+        unit-name: 
+        vip-channel-enabled: false
+        use-tls: false
+        access-key: 
+        secret-key: 
+        enable-msg-trace: true
+        customize-trace-topic: 
+        tls-enable: false
+      namesrv:
+        addr: rocketmq-namesrv:9876
+      topic:
+        default: default-topic
+        retry: %RETRY%default-consumer-group
+        dlq: %DLQ%default-consumer-group
+      loadbalance:
+        allocate-message-queue-strategy: AVG
+        message-model: CLUSTERING
+        consume-type: CONSUME_PASSIVELY
+        consume-from-where: CONSUME_FROM_FIRST_OFFSET
+      failover:
+        enabled: true
+        retry-count: 3
+        retry-interval: 1000
+        timeout: 5000
+      monitoring:
+        enabled: true
+        slow-operation-threshold: 1000
+        log-slow-operations: true" \
+                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 创建动态配置更新脚本
-              cat > /tmp/update-configs.sh << 'EOF'
-              #!/bin/sh
-              echo "Checking for configuration updates..."
+              # 创建集群切换配置
+              curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                -d "dataId=cluster-switch.yaml" \
+                -d "group=DEFAULT_GROUP" \
+                --data-urlencode "content=cluster:
+  switch:
+    auto-switch-enabled: false
+    strategy: MANUAL
+    thresholds:
+      cpu-usage: 80
+      memory-usage: 85
+      response-time: 1000
+      error-rate: 5
+      throughput-drop: 30
+    conditions:
+      consecutive-failures: 3
+      failure-window: 60
+      recovery-window: 300
+    operations:
+      scale-up:
+        enabled: true
+        threshold: 70
+        max-replicas: 10
+        scale-factor: 1.5
+      scale-down:
+        enabled: true
+        threshold: 30
+        min-replicas: 1
+        scale-factor: 0.5
+    notification:
+      enabled: true
+      channels:
+        - email
+        - sms
+        - webhook
+      recipients:
+        - admin@couponkill.com
+        - ops@couponkill.com
+    logging:
+      enabled: true
+      level: INFO
+      retention-days: 30
+    protection:
+      enabled: true
+      cooldown-period: 300
+      max-switches-per-hour: 10
+      rollback-on-failure: true
+    testing:
+      enabled: false
+      canary-percentage: 10
+      test-duration: 300
+    time-windows:
+      enabled: false
+      windows:
+        - start: 02:00
+          end: 04:00
+          days: [1, 3, 5]
+    approval:
+      enabled: false
+      approvers:
+        - admin@couponkill.com
+        - ops-lead@couponkill.com
+    rollback:
+      enabled: true
+      auto-rollback-after: 600
+      rollback-threshold: 50" \
+                -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 检查并更新 common.yaml 配置
-              COMMON_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.common.dataId }}&group={{ .Values.nacos.config.common.group }}")
-              if [ "$COMMON_CONFIG" != "{{ .Values.nacos.config.common.content | quote }}" ]; then
-                echo "Updating common.yaml configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId={{ .Values.nacos.config.common.dataId }}" \
-                  -d "group={{ .Values.nacos.config.common.group }}" \
-                  --data-urlencode "content={{ .Values.nacos.config.common.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              fi
-              
-              # 检查并更新用户服务分库分表配置
-              USER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.user.dataId }}&group={{ .Values.nacos.config.sharding.user.group }}")
-              if [ "$USER_SHARDING_CONFIG" != "{{ .Values.nacos.config.sharding.user.content | quote }}" ]; then
-                echo "Updating user service sharding configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId={{ .Values.nacos.config.sharding.user.dataId }}" \
-                  -d "group={{ .Values.nacos.config.sharding.user.group }}" \
-                  --data-urlencode "content={{ .Values.nacos.config.sharding.user.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              fi
-              
-              # 检查并更新订单服务分库分表配置
-              ORDER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.order.dataId }}&group={{ .Values.nacos.config.sharding.order.group }}")
-              if [ "$ORDER_SHARDING_CONFIG" != "{{ .Values.nacos.config.sharding.order.content | quote }}" ]; then
-                echo "Updating order service sharding configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId={{ .Values.nacos.config.sharding.order.dataId }}" \
-                  -d "group={{ .Values.nacos.config.sharding.order.group }}" \
-                  --data-urlencode "content={{ .Values.nacos.config.sharding.order.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              fi
-              
-              # 检查并更新优惠券服务分库分表配置
-              COUPON_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.coupon.dataId }}&group={{ .Values.nacos.config.sharding.coupon.group }}")
-              if [ "$COUPON_SHARDING_CONFIG" != "{{ .Values.nacos.config.sharding.coupon.content | quote }}" ]; then
-                echo "Updating coupon service sharding configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId={{ .Values.nacos.config.sharding.coupon.dataId }}" \
-                  -d "group={{ .Values.nacos.config.sharding.coupon.group }}" \
-                  --data-urlencode "content={{ .Values.nacos.config.sharding.coupon.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              fi
-              
-              # 检查并更新Go服务协同配置
-              COLLABORATION_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=service-collaboration.yaml&group=DEFAULT_GROUP")
-              EXPECTED_COLLABORATION_CONFIG="{{ .Values.nacos.config.collaboration.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-              if [ "$COLLABORATION_CONFIG" != "$EXPECTED_COLLABORATION_CONFIG" ]; then
-                echo "Updating service collaboration configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId=service-collaboration.yaml" \
-                  -d "group=DEFAULT_GROUP" \
-                  --data-urlencode "content={{ .Values.nacos.config.collaboration.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-              fi
-              
-              # 检查并更新中间件集群配置
-              MIDDLEWARE_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
-              EXPECTED_MIDDLEWARE_CONFIG="{{ .Values.nacos.config.middleware.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-              if [ "$MIDDLEWARE_CONFIG" != "$EXPECTED_MIDDLEWARE_CONFIG" ]; then
-                echo "Updating middleware cluster configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId=middleware-cluster-config.yaml" \
-                  -d "group=DEFAULT_GROUP" \
-                  --data-urlencode "content={{ .Values.nacos.config.middleware.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                if [ $? -ne 0 ]; then
-                  echo "Failed to update middleware cluster configuration"
-                  exit 1
-                fi
-              else
-                echo "Middleware cluster configuration is up to date"
-              fi
-              
-              # 检查并更新网关路由配置
-              GATEWAY_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=gateway-routes.yaml&group=DEFAULT_GROUP")
-              EXPECTED_GATEWAY_CONFIG="{{ .Values.nacos.config.gateway.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-              if [ "$GATEWAY_CONFIG" != "$EXPECTED_GATEWAY_CONFIG" ]; then
-                echo "Updating gateway routes configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId=gateway-routes.yaml" \
-                  -d "group=DEFAULT_GROUP" \
-                  --data-urlencode "content={{ .Values.nacos.config.gateway.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                if [ $? -ne 0 ]; then
-                  echo "Failed to update gateway routes configuration"
-                  exit 1
-                fi
-              else
-                echo "Gateway routes configuration is up to date"
-              fi
-              
-              # 检查并更新Go服务配置
-              GO_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.go.dataId }}&group={{ .Values.nacos.config.go.group }}")
-              EXPECTED_GO_CONFIG="{{ .Values.nacos.config.go.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-              if [ "$GO_CONFIG" != "$EXPECTED_GO_CONFIG" ]; then
-                echo "Updating Go service configuration..."
-                curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                  -d "dataId={{ .Values.nacos.config.go.dataId }}" \
-                  -d "group={{ .Values.nacos.config.go.group }}" \
-                  --data-urlencode "content={{ .Values.nacos.config.go.content }}" \
-                  -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                if [ $? -ne 0 ]; then
-                  echo "Failed to update Go service configuration"
-                  exit 1
-                fi
-              else
-                echo "Go service configuration is up to date"
-              fi
-              
-              echo "Configuration update check completed."
-              EOF
-              
-              chmod +x /tmp/update-configs.sh
-          env:
-            - name: NACOS_ADDR
-              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+              echo "Default Nacos configurations initialized successfully."
+              {{- end }}
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
       restartPolicy: OnFailure
+      serviceAccountName: {{ .Values.serviceAccount4.name }}
 {{- end }}

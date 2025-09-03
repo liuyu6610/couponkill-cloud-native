@@ -1,0 +1,97 @@
+# MySQL集群配置
+mysql:
+  cluster:
+    # 集群模式开关
+    enabled: false
+    
+    # 主从复制配置
+    master-slave:
+      enabled: false
+      master:
+        host: mysql-master
+        port: 3306
+        username: root
+        password: root
+      slaves:
+        - host: mysql-slave-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-slave-1
+          port: 3306
+          username: root
+          password: root
+          
+    # Group Replication配置
+    group-replication:
+      enabled: false
+      nodes:
+        - host: mysql-gr-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-gr-1
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-gr-2
+          port: 3306
+          username: root
+          password: root
+          
+    # InnoDB Cluster配置
+    innodb-cluster:
+      enabled: false
+      nodes:
+        - host: mysql-innodb-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-innodb-1
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-innodb-2
+          port: 3306
+          username: root
+          password: root
+          
+    # 读写分离配置
+    read-write-splitting:
+      enabled: false
+      strategy: ROUND_ROBIN
+      master:
+        host: mysql-master
+        port: 3306
+        username: root
+        password: root
+      slaves:
+        - host: mysql-slave-0
+          port: 3306
+          username: root
+          password: root
+        - host: mysql-slave-1
+          port: 3306
+          username: root
+          password: root
+          
+    # 连接池配置
+    pool:
+      max-active: 100
+      max-idle: 20
+      min-idle: 5
+      initial-size: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      
+    # 故障转移配置
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 5000

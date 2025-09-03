@@ -32,8 +32,11 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.services.go.port }}"
         prometheus.io/path: "/metrics"
+        # 添加Nacos配置检查注解，用于实现零停机配置更新
+        nacos-config-checksum: "{{ .Values.nacos.config.go.content | sha256sum }}"
+        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
     spec:
-      serviceAccountName: {{ .Values.serviceAccount3.name }}
+      serviceAccountName: {{ .Values.serviceAccount0.name }}
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.go.image.name }}"
@@ -56,10 +59,10 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              memory: "256Mi"
+              memory: "512Mi"
               cpu: "250m"
             limits:
-              memory: "512Mi"
+              memory: "1Gi"
               cpu: "500m"
           env:
             - name: PORT
@@ -79,10 +82,30 @@ spec:
             - name: NACOS_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             {{- end }}
+            # Nacos动态配置相关环境变量
+            - name: NACOS_CONFIG_ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.config.port | default 8848 }}"
+            - name: NACOS_CONFIG_NAMESPACE
+              value: "{{ .Values.nacos.namespace | default "couponkill" }}"
+            - name: NACOS_CONFIG_GROUP
+              value: "DEFAULT_GROUP"
+            - name: NACOS_CONFIG_DATA_ID
+              value: "couponkill-go-config"
+            - name: NACOS_CONFIG_AUTO_REFRESHED
+              value: "true"
             {{- if .Values.sentinel.enabled }}
             - name: SENTINEL_DASHBOARD
               value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
             {{- end }}
+            # MySQL和Redis集群配置
+            - name: MYSQL_CLUSTER_ENABLED
+              value: "{{ .Values.mysql.cluster.enabled | default "false" }}"
+            - name: MYSQL_CLUSTER_TYPE
+              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
+            - name: REDIS_CLUSTER_ENABLED
+              value: "{{ .Values.redis.cluster.enabled | default "false" }}"
+            - name: REDIS_CLUSTER_TYPE
+              value: "{{ .Values.redis.cluster.type | default "standalone" }}"
             # Go运行时优化参数
             {{- if .Values.services.go.goOpts }}
             - name: GOGC

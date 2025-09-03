@@ -11,7 +11,7 @@ spec:
   # Go服务的最大副本数，限制在高负载时最多可以扩展的实例数量
   goMaxReplicas: 5
   # CPU使用率目标阈值，当CPU使用率超过此值时触发扩容，低于此值时触发缩容
-  cpuTarget: 60
+  cpuTarget: 70
   # 其他相关服务的扩缩容配置列表
   otherServices:
     # 优惠券服务的扩缩容配置

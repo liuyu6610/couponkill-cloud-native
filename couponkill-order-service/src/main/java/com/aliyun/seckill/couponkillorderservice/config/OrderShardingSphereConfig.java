@@ -6,6 +6,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
+import org.apache.shardingsphere.driver.jdbc.core.datasource.ShardingSphereDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -82,7 +83,18 @@ public class OrderShardingSphereConfig {
                         // 重新创建数据源
                         DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(configInfo.getBytes());
                         
-                        // 替换旧的数据源（实际生产环境中需要更复杂的处理）
+                        // 安全关闭旧的数据源
+                        if (dataSource != null) {
+                            try {
+                                if (dataSource instanceof ShardingSphereDataSource) {
+                                    ((ShardingSphereDataSource) dataSource).close();
+                                }
+                            } catch (Exception e) {
+                                log.warn("关闭旧数据源时发生异常: ", e);
+                            }
+                        }
+                        
+                        // 替换旧的数据源
                         dataSource = newDataSource;
                         log.info("成功更新ShardingSphere数据源配置");
                     } catch (Exception e) {
@@ -102,7 +114,8 @@ public class OrderShardingSphereConfig {
     private void addMiddlewareConfigListener() {
         try {
             // 监听中间件集群配置
-            configService.addListener("middleware-cluster-config.yaml", group, new Listener() {
+            String dataId = "middleware-cluster-config.yaml";
+            configService.addListener(dataId, group, new Listener() {
                 @Override
                 public Executor getExecutor() {
                     return null;
@@ -110,13 +123,12 @@ public class OrderShardingSphereConfig {
 
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    log.info("接收到中间件集群配置变更通知");
-                    // 这里可以处理中间件集群配置变更，例如更新Redis、MySQL等客户端配置
-                    log.info("中间件集群配置: {}", configInfo);
+                    log.info("接收到中间件集群配置变更通知，dataId: {}", dataId);
+                    // 这里可以处理中间件集群配置变更
+                    // 例如重新初始化连接池等
                 }
             });
-            
-            log.info("已添加中间件集群配置监听器");
+            log.info("已添加中间件集群配置监听器，dataId: {}", dataId);
         } catch (Exception e) {
             log.error("添加中间件集群配置监听器失败", e);
         }

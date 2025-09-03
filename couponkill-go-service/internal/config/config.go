@@ -139,7 +139,12 @@ func Load() (*Config, error) {
 	var cfg Config
 
 	// 1. 获取Nacos连接配置（环境变量优先）
-	nacosServerAddr := getEnvOrDefault("NACOS_SERVER_ADDR", "localhost:8848")
+	// 支持两种环境变量名称：NACOS_SERVER_ADDR（代码中使用）和NACOS_ADDR（K8s部署中使用）
+	nacosServerAddr := getEnvOrDefault("NACOS_SERVER_ADDR", "")
+	if nacosServerAddr == "" {
+		nacosServerAddr = getEnvOrDefault("NACOS_ADDR", "localhost:8848")
+	}
+
 	nacosNamespaceId := getEnvOrDefault("NACOS_NAMESPACE_ID", "120")
 
 	// 2. 优先从Nacos加载配置
@@ -168,6 +173,9 @@ func Load() (*Config, error) {
 					} else {
 						cfg = newCfg // 更新配置
 						log.Println("配置已更新")
+
+						// 重新初始化中间件连接
+						initializeMiddlewareConnections(&cfg)
 					}
 				})
 				if err != nil {
@@ -308,7 +316,7 @@ func Load() (*Config, error) {
 }
 
 // LoadCollaborationConfig 加载服务协同配置
-func (c *Config) LoadCollaborationConfig(content string) error {
+func (c *Config) LoadCollaborationConfig(data string) error {
 	var collaborationConfig struct {
 		Collaboration struct {
 			JavaServiceUrl   string `yaml:"java-service-url"`
@@ -319,16 +327,11 @@ func (c *Config) LoadCollaborationConfig(content string) error {
 		} `yaml:"collaboration"`
 	}
 
-	if err := yaml.Unmarshal([]byte(content), &collaborationConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(data), &collaborationConfig); err != nil {
 		return err
 	}
 
-	c.Collaboration.JavaServiceUrl = collaborationConfig.Collaboration.JavaServiceUrl
-	c.Collaboration.GoServiceUrl = collaborationConfig.Collaboration.GoServiceUrl
-	c.Collaboration.JavaQpsThreshold = collaborationConfig.Collaboration.JavaQpsThreshold
-	c.Collaboration.GoEnabled = collaborationConfig.Collaboration.GoEnabled
-	c.Collaboration.FallbackToGo = collaborationConfig.Collaboration.FallbackToGo
-
+	c.Collaboration = collaborationConfig.Collaboration
 	return nil
 }
 
@@ -340,24 +343,19 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-// setDefaultValues 设置默认值
 func setDefaultValues(cfg *Config) {
 	if cfg.Server.Port == 0 {
 		cfg.Server.Port = 8090
 	}
-
+	if cfg.Seckill.MaxConcurrency == 0 {
+		cfg.Seckill.MaxConcurrency = 2000
+	}
+	if cfg.Seckill.RedisPrefix == "" {
+		cfg.Seckill.RedisPrefix = "seckill:"
+	}
 	if cfg.Seckill.ValidDays == 0 {
 		cfg.Seckill.ValidDays = 7
 	}
-
-	if cfg.Redis.Addr == "" {
-		cfg.Redis.Addr = "116.62.178.91:6379"
-	}
-
-	if cfg.Mysql.DSN == "" {
-		cfg.Mysql.DSN = "root:root@tcp(localhost:3306)/console?charset=utf8mb4&parseTime=True&loc=Local"
-	}
-
 	if cfg.Seckill.Redis.StockKeyPrefix == "" {
 		cfg.Seckill.Redis.StockKeyPrefix = "coupon:stock:"
 	}
@@ -371,34 +369,36 @@ func isConfigChanged(oldCfg, newCfg *Config) bool {
 	return string(oldBytes) != string(newBytes)
 }
 
-// initializeMiddlewareConnections 根据配置初始化中间件连接
+// initializeMiddlewareConnections 根据配置重新初始化中间件连接
 func initializeMiddlewareConnections(cfg *Config) {
-	// 初始化Redis连接
-	initializeRedisConnections(cfg)
-
-	// 初始化MySQL连接
-	var err error
-
-	// 根据配置选择MySQL连接方式
-	if cfg.Middleware.Mysql.Cluster.Enabled && len(cfg.Middleware.Mysql.Cluster.Nodes) > 0 {
-		// MySQL集群模式
-		log.Println("初始化MySQL集群连接")
-		MySQLClient, err = initializeMySQLCluster(cfg)
-	} else if cfg.Middleware.Mysql.Replication.Enabled {
-		// MySQL主从复制模式
-		log.Println("初始化MySQL主从复制连接")
-		MySQLClient, err = initializeMySQLReplication(cfg)
+	// 重新初始化Redis连接
+	if cfg.Redis.Cluster.Enabled && len(cfg.Redis.Cluster.Nodes) > 0 {
+		// 集群模式
+		log.Println("重新初始化Redis集群连接")
+		if RedisClusterClient != nil {
+			RedisClusterClient.Close()
+		}
+		// TODO: 初始化Redis集群客户端
+	} else if cfg.Redis.Sentinel.Enabled && len(cfg.Redis.Sentinel.Nodes) > 0 {
+		// 哨兵模式
+		log.Println("重新初始化Redis哨兵连接")
+		if RedisClient != nil {
+			RedisClient.Close()
+		}
+		// TODO: 初始化Redis哨兵客户端
 	} else {
-		// MySQL单节点模式
-		log.Println("初始化MySQL单节点连接")
-		MySQLClient, err = initializeMySQLStandalone(cfg)
+		// 单节点模式
+		log.Println("重新初始化Redis单节点连接")
+		if RedisClient != nil {
+			RedisClient.Close()
+		}
+		// TODO: 初始化Redis单节点客户端
 	}
 
-	if err != nil {
-		log.Printf("MySQL连接初始化失败: %v", err)
-	} else {
-		log.Println("MySQL连接初始化成功")
+	// 重新初始化MySQL连接
+	log.Println("重新初始化MySQL连接")
+	if MySQLClient != nil {
+		MySQLClient.Close()
 	}
-
-	// TODO: 初始化其他中间件连接 (如RocketMQ, Kafka等)
+	// TODO: 初始化MySQL客户端
 }

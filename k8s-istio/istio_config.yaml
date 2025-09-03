@@ -15,3 +15,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: istio-system
+---
+# 创建 monitor 命名空间
+# 这是监控组件的标准命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitor

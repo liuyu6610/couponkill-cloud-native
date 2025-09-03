@@ -22,40 +22,40 @@ spec:
   # Go服务端口配置
   - port:
       # 端口号
-      number: 8090
+      number: 80
       # 协议类型
       protocol: HTTP
       # 端口名称
       name: seckill-go
-    # 默认端点，将流量转发到本地的8090端口
-    defaultEndpoint: 0.0.0.0:8090
+    # 默认端点，将流量转发到本地的80端口
+    defaultEndpoint: 0.0.0.0:80
   # 订单服务端口配置
   - port:
       # 端口号
-      number: 8082
+      number: 80
       # 协议类型
       protocol: HTTP
       # 端口名称
       name: order-service
-    # 默认端点，将流量转发到本地的8082端口
-    defaultEndpoint: 0.0.0.0:8082
+    # 默认端点，将流量转发到本地的80端口
+    defaultEndpoint: 0.0.0.0:80
   # 优惠券服务端口配置
   - port:
       # 端口号
-      number: 8081
+      number: 80
       # 协议类型
       protocol: HTTP
       # 端口名称
       name: coupon-service
-    # 默认端点，将流量转发到本地的8081端口
-    defaultEndpoint: 0.0.0.0:8081
+    # 默认端点，将流量转发到本地的80端口
+    defaultEndpoint: 0.0.0.0:80
   # 用户服务端口配置
   - port:
       # 端口号
-      number: 8083
+      number: 80
       # 协议类型
       protocol: HTTP
       # 端口名称
       name: user-service
-    # 默认端点，将流量转发到本地的8083端口
-    defaultEndpoint: 0.0.0.0:8083
+    # 默认端点，将流量转发到本地的80端口
+    defaultEndpoint: 0.0.0.0:80

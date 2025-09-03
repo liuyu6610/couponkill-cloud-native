@@ -1,0 +1,46 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: seckill-go-service
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+
+seckill:
+  max-concurrency: 5000
+  redis-key-prefix: "seckill:"
+  valid-days: 7
+  redis:
+    stock-key-prefix: "coupon:stock:"
+
+mysql:
+  dsn: "root:root@tcp(mysql:3306)/console?charset=utf8mb4&parseTime=True&loc=Local"
+
+data.redis:
+  host: "redis-master:6379"
+  db: 0
+
+nacos:
+  server-addr: "nacos:8848"
+  namespace-id: "couponkill"
+
+# Go服务集群配置
+go:
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # 集群节点列表
+    nodes:
+      - seckill-go-0.seckill-go-headless:8083
+      - seckill-go-1.seckill-go-headless:8083
+      - seckill-go-2.seckill-go-headless:8083
+    # 负载均衡策略
+    load-balancer:
+      strategy: LEAST_CONNECTION
+    # 任务分发配置
+    task:
+      distribution:
+        strategy: HASH

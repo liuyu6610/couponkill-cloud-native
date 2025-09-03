@@ -1,4 +1,3 @@
-// controllers/seckill_controller.go
 package controllers
 
 import (

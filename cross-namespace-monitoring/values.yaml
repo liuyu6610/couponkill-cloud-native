@@ -1,0 +1,77 @@
+# 跨命名空间监控配置示例
+# 这个配置文件展示了如何配置Helm Chart以支持跨命名空间监控
+
+# 应用服务所在的命名空间
+appNamespace: couponkill
+
+# 监控组件所在的命名空间
+monitoringNamespace: monitoring
+
+# 监控配置
+monitoring:
+  enabled: true
+  # Prometheus配置
+  prometheus:
+    enabled: true
+    # Prometheus实例所在的命名空间
+    namespace: monitoring
+    # Prometheus ServiceMonitor配置
+    serviceMonitor:
+      # 是否启用ServiceMonitor
+      enabled: true
+      # 监控间隔
+      interval: 30s
+      # 抓取超时时间
+      scrapeTimeout: 10s
+      # 指定要监控的命名空间
+      namespaceSelector:
+        # 监控当前命名空间(any)和couponkill命名空间中的服务
+        any: false
+        matchNames:
+          - couponkill
+    # PrometheusRule配置
+    prometheusRule:
+      enabled: true
+
+# 服务配置
+services:
+  # Go服务配置
+  go:
+    name: seckill-go
+    port: 8090
+    replicas: 2
+    image:
+      name: "seckill-go"
+  # 优惠券服务配置
+  coupon:
+    name: couponkill-coupon-service
+    port: 8081
+    replicas: 2
+    image:
+      name: "coupon"
+  # 订单服务配置
+  order:
+    name: couponkill-order-service
+    port: 8082
+    replicas: 2
+    image:
+      name: "order"
+  # 用户服务配置
+  user:
+    name: couponkill-user-service
+    port: 8083
+    replicas: 1
+    image:
+      name: "user"
+  # 网关服务配置
+  gateway:
+    name: couponkill-gateway
+    port: 8080
+    replicas: 1
+    image:
+      name: "gateway"
+
+# 镜像配置
+image:
+  registry: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
+  tag: latest

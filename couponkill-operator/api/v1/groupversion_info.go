@@ -1,6 +1,3 @@
-// Package v1 contains API Schema definitions for the ops v1 API group
-// +kubebuilder:object:generate=true
-// +groupName=ops.couponkill.io
 package v1
 
 import (

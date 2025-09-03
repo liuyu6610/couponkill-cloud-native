@@ -1,4 +1,3 @@
-// internal/handler/seckill_handler.go
 package handler
 
 import (

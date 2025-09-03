@@ -35,7 +35,7 @@ spec:
             host: seckill-go-svc.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8090
+              number: 80
       # 重试策略
       retries:
         # 重试次数
@@ -85,8 +85,8 @@ spec:
     - match:
         # URI 前缀匹配规则
         - uri:
-            # 前缀匹配，所有以 /order 开头的请求都会匹配此规则
-            prefix: /order
+            # 前缀匹配，所有以 /api/v1/order 开头的请求都会匹配此规则
+            prefix: /api/v1/order
       # 路由目标
       route:
         # 目标服务列表
@@ -95,7 +95,7 @@ spec:
             host: couponkill-order-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8082
+              number: 80
       # 重试策略
       retries:
         # 重试次数
@@ -139,7 +139,7 @@ spec:
             host: couponkill-coupon-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8081
+              number: 80
       # 重试策略
       retries:
         # 重试次数
@@ -183,7 +183,7 @@ spec:
             host: couponkill-user-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8083
+              number: 80
       # 重试策略
       retries:
         # 重试次数
@@ -194,6 +194,74 @@ spec:
         retryOn: gateway-error,connect-failure,refused-stream
       # 请求超时时间
       timeout: 15s
+
+---
+# Nacos服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: nacos-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /nacos 开头的请求都会匹配此规则
+            prefix: /nacos
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: nacos.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8848
+
+---
+# Sentinel服务的VirtualService配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  # VirtualService 的名称
+  name: sentinel-vs
+  # VirtualService 所在的命名空间
+  namespace: couponkill
+spec:
+  # 主机列表，定义此 VirtualService 适用的主机
+  hosts:
+    - "*"
+  # 网关列表，指定此 VirtualService 应用于哪些网关
+  gateways:
+    - istio-system/couponkill-gateway
+  # HTTP 路由规则列表
+  http:
+    # 匹配规则
+    - match:
+        # URI 前缀匹配规则
+        - uri:
+            # 前缀匹配，所有以 /sentinel 开头的请求都会匹配此规则
+            prefix: /sentinel
+      # 路由目标
+      route:
+        # 目标服务列表
+        - destination:
+            # 目标服务的主机名
+            host: sentinel-dashboard.couponkill.svc.cluster.local
+            # 目标服务的端口号
+            port:
+              number: 8080
 
 ---
 # 内部服务间通信的VirtualService配置
@@ -231,7 +299,7 @@ spec:
             host: seckill-go-svc.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8090
+              number: 80
       # 请求超时时间
       timeout: 5s
 
@@ -239,8 +307,8 @@ spec:
     - match:
         # URI 前缀匹配规则
         - uri:
-            # 前缀匹配，所有以 /order 开头的请求都会匹配此规则
-            prefix: /order
+            # 前缀匹配，所有以 /api/v1/order 开头的请求都会匹配此规则
+            prefix: /api/v1/order
       # 路由目标
       route:
         # 目标服务列表
@@ -249,7 +317,7 @@ spec:
             host: couponkill-order-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8082
+              number: 80
       # 请求超时时间
       timeout: 10s
 
@@ -267,7 +335,7 @@ spec:
             host: couponkill-coupon-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8081
+              number: 80
       # 请求超时时间
       timeout: 15s
 
@@ -285,6 +353,6 @@ spec:
             host: couponkill-user-service.couponkill.svc.cluster.local
             # 目标服务的端口号
             port:
-              number: 8083
+              number: 80
       # 请求超时时间
       timeout: 15s

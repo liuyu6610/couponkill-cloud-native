@@ -1,0 +1,64 @@
+rocketmq:
+  # 单节点模式配置
+  name-server: rocketmq-namesrv:9876
+  # 集群模式配置（注释掉单节点配置后启用）
+  # name-server: rocketmq-namesrv-0:9876;rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+  
+  # 生产者配置
+  producer:
+    group: seckill-order-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
+    max-message-size: 4096
+    compress-msg-body-over-howmuch: 4096
+    retry-another-broker-when-not-store-ok: true
+  
+  # 消费者配置
+  consumer:
+    group:
+      seckill-result: seckill-order-result-group  # 秒杀结果消费组
+      order-create: seckill-order-create-group    # 订单创建消费组
+    consume-thread-min: 64
+    consume-thread-max: 256
+    consume-message-batch-max-size: 32
+    pull-batch-size: 64
+    pull-interval: 0
+    consume-timeout: 15
+  
+  # 主题配置
+  topic:
+    seckill-order-create: seckill_order_create    # 订单创建主题
+    seckill-order-result: seckill_order_result    # 订单结果主题
+    seckill-compensation: seckill_compensation    # 补偿消息主题
+  
+  # 重试配置
+  retry:
+    max-reconsume-times: 3  # 最大重试次数
+    delay-level: 2          # 重试延迟级别（1=1s, 2=5s, 3=10s, 5=60s）
+
+  # RocketMQ集群配置
+  cluster:
+    # 是否启用集群模式
+    enabled: false
+    # Namesrv集群节点
+    namesrv:
+      - rocketmq-namesrv-0.rocketmq-namesrv-headless:9876
+      - rocketmq-namesrv-1.rocketmq-namesrv-headless:9876
+      - rocketmq-namesrv-2.rocketmq-namesrv-headless:9876
+    # Broker集群配置
+    broker:
+      # Master brokers
+      masters:
+        - broker-master-0:10911
+        - broker-master-1:10911
+        - broker-master-2:10911
+      # Slave brokers
+      slaves:
+        - broker-slave-0:10911
+        - broker-slave-1:10911
+        - broker-slave-2:10911
+    # 集群通信配置
+    communication:
+      timeout: 3000
+      retries: 3

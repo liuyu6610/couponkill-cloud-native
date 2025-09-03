@@ -1,0 +1,50 @@
+{{- if .Values.configmap.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: couponkill-config
+  namespace: {{ .Values.namespace }}
+data:
+  # 应用配置
+  application.yml: |
+    server:
+      port: 8080
+    spring:
+      application:
+        name: couponkill-service
+    logging:
+      level:
+        root: INFO
+        
+  # 数据库配置（不包含敏感信息）
+  database.yml: |
+    spring:
+      datasource:
+        hikari:
+          connection-timeout: 30000
+          idle-timeout: 600000
+          max-lifetime: 1800000
+          
+  # Redis配置（不包含敏感信息）
+  redis.yml: |
+    spring:
+      data:
+        redis:
+          lettuce:
+            pool:
+              max-active: 200
+              max-idle: 50
+              min-idle: 20
+              max-wait: 2000ms
+              
+  # 线程池配置
+  threadpool.yml: |
+    thread-pool:
+      async:
+        core-pool-size: 50
+        max-pool-size: 100
+        queue-capacity: 500
+        keep-alive-seconds: 60
+        rejected-policy: CALLER_RUNS
+{{- end }}

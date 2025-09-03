@@ -8,7 +8,7 @@ metadata:
   labels:
     app: {{ .Values.nacos.name }}-config-watcher
 spec:
-  schedule: "*/5 * * * *"  # 每5分钟检查一次配置更新
+  schedule: "{{ .Values.nacos.configWatcher.schedule }}"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
   jobTemplate:
@@ -17,125 +17,71 @@ spec:
         spec:
           containers:
             - name: nacos-config-watcher
-              image: "{{ .Values.nacos.image.repository }}:{{ .Values.nacos.image.tag }}"
-              imagePullPolicy: {{ .Values.nacos.image.pullPolicy }}
+              image: "{{ .Values.nacos.configWatcher.image.repository }}:{{ .Values.nacos.configWatcher.image.tag }}"
+              imagePullPolicy: {{ .Values.nacos.configWatcher.image.pullPolicy }}
               command:
                 - /bin/sh
                 - -c
                 - |
                   echo "Checking for configuration updates..."
                   
-                  # 检查并更新 common.yaml 配置
-                  COMMON_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.common.dataId }}&group={{ .Values.nacos.config.common.group }}")
-                  EXPECTED_COMMON_CONFIG="{{ .Values.nacos.config.common.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$COMMON_CONFIG" != "$EXPECTED_COMMON_CONFIG" ]; then
-                    echo "Updating common.yaml configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId={{ .Values.nacos.config.common.dataId }}" \
-                      -d "group={{ .Values.nacos.config.common.group }}" \
-                      --data-urlencode "content={{ .Values.nacos.config.common.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
+                  {{- if .Values.nacos.config.external.enabled }}
+                  # 检查外部配置源是否有更新
+                  echo "Checking for external configuration updates from: {{ .Values.nacos.config.external.url }}"
                   
-                  # 检查并更新用户服务分库分表配置
-                  USER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.user.dataId }}&group={{ .Values.nacos.config.sharding.user.group }}")
-                  EXPECTED_USER_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.user.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$USER_SHARDING_CONFIG" != "$EXPECTED_USER_SHARDING_CONFIG" ]; then
-                    echo "Updating user service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId={{ .Values.nacos.config.sharding.user.dataId }}" \
-                      -d "group={{ .Values.nacos.config.sharding.user.group }}" \
-                      --data-urlencode "content={{ .Values.nacos.config.sharding.user.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
+                  # 获取外部配置的ETag或Last-Modified
+                  EXT_CONFIG_INFO=$(curl -s -I {{ .Values.nacos.config.external.url }} | grep -E "(ETag|Last-Modified)")
+                  CURRENT_EXT_CONFIG_INFO=$(cat /tmp/ext-config-info 2>/dev/null || echo "")
                   
-                  # 检查并更新订单服务分库分表配置
-                  ORDER_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.order.dataId }}&group={{ .Values.nacos.config.sharding.order.group }}")
-                  EXPECTED_ORDER_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.order.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$ORDER_SHARDING_CONFIG" != "$EXPECTED_ORDER_SHARDING_CONFIG" ]; then
-                    echo "Updating order service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId={{ .Values.nacos.config.sharding.order.dataId }}" \
-                      -d "group={{ .Values.nacos.config.sharding.order.group }}" \
-                      --data-urlencode "content={{ .Values.nacos.config.sharding.order.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
-                  
-                  # 检查并更新优惠券服务分库分表配置
-                  COUPON_SHARDING_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.sharding.coupon.dataId }}&group={{ .Values.nacos.config.sharding.coupon.group }}")
-                  EXPECTED_COUPON_SHARDING_CONFIG="{{ .Values.nacos.config.sharding.coupon.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$COUPON_SHARDING_CONFIG" != "$EXPECTED_COUPON_SHARDING_CONFIG" ]; then
-                    echo "Updating coupon service sharding configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId={{ .Values.nacos.config.sharding.coupon.dataId }}" \
-                      -d "group={{ .Values.nacos.config.sharding.coupon.group }}" \
-                      --data-urlencode "content={{ .Values.nacos.config.sharding.coupon.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
-                  
-                  # 检查并更新Go服务协同配置
-                  COLLABORATION_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=service-collaboration.yaml&group=DEFAULT_GROUP")
-                  EXPECTED_COLLABORATION_CONFIG="{{ .Values.nacos.config.collaboration.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$COLLABORATION_CONFIG" != "$EXPECTED_COLLABORATION_CONFIG" ]; then
-                    echo "Updating service collaboration configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId=service-collaboration.yaml" \
-                      -d "group=DEFAULT_GROUP" \
-                      --data-urlencode "content={{ .Values.nacos.config.collaboration.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
-                  
-                  # 检查并更新中间件集群配置
-                  echo "Checking current middleware configuration..."
-                  MIDDLEWARE_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
-                  EXPECTED_MIDDLEWARE_CONFIG="{{ .Values.nacos.config.middleware.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$MIDDLEWARE_CONFIG" != "$EXPECTED_MIDDLEWARE_CONFIG" ]; then
-                    echo "Current middleware configuration differs from expected. Updating..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId=middleware-cluster-config.yaml" \
-                      -d "group=DEFAULT_GROUP" \
-                      --data-urlencode "content={{ .Values.nacos.config.middleware.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                    UPDATE_STATUS=$?
-                    if [ $UPDATE_STATUS -eq 0 ]; then
-                      echo "Middleware configuration updated successfully."
-                      # Optional: Verify the update
-                      UPDATED_MIDDLEWARE_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=middleware-cluster-config.yaml&group=DEFAULT_GROUP")
-                      if [ "$UPDATED_MIDDLEWARE_CONFIG" == "$EXPECTED_MIDDLEWARE_CONFIG" ]; then
-                        echo "Verification: Middleware configuration matches expected content."
-                      else
-                        echo "Warning: Verification failed. Middleware configuration does not match expected content."
+                  if [ "$EXT_CONFIG_INFO" != "$CURRENT_EXT_CONFIG_INFO" ]; then
+                    echo "External configuration has been updated. Updating Nacos configurations..."
+                    
+                    # 下载新的配置包
+                    curl -s -L -o /tmp/nacos-configs.zip {{ .Values.nacos.config.external.url }}
+                    
+                    # 保存新的ETag或Last-Modified信息
+                    echo "$EXT_CONFIG_INFO" > /tmp/ext-config-info
+                    
+                    # 解压并导入配置
+                    cd /tmp
+                    unzip -o nacos-configs.zip
+                    
+                    # 遍历配置文件并导入到Nacos
+                    for file in *.yaml *.yml *.json; do
+                      if [ -f "$file" ]; then
+                        echo "Importing configuration file: $file"
+                        filename=$(basename "$file")
+                        extension="${filename##*.}"
+                        dataId="${filename}"
+                        group="DEFAULT_GROUP"
+                        
+                        # 根据文件扩展名设置content-type
+                        if [ "$extension" = "yaml" ] || [ "$extension" = "yml" ]; then
+                          contentType="application/yaml"
+                        elif [ "$extension" = "json" ]; then
+                          contentType="application/json"
+                        else
+                          contentType="text/plain"
+                        fi
+                        
+                        # 导入配置到Nacos
+                        curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
+                          -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8" \
+                          --data-urlencode "dataId=$dataId" \
+                          --data-urlencode "group=$group" \
+                          --data-urlencode "content@./$file" \
+                          -H "contentType: $contentType"
                       fi
-                    else
-                      echo "Error: Failed to update middleware configuration. Curl exited with status $UPDATE_STATUS"
-                    fi
+                    done
+                    
+                    echo "Nacos configurations updated from external source."
                   else
-                    echo "Middleware configuration is up to date."
+                    echo "External configuration is up to date."
                   fi
-                  
-                  # 检查并更新网关路由配置
-                  GATEWAY_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId=gateway-routes.yaml&group=DEFAULT_GROUP")
-                  EXPECTED_GATEWAY_CONFIG="{{ .Values.nacos.config.gateway.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$GATEWAY_CONFIG" != "$EXPECTED_GATEWAY_CONFIG" ]; then
-                    echo "Updating gateway routes configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId=gateway-routes.yaml" \
-                      -d "group=DEFAULT_GROUP" \
-                      --data-urlencode "content={{ .Values.nacos.config.gateway.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
-                  
-                  # 检查并更新Go服务配置
-                  GO_CONFIG=$(curl -s "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs?dataId={{ .Values.nacos.config.go.dataId }}&group={{ .Values.nacos.config.go.group }}")
-                  EXPECTED_GO_CONFIG="{{ .Values.nacos.config.go.content | replace "\"" "\\\"" | replace "\n" "\\n" }}"
-                  if [ "$GO_CONFIG" != "$EXPECTED_GO_CONFIG" ]; then
-                    echo "Updating Go service configuration..."
-                    curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                      -d "dataId={{ .Values.nacos.config.go.dataId }}" \
-                      -d "group={{ .Values.nacos.config.go.group }}" \
-                      --data-urlencode "content={{ .Values.nacos.config.go.content }}" \
-                      -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
-                  fi
+                  {{- else }}
+                  # 检查Nacos中配置是否有变更（简化版）
+                  echo "External configuration source is not enabled. Skipping configuration update check."
+                  {{- end }}
                   
                   echo "Configuration update check completed."
               env:

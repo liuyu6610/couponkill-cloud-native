@@ -12,11 +12,59 @@ spec:
       targetPort: 3306
   clusterIP: None
 ---
+# MySQL Master Service for master-slave setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-master
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None
+---
+# MySQL Slave Service for master-slave setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-slave
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None
+---
 # Redis Service definition
 apiVersion: v1
 kind: Service
 metadata:
   name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  clusterIP: None
+---
+# Redis Master Service for master-slave setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  clusterIP: None
+---
+# Redis Slave Service for master-slave setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-slave
   namespace: {{ .Values.namespace }}
 spec:
   ports:
@@ -46,7 +94,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - port: {{ .Values.rocketmq.nameServer.service.port }}
+    - port: {{ .Values.rocketmq.namesrv.service.port }}
       targetPort: 9876
   clusterIP: None
 ---

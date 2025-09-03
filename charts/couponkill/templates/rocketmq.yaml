@@ -9,7 +9,7 @@ metadata:
     app: {{ .Values.rocketmq.name }}-namesrv
 spec:
   ports:
-    - port: {{ .Values.rocketmq.nameServer.service.port }}
+    - port: {{ .Values.rocketmq.namesrv.service.port }}
       targetPort: 9876
       protocol: TCP
       name: namesrv
@@ -48,7 +48,7 @@ metadata:
   labels:
     app: {{ .Values.rocketmq.name }}-namesrv
 spec:
-  replicas: {{ .Values.rocketmq.nameServer.replicas }}
+  replicas: {{ .Values.rocketmq.namesrv.replicas }}
   selector:
     matchLabels:
       app: {{ .Values.rocketmq.name }}-namesrv
@@ -59,27 +59,30 @@ spec:
     spec:
       containers:
         - name: namesrv
-          image: "{{ .Values.rocketmq.nameServer.image.registry }}:{{ .Values.rocketmq.nameServer.image.tag }}"
-          imagePullPolicy: {{ .Values.rocketmq.nameServer.image.pullPolicy | default "IfNotPresent" }}
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
+          image: "{{ .Values.rocketmq.namesrv.image.repository }}:{{ .Values.rocketmq.namesrv.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.namesrv.image.pullPolicy }}
           ports:
             - containerPort: 9876
           env:
-            - name: JAVA_OPT
-              value: "-server -Xms512m -Xmx512m -Xmn256m"
-          command: ["sh", "mqnamesrv"]
-          volumeMounts:
-            - name: data
-              mountPath: /home/rocketmq/store
-      volumes:
-        - name: data
-          emptyDir: {}
+            - name: NAMESRV_ADDR
+              value: "{{ .Values.rocketmq.name }}-namesrv:9876"
+          resources:
+            requests:
+              memory: "{{ .Values.rocketmq.namesrv.resources.requests.memory }}"
+              cpu: "{{ .Values.rocketmq.namesrv.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.rocketmq.namesrv.resources.limits.memory }}"
+              cpu: "{{ .Values.rocketmq.namesrv.resources.limits.cpu }}"
+          readinessProbe:
+            tcpSocket:
+              port: 9876
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 9876
+            initialDelaySeconds: 30
+            periodSeconds: 10
 
 ---
 apiVersion: apps/v1
@@ -101,30 +104,208 @@ spec:
     spec:
       containers:
         - name: broker
-          image: "{{ .Values.rocketmq.broker.image.registry }}:{{ .Values.rocketmq.broker.image.tag }}"
-          imagePullPolicy: {{ .Values.rocketmq.broker.image.pullPolicy | default "IfNotPresent" }}
-          resources:
-            requests:
-              memory: "1Gi"
-              cpu: "500m"
-            limits:
-              memory: "2Gi"
-              cpu: "1"
+          image: "{{ .Values.rocketmq.broker.image.repository }}:{{ .Values.rocketmq.broker.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.broker.image.pullPolicy }}
           ports:
             - containerPort: 10911
-              name: broker-port
             - containerPort: 10912
-              name: broker-ha-port
-          command: ["sh", "mqbroker"]
           env:
             - name: NAMESRV_ADDR
-              value: "{{ .Values.rocketmq.name }}-namesrv:{{ .Values.rocketmq.nameServer.service.port }}"
-            - name: JAVA_OPT
-              value: "-server -Xms1g -Xmx1g -Xmn512m"
+              value: "{{ .Values.rocketmq.name }}-namesrv:9876"
+            - name: BROKER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: BROKER_ROLE
+              value: "ASYNC_MASTER"
+            - name: FLUSH_DISK_TYPE
+              value: "ASYNC_FLUSH"
           volumeMounts:
-            - name: data
-              mountPath: /home/rocketmq/store
+            - name: broker-storage
+              mountPath: /root/store
+            - name: broker-logs
+              mountPath: /root/logs
+          resources:
+            requests:
+              memory: "{{ .Values.rocketmq.broker.resources.requests.memory }}"
+              cpu: "{{ .Values.rocketmq.broker.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.rocketmq.broker.resources.limits.memory }}"
+              cpu: "{{ .Values.rocketmq.broker.resources.limits.cpu }}"
+          readinessProbe:
+            tcpSocket:
+              port: 10911
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 10911
+            initialDelaySeconds: 60
+            periodSeconds: 20
       volumes:
-        - name: data
+        - name: broker-storage
           emptyDir: {}
+        - name: broker-logs
+          emptyDir: {}
+
+---
+# RocketMQ集群模式支持
+{{- if .Values.rocketmq.cluster.enabled }}
+{{- range $index := until (int .Values.rocketmq.cluster.namesrv.replicas) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.rocketmq.name }}-namesrv-{{ $index }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.rocketmq.name }}-namesrv-cluster
+spec:
+  ports:
+    - port: {{ $.Values.rocketmq.namesrv.service.port }}
+      targetPort: 9876
+      protocol: TCP
+      name: namesrv
+  selector:
+    app: {{ $.Values.rocketmq.name }}-namesrv-cluster
+    index: "{{ $index }}"
+  type: ClusterIP
+{{- end }}
+
+{{- range $index := until (int .Values.rocketmq.cluster.broker.replicas) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.rocketmq.name }}-broker-{{ $index }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.rocketmq.name }}-broker-cluster
+spec:
+  ports:
+    - port: {{ $.Values.rocketmq.broker.service.ports.listenPort }}
+      targetPort: 10911
+      protocol: TCP
+      name: broker-port
+    - port: {{ $.Values.rocketmq.broker.service.ports.haListenPort }}
+      targetPort: 10912
+      protocol: TCP
+      name: broker-ha-port
+  selector:
+    app: {{ $.Values.rocketmq.name }}-broker-cluster
+    index: "{{ $index }}"
+  type: ClusterIP
+{{- end }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.rocketmq.name }}-namesrv-cluster
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-namesrv-cluster
+spec:
+  serviceName: {{ .Values.rocketmq.name }}-namesrv-cluster
+  replicas: {{ .Values.rocketmq.cluster.namesrv.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-namesrv-cluster
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-namesrv-cluster
+    spec:
+      containers:
+        - name: namesrv
+          image: "{{ .Values.rocketmq.namesrv.image.repository }}:{{ .Values.rocketmq.namesrv.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.namesrv.image.pullPolicy }}
+          ports:
+            - containerPort: 9876
+          env:
+            - name: NAMESRV_ADDR
+              value: "{{ range $index := until (int .Values.rocketmq.cluster.namesrv.replicas) }}{{ $.Values.rocketmq.name }}-namesrv-{{ $index }}:9876;{{ end }}"
+          resources:
+            requests:
+              memory: "{{ .Values.rocketmq.namesrv.resources.requests.memory }}"
+              cpu: "{{ .Values.rocketmq.namesrv.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.rocketmq.namesrv.resources.limits.memory }}"
+              cpu: "{{ .Values.rocketmq.namesrv.resources.limits.cpu }}"
+          readinessProbe:
+            tcpSocket:
+              port: 9876
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 9876
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.rocketmq.name }}-broker-cluster
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.rocketmq.name }}-broker-cluster
+spec:
+  serviceName: {{ .Values.rocketmq.name }}-broker-cluster
+  replicas: {{ .Values.rocketmq.cluster.broker.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.rocketmq.name }}-broker-cluster
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rocketmq.name }}-broker-cluster
+    spec:
+      containers:
+        - name: broker
+          image: "{{ .Values.rocketmq.broker.image.repository }}:{{ .Values.rocketmq.broker.image.tag }}"
+          imagePullPolicy: {{ .Values.rocketmq.broker.image.pullPolicy }}
+          ports:
+            - containerPort: 10911
+            - containerPort: 10912
+          env:
+            - name: NAMESRV_ADDR
+              value: "{{ range $index := until (int .Values.rocketmq.cluster.namesrv.replicas) }}{{ $.Values.rocketmq.name }}-namesrv-{{ $index }}:9876;{{ end }}"
+            - name: BROKER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: BROKER_ROLE
+              value: "ASYNC_MASTER"
+            - name: FLUSH_DISK_TYPE
+              value: "ASYNC_FLUSH"
+          volumeMounts:
+            - name: broker-storage
+              mountPath: /root/store
+            - name: broker-logs
+              mountPath: /root/logs
+          resources:
+            requests:
+              memory: "{{ .Values.rocketmq.broker.resources.requests.memory }}"
+              cpu: "{{ .Values.rocketmq.broker.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.rocketmq.broker.resources.limits.memory }}"
+              cpu: "{{ .Values.rocketmq.broker.resources.limits.cpu }}"
+          readinessProbe:
+            tcpSocket:
+              port: 10911
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 10911
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: broker-storage
+          emptyDir: {}
+        - name: broker-logs
+          emptyDir: {}
+{{- end }}
 {{- end }}
