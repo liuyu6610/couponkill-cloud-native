@@ -1,4 +1,3 @@
-// cmd/server/main.go
 package main
 
 import (
@@ -24,6 +23,7 @@ import (
 	"couponkill-go-service/internal/service"
 	"couponkill-go-service/pkg/mysqlclient"
 	"couponkill-go-service/pkg/redisclient"
+	"couponkill-go-service/pkg/sharding"
 )
 
 // main 是程序的入口函数，负责初始化配置、连接依赖服务、设置路由并启动HTTP服务器。
@@ -85,7 +85,7 @@ func main() {
 	log.Printf("配置加载成功: 端口=%d, Redis地址=%s", cfg.Server.Port, cfg.Redis.Addr)
 
 	// 3. 初始化客户端
-	multiDS, err := mysqlclient.NewMultiMysqlClient(cfg)
+	multiDS, err := initializeMySQLClient(cfg)
 	if err != nil {
 		log.Fatalf("初始化MySQL客户端失败: %v", err)
 	}
@@ -139,4 +139,67 @@ func main() {
 	}
 
 	log.Println("服务器已退出")
+}
+
+// initializeMySQLClient 初始化MySQL客户端
+func initializeMySQLClient(cfg *config.Config) (*sharding.MultiDataSource, error) {
+	// 转换数据源配置格式
+	convertedDataSources := make(map[string]struct{ DSN string })
+	for name, dsConfig := range cfg.Mysql.DataSources {
+		convertedDataSources[name] = struct{ DSN string }{DSN: dsConfig.DSN}
+	}
+
+	// 初始化MySQL客户端
+	multiDS, err := mysqlclient.NewMultiMysqlClient(
+		cfg.Mysql.DSN,
+		convertedDataSources,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("初始化MySQL客户端失败: %v", err)
+	}
+
+	// 将全局MySQL客户端变量设置为新创建的客户端
+	config.MySQLClient = multiDS
+	return multiDS, nil
+}
+
+// monitorMySQLClient 监控MySQL客户端状态并在需要时重新初始化
+func monitorMySQLClient(cfg *config.Config, currentDS *sharding.MultiDataSource) {
+	// 定期检查MySQL客户端是否需要重新初始化
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// 检查全局MySQL客户端是否为nil，表示需要重新初始化
+		if config.MySQLClient == nil {
+			log.Println("检测到MySQL客户端需要重新初始化")
+
+			// 转换数据源配置格式
+			convertedDataSources := make(map[string]struct{ DSN string })
+			for name, dsConfig := range cfg.Mysql.DataSources {
+				convertedDataSources[name] = struct{ DSN string }{DSN: dsConfig.DSN}
+			}
+
+			// 重新初始化MySQL客户端
+			newDS, err := mysqlclient.NewMultiMysqlClient(
+				cfg.Mysql.DSN,
+				convertedDataSources,
+			)
+			if err != nil {
+				log.Printf("重新初始化MySQL客户端失败: %v", err)
+				continue
+			}
+
+			// 更新全局变量
+			config.MySQLClient = newDS
+
+			// 关闭旧的连接
+			currentDS.Close()
+
+			// 更新当前连接引用
+			currentDS = newDS
+
+			log.Println("MySQL客户端重新初始化完成")
+		}
+	}
 }

@@ -1,4 +1,3 @@
-// internal/repository/redis_repo.go
 package repository
 
 import (

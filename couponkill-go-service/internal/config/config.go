@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"couponkill-go-service/pkg/nacosclient"
+	"couponkill-go-service/pkg/redisclient"
 	"couponkill-go-service/pkg/sharding"
 
 	"github.com/redis/go-redis/v9"
@@ -372,27 +373,32 @@ func isConfigChanged(oldCfg, newCfg *Config) bool {
 // initializeMiddlewareConnections 根据配置重新初始化中间件连接
 func initializeMiddlewareConnections(cfg *Config) {
 	// 重新初始化Redis连接
-	if cfg.Redis.Cluster.Enabled && len(cfg.Redis.Cluster.Nodes) > 0 {
+	if cfg.Middleware.Redis.Cluster.Enabled && len(cfg.Middleware.Redis.Cluster.Nodes) > 0 {
 		// 集群模式
 		log.Println("重新初始化Redis集群连接")
 		if RedisClusterClient != nil {
 			RedisClusterClient.Close()
 		}
-		// TODO: 初始化Redis集群客户端
-	} else if cfg.Redis.Sentinel.Enabled && len(cfg.Redis.Sentinel.Nodes) > 0 {
+		RedisClusterClient = redisclient.NewRedisClusterClient(cfg.Middleware.Redis.Cluster.Nodes, cfg.Redis.Password)
+	} else if cfg.Middleware.Redis.Sentinel.Enabled && len(cfg.Middleware.Redis.Sentinel.Nodes) > 0 {
 		// 哨兵模式
 		log.Println("重新初始化Redis哨兵连接")
 		if RedisClient != nil {
 			RedisClient.Close()
 		}
-		// TODO: 初始化Redis哨兵客户端
+		RedisClient = redisclient.NewRedisSentinelClient(
+			cfg.Middleware.Redis.Sentinel.Nodes,
+			cfg.Middleware.Redis.Sentinel.MasterName,
+			cfg.Middleware.Redis.Sentinel.Password,
+			cfg.Redis.DB,
+		)
 	} else {
 		// 单节点模式
 		log.Println("重新初始化Redis单节点连接")
 		if RedisClient != nil {
 			RedisClient.Close()
 		}
-		// TODO: 初始化Redis单节点客户端
+		RedisClient = redisclient.NewRedisClient(cfg.Redis.Addr, cfg.Redis.UserName, cfg.Redis.Password, cfg.Redis.DB)
 	}
 
 	// 重新初始化MySQL连接
@@ -400,5 +406,8 @@ func initializeMiddlewareConnections(cfg *Config) {
 	if MySQLClient != nil {
 		MySQLClient.Close()
 	}
-	// TODO: 初始化MySQL客户端
+
+	// 发送通知信号，让main.go重新初始化MySQL客户端
+	// 这里我们简单地将MySQLClient设置为nil，表示需要重新初始化
+	MySQLClient = nil
 }
