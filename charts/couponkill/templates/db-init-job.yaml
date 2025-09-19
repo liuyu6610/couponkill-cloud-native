@@ -54,13 +54,13 @@ spec:
                     ;;
                   "group-replication")
                     echo "Connecting to MySQL group replication cluster"
-                    MYSQL_HOST="{{ .Values.mysql.cluster.groupReplication.nodes[0].host }}"
-                    MYSQL_PORT="{{ .Values.mysql.cluster.groupReplication.nodes[0].port }}"
+                    MYSQL_HOST="{{ (index .Values.mysql.cluster.groupReplication.nodes 0).host }}"
+                    MYSQL_PORT="{{ (index .Values.mysql.cluster.groupReplication.nodes 0).port }}"
                     ;;
                   "innodb-cluster")
                     echo "Connecting to MySQL InnoDB cluster"
-                    MYSQL_HOST="{{ .Values.mysql.cluster.innodbCluster.nodes[0].host }}"
-                    MYSQL_PORT="{{ .Values.mysql.cluster.innodbCluster.nodes[0].port }}"
+                    MYSQL_HOST="{{ (index .Values.mysql.cluster.innodbCluster.nodes 0).host }}"
+                    MYSQL_PORT="{{ (index .Values.mysql.cluster.innodbCluster.nodes 0).port }}"
                     ;;
                   *)
                     echo "Unknown cluster type, using default configuration"
