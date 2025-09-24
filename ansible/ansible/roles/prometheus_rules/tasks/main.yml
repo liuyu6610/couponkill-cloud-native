@@ -1,0 +1,32 @@
+---
+- name: Ensure rules dir
+  ansible.builtin.file:
+    path: "{{ prom_rules_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Render node rules
+  ansible.builtin.template:
+    src: rules-node.yml.j2
+    dest: "{{ prom_rules_dir }}/node.yml"
+    mode: "0644"
+
+- name: Render app rules
+  ansible.builtin.template:
+    src: rules-app.yml.j2
+    dest: "{{ prom_rules_dir }}/app.yml"
+    mode: "0644"
+
+- name: Reload prometheus
+  ansible.builtin.shell: "kill -HUP $(pidof prometheus) || true"
+  args: { warn: false }
+
+- name: Render Alertmanager config
+  ansible.builtin.template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_cfg }}"
+    mode: "0644"
+
+- name: Reload alertmanager
+  ansible.builtin.shell: "kill -HUP $(pidof alertmanager) || true"
+  args: { warn: false }

@@ -1,0 +1,17 @@
+route:
+  receiver: {{ am_route.receiver }}
+  group_by: {{ am_route.group_by }}
+  group_wait: {{ am_route.group_wait }}
+  group_interval: {{ am_route.group_interval }}
+  repeat_interval: {{ am_route.repeat_interval }}
+
+receivers:
+{% for r in am_receivers %}
+  - name: {{ r.name }}
+  {% if r.webhook_configs is defined %}
+    webhook_configs:
+  {% for wh in r.webhook_configs %}
+      - url: "{{ wh.url }}"
+  {% endfor %}
+  {% endif %}
+{% endfor %}

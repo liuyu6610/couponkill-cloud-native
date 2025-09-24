@@ -1,0 +1,15 @@
+upstream {{ bg_upstream_name }}_blue  { server 127.0.0.1:{{ service_port }}; }
+upstream {{ bg_upstream_name }}_green { server 127.0.0.1:{{ service_port }}; }
+
+map $bg_color_active $upstream_name {
+default {{ bg_upstream_name }}_{{ bg_color_active }};
+}
+
+server {
+listen 80;
+location / {
+proxy_pass http://$upstream_name;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+}
+}

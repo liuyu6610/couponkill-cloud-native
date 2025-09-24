@@ -1,0 +1,18 @@
+# playbooks/provision_ecs.yml
+---
+- name: Show ECS instances in region
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  collections:
+    - community.general
+    - alibaba.alicloud
+  tasks:
+    - name: Gather instance info (示例：community.general)
+      community.general.ali_instance_info:
+        region: "{{ lookup('env', 'ALICLOUD_REGION') | default('cn-hangzhou') }}"
+      register: ecs_info
+
+    - name: Print count
+      ansible.builtin.debug:
+        msg: "ECS instances found: {{ ecs_info.instances | length }}"

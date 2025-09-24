@@ -1,0 +1,17 @@
+level: INFO
+appenders:
+  console:
+    type: console
+    pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+  file:
+    type: file
+    path: "{{ shared_dir }}/logs/{{ app_name }}.log"
+    rotate:
+      max_size: "100MB"
+      max_backups: 10
+loggers:
+  root:
+    level: "{{ log_level | default('INFO') }}"
+    appenders: [console, file]
+  app:
+    level: "{{ app_log_level | default('INFO') }}"

@@ -1,0 +1,47 @@
+---
+- name: Ensure arms dir
+  ansible.builtin.file:
+    path: "{{ arms_agent_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Download ARMS java agent (if url provided)
+  when: arms_java_agent_url | length > 0
+  ansible.builtin.get_url:
+    url: "{{ arms_java_agent_url }}"
+    dest: "{{ arms_java_agent_jar }}"
+    mode: "0644"
+
+- name: Render arms properties
+  ansible.builtin.template:
+    src: arms-java.properties.j2
+    dest: "{{ arms_agent_dir }}/arms.properties"
+    mode: "0644"
+
+# —— 对于 systemd 形式（JAR/二进制），用 drop-in 注入 JAVA_TOOL_OPTIONS —— #
+- name: Inject JAVA_TOOL_OPTIONS via systemd drop-in
+  when: artifact_type in ['jar','binary']
+  block:
+    - name: Create drop-in dir
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ app_name }}.service.d"
+        state: directory
+        mode: "0755"
+    - name: Write override
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ app_name }}.service.d/arms.conf"
+        mode: "0644"
+        content: |
+          [Service]
+          Environment="JAVA_TOOL_OPTIONS=-javaagent:{{ arms_java_agent_jar }} -Darms.tenant={{ arms_namespace }} -Darms.appName={{ arms_app_name }} -Darms.config={{ arms_agent_dir }}/arms.properties"
+    - name: Reload & restart
+      ansible.builtin.systemd:
+        name: "{{ app_name }}"
+        state: restarted
+        daemon_reload: true
+
+# —— 对于容器，向 deploy_service 的 container_env 追加 —— #
+- name: Set fact for container env
+  when: artifact_type == 'container'
+  ansible.builtin.set_fact:
+    container_env: "{{ (container_env | default([])) + ['JAVA_TOOL_OPTIONS=-javaagent:'+ arms_java_agent_jar +' -Darms.tenant='+ arms_namespace +' -Darms.appName='+ arms_app_name +' -Darms.config='+ arms_agent_dir +'/arms.properties'] }}"

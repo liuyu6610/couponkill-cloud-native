@@ -1,0 +1,39 @@
+---
+- name: Install Nginx
+  ansible.builtin.package:
+    name: "{{ nginx_package_name }}"
+    state: present
+
+- name: Ensure dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /etc/nginx/conf.d
+    - /etc/nginx/certs
+
+- name: Generate self-signed cert (optional)
+  when: tls_enabled and (tls_cert_path is defined) and (tls_key_path is defined) and (not (tls_cert_path is exists) or not (tls_key_path is exists))
+  ansible.builtin.shell: |
+    openssl req -x509 -nodes -newkey rsa:2048 -keyout {{ tls_key_path }} -out {{ tls_cert_path }} -days 3650 -subj "/CN={{ site_server_name }}"
+  args: { warn: false }
+
+- name: Render site conf
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: "/etc/nginx/conf.d/{{ app_name | default('site') }}.conf"
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Ensure Nginx running
+  ansible.builtin.service:
+    name: nginx
+    enabled: true
+    state: started
+
+handlers:
+  - name: Reload nginx
+    ansible.builtin.service:
+      name: nginx
+      state: reloaded

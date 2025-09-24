@@ -1,0 +1,1 @@
+db_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=kv/data/yourapp/db field=password url=https://vault.yourcorp.com token={{ vault_token }}') }}"

@@ -1,0 +1,58 @@
+---
+- name: Ensure service group
+  ansible.builtin.group:
+    name: "{{ service_group }}"
+    state: present
+
+- name: Ensure service user
+  ansible.builtin.user:
+    name: "{{ service_user }}"
+    group: "{{ service_group }}"
+    shell: /sbin/nologin
+    create_home: false
+    system: true
+
+- name: Ensure base dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ service_group }}"
+    mode: "0755"
+  loop:
+    - "{{ app_base_dir }}"
+    - "{{ releases_dir }}"
+    - "{{ shared_dir }}"
+    - "{{ shared_dir }}/config"
+    - "{{ shared_dir }}/logs"
+    - "{{ shared_dir }}/data"
+
+- name: Validate artifact_type
+  ansible.builtin.assert:
+    that:
+      - artifact_type in ['container','jar','binary']
+    fail_msg: "artifact_type 必须为 container/jar/binary"
+
+- name: Check runtime or JDK when needed
+  block:
+    - name: Check docker/nerdctl
+      ansible.builtin.shell: |
+        set -e
+        if [ "{{ container_runtime }}" = "docker" ]; then command -v docker >/dev/null
+        else command -v nerdctl >/dev/null
+        fi
+      changed_when: false
+      when: artifact_type == 'container'
+    - name: Ensure Java for JAR
+      ansible.builtin.package:
+        name: "{{ (ansible_facts.os_family == 'Debian') | ternary('openjdk-17-jre-headless','java-17-openjdk') }}"
+        state: present
+      when: artifact_type == 'jar'
+  rescue:
+    - ansible.builtin.fail:
+        msg: "运行时/依赖检查失败，请确认目标机具备相应依赖"
+
+- name: Determine compose command
+  ansible.builtin.set_fact:
+    compose_cmd: "{{ 'docker compose' if container_runtime == 'docker' else 'nerdctl compose' }}"
+  when: artifact_type == 'container'

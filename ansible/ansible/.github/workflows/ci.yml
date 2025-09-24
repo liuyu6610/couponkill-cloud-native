@@ -1,0 +1,36 @@
+name: Ansible CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  lint-and-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "ansible>=2.15" ansible-lint footmark
+          ansible-galaxy collection install -r collections/requirements.yml
+
+      - name: Syntax check
+        run: |
+          ansible-playbook --syntax-check playbooks/bootstrap.yml
+          ansible-playbook --syntax-check playbooks/deploy.yml
+          ansible-playbook --syntax-check playbooks/rollback.yml
+
+      - name: ansible-lint
+        run: ansible-lint -v
+
+      - name: Inventory smoke (no creds)
+        run: |
+          ansible-inventory -i inventories/alicloud --list >/dev/null || true

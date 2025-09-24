@@ -1,0 +1,11 @@
+---
+- name: Bootstrap baseline
+  hosts: "tag_env=prod"   # 也可 ":&tag_role=web" 等交集
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: common
+    - role: docker
+    - role: node_exporter
+    - role: sls_logtail           # 或者 fluent_bit_to_sls
+    - role: arms_agent            # 若启用 ARMS

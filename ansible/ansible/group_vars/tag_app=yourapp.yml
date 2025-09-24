@@ -1,0 +1,63 @@
+# —— 应用基础 —— #
+app_name: yourapp
+service_user: app
+service_group: app
+service_port: 8080
+app_env: prod                    # 也可来自 tag_env
+artifact_type: container         # container | jar | binary
+app_version: "2025.09.24-001"   # 版本号/镜像tag
+deploy_strategy: rolling         # rolling | canary | blue_green
+
+# —— 路径约定（统一 releases / current 语义） —— #
+app_base_dir: "/opt/apps/{{ app_name }}"
+releases_dir: "{{ app_base_dir }}/releases"
+current_dir:  "{{ app_base_dir }}/current"
+shared_dir:   "{{ app_base_dir }}/shared"   # 放置持久化 config / logs / data
+
+# —— 容器/JAR/二进制 各自参数 —— #
+container_image: "registry.cn-hangzhou.aliyuncs.com/yourproj/{{ app_name }}:{{ app_version }}"
+container_runtime: docker        # docker | containerd
+container_env:                   # 环境变量（容器/JAR/二进制均可复用）
+  - "JAVA_TOOL_OPTIONS=-Xms512m -Xmx1024m"
+  - "SPRING_PROFILES_ACTIVE={{ app_env }}"
+
+jar_download_url: "https://your-oss/yourapp/{{ app_version }}/app.jar"
+binary_download_url: "https://your-oss/yourapp/{{ app_version }}/yourapp_linux_amd64"
+binary_exec_args: ["-config", "{{ current_dir }}/config/app.yml"]
+
+# —— 动态配置（统一模板化） —— #
+config_templates:
+  - src: "app.yml.j2"
+    dest: "{{ shared_dir }}/config/app.yml"
+  - src: "logging.yml.j2"
+    dest: "{{ shared_dir }}/config/logging.yml"
+
+# —— 健康检查 —— #
+healthcheck:
+  type: http            # http | tcp | cmd
+  path: /healthz
+  port: "{{ service_port }}"
+  interval: 5
+  retries: 30
+  cmd: "curl -fsS http://127.0.0.1:{{ service_port }}/healthz"
+
+# —— 滚动 & 金丝雀 —— #
+rolling_serial: "20%"   # 支持 "1" | "30%" | "2" 等
+canary_batch:  "5%"     # 首批金丝雀比例
+promote_wait:  300      # 金丝雀观测秒数
+
+# —— 蓝绿 —— #
+bg_color_active: blue   # blue | green
+nginx_managed: true     # 使用 Nginx 本地切源；false 表示依赖 SLB 组
+bg_upstream_name: "{{ app_name }}_upstream"
+
+# —— 流量管理（SLB 可选） —— #
+slb_enabled: false
+slb_region: "cn-hangzhou"
+slb_instance_id: ""                   # 你的 SLB/ALB/NLB 实例
+slb_server_group_id: ""               # 后端服务器组ID（推荐）
+slb_drain_wait: 20                    # 摘流量后等待
+slb_backend_port: "{{ service_port }}"
+
+# —— 版本保留 —— #
+keep_releases: 5

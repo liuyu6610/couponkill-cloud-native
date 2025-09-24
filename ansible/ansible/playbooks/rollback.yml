@@ -1,0 +1,48 @@
+---
+- name: App Rollback
+  hosts: "tag_env=prod:&tag_app=yourapp"
+  become: yes
+  gather_facts: no
+
+  vars:
+    rollback_steps: 1   # 回滚到上一个版本；可设置为 2/3...
+
+  tasks:
+    - name: Find releases
+      ansible.builtin.shell: "ls -1dt {{ releases_dir }}/*"
+      register: _ls
+      changed_when: false
+
+    - name: Choose target release
+      ansible.builtin.set_fact:
+        target_release: "{{ (_ls.stdout_lines | default([]))[rollback_steps] | default('') }}"
+
+    - name: Fail if no target
+      ansible.builtin.fail:
+        msg: "No rollback target found"
+      when: target_release == ""
+
+    - name: Symlink to target
+      ansible.builtin.file:
+        src: "{{ target_release }}"
+        dest: "{{ current_dir }}"
+        state: link
+        force: true
+
+    - name: Restart service (jar/binary)
+      when: artifact_type in ['jar','binary']
+      ansible.builtin.systemd:
+        name: "{{ app_name }}"
+        state: restarted
+        daemon_reload: true
+
+    - name: Compose up (container)
+      when: artifact_type == 'container'
+      ansible.builtin.shell: |
+        {{ 'docker compose' if container_runtime == 'docker' else 'nerdctl compose' }} -f {{ current_dir }}/docker-compose.yml up -d
+      args: { warn: false }
+
+    - name: Post-rollback healthcheck
+      include_role:
+        name: deploy_service
+        tasks_from: healthcheck.yml

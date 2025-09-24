@@ -1,0 +1,23 @@
+---
+# —— 使用 SLB 后端服务器组摘流量 —— #
+- name: Drain from SLB server group
+  when: slb_enabled
+  community.general.ali_slb_backend:  # 如需使用 alibaba.alicloud 集合，请换成对应模块名
+    state: absent
+    instance_id: "{{ slb_instance_id }}"
+    server_group_id: "{{ slb_server_group_id }}"
+    backend_servers:
+      - server_id: "{{ ansible_ec2_instance_id | default(inventory_hostname) }}"
+        port: "{{ slb_backend_port }}"
+  register: _slb_drain
+
+- name: Wait after SLB drain
+  when: slb_enabled
+  ansible.builtin.pause:
+    seconds: "{{ slb_drain_wait }}"
+
+# —— 使用本地 Nginx 进行逐机下线（通过临时禁用 upstream 中本机；此处示例略化） —— #
+- name: Disable local upstream (nginx)
+  when: nginx_managed and not slb_enabled
+  ansible.builtin.shell: "sed -i '/127.0.0.1:{{ service_port }}/ s/^/#/g' /etc/nginx/conf.d/{{ app_name }}.conf && nginx -s reload"
+  args: { warn: false }

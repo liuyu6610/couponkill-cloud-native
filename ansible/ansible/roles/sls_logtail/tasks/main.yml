@@ -1,0 +1,45 @@
+---
+- name: Install ilogtail (package)
+  ansible.builtin.package:
+    name: "{{ sls_ilogtail_pkg_name }}"
+    state: present
+  when: sls_install_method == 'package'
+  register: _ilog_pkg
+  retries: 2
+  delay: 5
+  until: _ilog_pkg is succeeded
+
+- name: Install ilogtail from URL (fallback)
+  when: sls_install_method == 'url' and sls_ilogtail_download_url | length > 0
+  block:
+    - ansible.builtin.get_url:
+        url: "{{ sls_ilogtail_download_url }}"
+        dest: "/tmp/ilogtail.pkg"
+        mode: "0644"
+    - ansible.builtin.shell: |
+        if command -v rpm >/dev/null 2>&1; then
+          rpm -Uvh --force /tmp/ilogtail.pkg
+        elif command -v dpkg >/dev/null 2>&1; then
+          dpkg -i /tmp/ilogtail.pkg || apt-get -f install -y
+        else
+          echo "unsupported package mgr" && exit 1
+      args: { warn: false }
+
+- name: Ensure config dir exists
+  ansible.builtin.file:
+    path: /etc/ilogtail/user_config.d
+    state: directory
+    mode: "0755"
+
+- name: Render ilogtail config (per-app)
+  ansible.builtin.template:
+    src: "ilogtail-{{ app_name | default('app') }}.json.j2"
+    dest: "/etc/ilogtail/user_config.d/{{ app_name | default('app') }}.json"
+    mode: "0644"
+
+- name: Enable & restart ilogtail
+  ansible.builtin.systemd:
+    name: "{{ ilogtail_service_name }}"
+    enabled: true
+    state: restarted
+    daemon_reload: true

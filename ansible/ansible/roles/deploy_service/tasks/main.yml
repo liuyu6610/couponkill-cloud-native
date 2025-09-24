@@ -1,0 +1,14 @@
+---
+- import_tasks: precheck.yml
+- import_tasks: fetch_artifact.yml
+- import_tasks: render_configs.yml
+
+- name: Deploy by artifact type
+  include_tasks: "{{ item }}"
+  with_first_found:
+    - files:
+        - "deploy_{{ artifact_type }}.yml"
+      skip: true
+
+- import_tasks: healthcheck.yml
+- import_tasks: finalize.yml

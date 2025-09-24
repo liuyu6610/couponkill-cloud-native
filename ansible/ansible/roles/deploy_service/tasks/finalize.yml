@@ -1,0 +1,11 @@
+---
+- name: Mark release
+  ansible.builtin.copy:
+    dest: "{{ current_dir }}/.release"
+    content: "{{ release_id }}"
+    mode: "0644"
+
+- name: Purge old releases
+  ansible.builtin.shell: |
+    ls -1dt {{ releases_dir }}/* | tail -n +{{ keep_releases + 1 }} | xargs -r rm -rf
+  args: { warn: false }

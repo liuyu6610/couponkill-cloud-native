@@ -1,0 +1,38 @@
+{
+  "inputs": [
+    {% for item in sls_log_paths %}
+    {
+      "Type": "file",
+      "Path": "{{ item.path }}",
+      "Tags": {
+        {% for k,v in sls_labels.items() %}
+        "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
+        {% endfor %}
+      },
+      "Topic": "{{ item.topic }}",
+      {% if item.multiline.enabled %}
+      "Multiline": {
+        "StartLineRegex": "{{ item.multiline.start_regex }}",
+        "UnmatchedContentTreatment": "as_firstline"
+      },
+      {% endif %}
+      "Parser": {
+        "Type": {{ "json" if item.parse_json else "","" | trim | default("\"delimiter\"") }},
+        {% if item.parse_json %}
+        "PreserveRawLog": false
+        {% else %}
+        "Delimiter": "\n"
+        {% endif %}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "flushers": [
+    {
+      "Type": "sls",
+      "Endpoint": "{{ sls_endpoint }}",
+      "Project": "{{ sls_project }}",
+      "Logstore": "{{ sls_logstore }}"
+    }
+  ]
+}

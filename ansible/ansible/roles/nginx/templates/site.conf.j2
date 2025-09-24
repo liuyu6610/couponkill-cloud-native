@@ -1,0 +1,39 @@
+worker_processes {{ nginx_worker_processes }};
+
+events {
+worker_connections {{ nginx_worker_connections }};
+}
+
+http {
+upstream {{ app_name | default('site') }}_upstream {
+server {{ site_upstream }};
+keepalive 64;
+}
+
+{% if tls_enabled %}
+    server {
+    listen 443 ssl;
+    server_name {{ site_server_name }};
+    ssl_certificate {{ tls_cert_path }};
+    ssl_certificate_key {{ tls_key_path }};
+    location / {
+    proxy_pass http://{{ app_name | default('site') }}_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    }
+    server { listen 80; return 301 https://$host$request_uri; }
+{% else %}
+    server {
+    listen 80;
+    server_name {{ site_server_name }};
+    location / {
+    proxy_pass http://{{ app_name | default('site') }}_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    }
+{% endif %}
+}

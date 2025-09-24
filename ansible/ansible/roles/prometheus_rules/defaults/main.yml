@@ -1,0 +1,16 @@
+prom_rules_dir: /etc/prometheus/rules
+alertmanager_cfg: /etc/alertmanager/alertmanager.yml
+
+# 告警接收（示例：WebHook；也可 DingTalk/Feishu/Email）
+am_receivers:
+  - name: default
+    webhook_configs:
+      - url: "https://alert-webhook.yourcorp.com/prom"
+
+# 路由（示例）
+am_route:
+  receiver: default
+  group_by: ["alertname","job","instance"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h

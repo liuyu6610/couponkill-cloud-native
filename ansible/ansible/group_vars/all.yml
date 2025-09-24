@@ -1,0 +1,30 @@
+# 系统与用户
+timezone: Asia/Shanghai
+common_users:
+  - name: devops
+    uid: 2001
+    groups: sudo
+    ssh_pubkey: "{{ lookup('file', 'files/keys/devops.pub') }}"
+    sudo_nopasswd: true
+
+# SSH/安全
+ssh_port: 22
+disable_root_ssh: true
+password_auth: false
+fail2ban_enabled: true
+
+# 包与时钟/内核
+common_packages:
+  - vim
+  - curl
+  - wget
+  - htop
+ntp_servers:
+  - ntp.aliyun.com
+
+# 连接参数（如存在跳板机，可在 prod 组覆盖）
+ansible_user: ecs-user
+ansible_ssh_common_args: ""
+
+# 日志/监控（后续章节详细）
+node_exporter_version: "1.8.1"

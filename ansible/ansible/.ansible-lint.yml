@@ -1,0 +1,22 @@
+profile: production
+exclude_paths:
+  - .venv/
+  - .ansible_cache/
+warn_list:
+  - experimental
+  - fqcn-builtins  # 鼓励使用 FQCN，可逐步修复
+parseable: true
+kinds:
+  - playbook
+  - tasks
+  - handlers
+  - roles
+  - vars
+mock_modules:
+  - community.general.ali_slb_backend
+  - alibaba.alicloud.ecs_instance
+require-collections:
+  - alibaba.alicloud
+  - community.general
+  - ansible.posix
+  - community.docker

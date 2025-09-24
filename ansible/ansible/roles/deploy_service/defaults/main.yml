@@ -1,0 +1,19 @@
+app_name: app
+artifact_type: container
+deploy_strategy: rolling
+rolling_serial: "30%"
+canary_batch: "10%"
+promote_wait: 180
+bg_color_active: blue
+keep_releases: 5
+container_runtime: docker
+healthcheck:
+  type: http
+  path: /healthz
+  port: 8080
+  interval: 5
+  retries: 30
+  cmd: "true"
+config_templates: []
+nginx_managed: false
+slb_enabled: false

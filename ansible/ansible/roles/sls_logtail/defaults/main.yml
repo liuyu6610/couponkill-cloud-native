@@ -1,0 +1,35 @@
+# 安装方式：package（优先）或 url（从你们的 OSS/镜像仓下载 rpm/deb）
+sls_install_method: package
+sls_ilogtail_pkg_name: ilogtail
+
+# 备用：手动下载地址（rpm/deb）
+sls_ilogtail_download_url: ""   # 例如 https://oss-xxx/ilogtail-1.10.x.amd64.rpm
+
+# SLS 目标
+sls_endpoint: "cn-hangzhou.log.aliyuncs.com"
+sls_project:  "your-sls-project"
+sls_logstore: "your-logstore"
+
+# 机器维度标签（自动加到每条日志）
+sls_labels:
+  env: "{{ app_env | default('prod') }}"
+  app: "{{ app_name | default('app') }}"
+  role: "{{ hostvars[inventory_hostname]['group_names'] | select('match','^tag_role=.*') | list | first | default('tag_role=na') }}"
+  region: "{{ hostvars[inventory_hostname].alicloud_region | default('cn-hangzhou') | string }}"
+
+# 采集路径（可按需覆盖/追加）
+sls_log_paths:
+  - path: "{{ shared_dir | default('/opt/apps/'+app_name+'/shared') }}/logs/*.log"
+    topic: "app"
+    multiline:
+      enabled: true
+      start_regex: "^(\\d{4}-\\d{2}-\\d{2}|\\[\\d{4}-\\d{2}-\\d{2})"  # Java/通用
+    parse_json: true
+  - path: "/var/log/messages"
+    topic: "syslog"
+    multiline:
+      enabled: false
+    parse_json: false
+
+# 服务名
+ilogtail_service_name: ilogtail

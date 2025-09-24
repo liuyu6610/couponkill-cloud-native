@@ -1,0 +1,4 @@
+ansible_user: ecs-user
+ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+# 如需经跳板机：
+# ansible_ssh_common_args: "-o ProxyJump bastion@bastion.prod.yourcorp.com"

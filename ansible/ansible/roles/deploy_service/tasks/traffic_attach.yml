@@ -1,0 +1,15 @@
+---
+- name: Attach back to SLB server group
+  when: slb_enabled
+  community.general.ali_slb_backend:
+    state: present
+    instance_id: "{{ slb_instance_id }}"
+    server_group_id: "{{ slb_server_group_id }}"
+    backend_servers:
+      - server_id: "{{ ansible_ec2_instance_id | default(inventory_hostname) }}"
+        port: "{{ slb_backend_port }}"
+
+- name: Enable local upstream (nginx)
+  when: nginx_managed and not slb_enabled
+  ansible.builtin.shell: "sed -i '/127.0.0.1:{{ service_port }}/ s/^#//g' /etc/nginx/conf.d/{{ app_name }}.conf && nginx -s reload"
+  args: { warn: false }

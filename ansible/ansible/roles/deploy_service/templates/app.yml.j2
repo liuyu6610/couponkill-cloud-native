@@ -1,0 +1,20 @@
+app:
+  name: {{ app_name }}
+  env: {{ app_env }}
+  http:
+    port: {{ service_port }}
+  upstreams:
+    - "127.0.0.1:{{ service_port }}"
+runtime:
+  logs_dir: "{{ shared_dir }}/logs"
+  data_dir: "{{ shared_dir }}/data"
+  config_dir: "{{ shared_dir }}/config"
+database:
+  host: "{{ db_host | default('127.0.0.1') }}"
+  port: {{ db_port | default(3306) }}
+  user: "{{ db_user | default('app') }}"
+  password: "{{ db_password | default('changeme') }}"
+  name: "{{ db_name | default(app_name) }}"
+features:
+  enable_metrics: true
+  enable_tracing: false

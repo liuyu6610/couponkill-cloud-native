@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  {{ app_name }}:
+  image: "{{ container_image }}"
+  restart: always
+  env_file: []
+  environment:
+      {% for e in container_env %} - {{ e }}
+      {% endfor %}
+  ports:
+    - "{{ service_port }}:{{ service_port }}"
+  volumes:
+    - "{{ shared_dir }}/config:/app/config:ro"
+    - "{{ shared_dir }}/logs:/app/logs"
+    - "{{ shared_dir }}/data:/app/data"
+  command: []

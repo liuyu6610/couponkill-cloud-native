@@ -1,0 +1,9 @@
+nginx_package_name: nginx
+nginx_user: nginx
+nginx_worker_processes: "auto"
+nginx_worker_connections: 4096
+tls_enabled: false
+tls_cert_path: "/etc/nginx/certs/{{ app_name | default('site') }}.crt"
+tls_key_path:  "/etc/nginx/certs/{{ app_name | default('site') }}.key"
+site_server_name: "_"
+site_upstream: "127.0.0.1:{{ service_port | default(8080) }}"

@@ -1,0 +1,15 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "slb:AddVServerGroupBackendServers",
+        "slb:RemoveVServerGroupBackendServers",
+        "slb:SetVServerGroupAttribute",
+        "slb:DescribeVServerGroupAttribute"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

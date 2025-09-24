@@ -1,0 +1,68 @@
+---
+- name: Set timezone
+  ansible.builtin.file:
+    path: /etc/localtime
+    state: link
+    src: "/usr/share/zoneinfo/{{ timezone | default('Asia/Shanghai') }}"
+
+- name: Ensure base packages
+  ansible.builtin.package:
+    name: "{{ common_packages }}"
+    state: present
+  register: pkg_result
+  retries: 3
+  delay: 5
+  until: pkg_result is succeeded
+
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid | default(omit) }}"
+    groups: "{{ item.groups | default(omit) }}"
+    shell: /bin/bash
+    state: present
+  loop: "{{ common_users | default([]) }}"
+
+- name: Authorized keys
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_pubkey }}"
+    state: present
+  loop: "{{ common_users | default([]) }}"
+
+- name: Harden SSH
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    mode: "0600"
+  notify: Restart sshd
+
+- name: Ensure chrony
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: Configure chrony servers
+  ansible.builtin.lineinfile:
+    path: /etc/chrony.conf
+    regexp: "^server "
+    line: "server {{ item }} iburst"
+    state: present
+  loop: "{{ ntp_servers }}"
+  notify: Restart chrony
+
+- name: Kernel params (sanity example)
+  ansible.posix.sysctl:
+    name: net.ipv4.tcp_syncookies
+    value: "1"
+    state: present
+
+handlers:
+  - name: Restart sshd
+    ansible.builtin.service:
+      name: sshd
+      state: restarted
+  - name: Restart chrony
+    ansible.builtin.service:
+      name: chronyd
+      state: restarted

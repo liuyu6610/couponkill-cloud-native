@@ -1,0 +1,6 @@
+---
+collections:
+  - name: alibaba.alicloud   # 阿里云官方 Collection（推荐）
+  - name: community.general  # 补充历史 ali_* 模块与通用工具
+  - name: ansible.posix
+  - name: community.docker

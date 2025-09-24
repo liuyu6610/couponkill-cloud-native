@@ -1,0 +1,22 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeInstances",
+        "ecs:DescribeInstanceAttribute",
+        "ecs:DescribeTags",
+        "ecs:DescribeSecurityGroups",
+        "vpc:DescribeVpcs",
+        "vpc:DescribeVSwitches",
+        "vpc:DescribeRouteTables",
+        "slb:DescribeLoadBalancers",
+        "slb:DescribeVServerGroups",
+        "slb:DescribeVServerGroupAttribute",
+        "tag:ListTagResources"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

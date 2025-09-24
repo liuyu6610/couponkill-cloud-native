@@ -1,0 +1,27 @@
+---
+- name: Download binary
+  ansible.builtin.get_url:
+    url: "{{ binary_download_url }}"
+    dest: "{{ releases_dir }}/{{ release_id }}/{{ app_name }}"
+    mode: "0755"
+    force: true
+
+- name: Render systemd unit
+  ansible.builtin.template:
+    src: systemd.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+    mode: "0644"
+
+- name: Symlink current -> new release
+  ansible.builtin.file:
+    src: "{{ releases_dir }}/{{ release_id }}"
+    dest: "{{ current_dir }}"
+    state: link
+    force: true
+
+- name: Reload & restart service
+  ansible.builtin.systemd:
+    name: "{{ app_name }}"
+    state: restarted
+    enabled: true
+    daemon_reload: true

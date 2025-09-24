@@ -1,0 +1,21 @@
+[Unit]
+Description={{ app_name }} service
+After=network.target
+
+[Service]
+User={{ service_user }}
+Group={{ service_group }}
+WorkingDirectory={{ current_dir }}
+{% if artifact_type == 'jar' -%}
+    ExecStart=/usr/bin/java -jar {{ current_dir }}/app.jar
+{% elif artifact_type == 'binary' -%}
+    ExecStart={{ current_dir }}/{{ app_name }} {{ binary_exec_args | join(' ') }}
+{% else -%}
+    ExecStart=/usr/bin/true
+{% endif -%}
+Restart=always
+RestartSec=3
+Environment={{ container_env | default([]) | join(' ') }}
+
+[Install]
+WantedBy=multi-user.target

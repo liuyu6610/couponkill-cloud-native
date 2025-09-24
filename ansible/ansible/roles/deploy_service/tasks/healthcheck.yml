@@ -1,0 +1,28 @@
+---
+- name: Wait for service healthy (http)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ healthcheck.port }}{{ healthcheck.path | default('/') }}"
+    status_code: 200
+  register: _hc
+  retries: "{{ healthcheck.retries }}"
+  delay: "{{ healthcheck.interval }}"
+  until: _hc is succeeded
+  when: healthcheck.type == 'http'
+
+- name: Wait for service healthy (tcp)
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ healthcheck.port }}"
+    delay: 1
+    sleep: "{{ healthcheck.interval }}"
+    timeout: "{{ healthcheck.interval * healthcheck.retries }}"
+  when: healthcheck.type == 'tcp'
+
+- name: Wait for service healthy (cmd)
+  ansible.builtin.shell: "{{ healthcheck.cmd }}"
+  register: _hc_cmd
+  retries: "{{ healthcheck.retries }}"
+  delay: "{{ healthcheck.interval }}"
+  until: _hc_cmd.rc == 0
+  changed_when: false
+  when: healthcheck.type == 'cmd'

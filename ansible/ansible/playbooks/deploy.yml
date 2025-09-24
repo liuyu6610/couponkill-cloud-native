@@ -1,0 +1,112 @@
+---
+- name: App Deploy (rolling/canary/blue_green)
+  hosts: "tag_env=prod:&tag_app=yourapp"
+  become: yes
+  gather_facts: yes
+
+  vars:
+    target_group: "tag_env=prod:&tag_app=yourapp"
+
+  pre_tasks:
+    - name: Build deployment inventory facts
+      run_once: true
+      delegate_to: localhost
+      vars:
+        all_targets: "{{ groups[target_group] | default([]) }}"
+      set_fact:
+        canary_size: "{{ (all_targets | length * (canary_batch | regex_replace('%','') | int) / 100) | round(0,'ceil') | int if canary_batch is search('%') else (canary_batch | int) }}"
+        canary_hosts: "{{ (all_targets | shuffle)[: (canary_size | int)] }}"
+        non_canary_hosts: "{{ all_targets | difference(canary_hosts) }}"
+      when: deploy_strategy == 'canary'
+
+    - name: Create dynamic groups for canary
+      run_once: true
+      delegate_to: localhost
+      add_host:
+        name: "{{ item }}"
+        groups: "canary"
+      loop: "{{ canary_hosts | default([]) }}"
+      when: deploy_strategy == 'canary'
+
+    - name: Add non-canary group
+      run_once: true
+      delegate_to: localhost
+      add_host:
+        name: "{{ item }}"
+        groups: "non_canary"
+      loop: "{{ non_canary_hosts | default([]) }}"
+      when: deploy_strategy == 'canary'
+
+  roles: []
+
+  tasks:
+    # —— 蓝绿：先部署到非活动色 —— #
+    - name: Blue-Green: set next color
+      when: deploy_strategy == 'blue_green'
+      ansible.builtin.set_fact:
+        next_color: "{{ 'green' if bg_color_active == 'blue' else 'blue' }}"
+
+    - name: Blue-Green: deploy to next color
+      when: deploy_strategy == 'blue_green'
+      include_role:
+        name: deploy_service
+      vars:
+        # 使用 next_color 单独的 release 目录可通过额外拼接路径实现，此处沿用统一目录语义简化
+        app_version: "{{ app_version }}"
+        # 如需区分端口/容器名，可在 defaults 派生 next_color 变量拼接
+
+    - name: Blue-Green: switch upstream
+      when: deploy_strategy == 'blue_green' and nginx_managed
+      ansible.builtin.template:
+        src: "roles/deploy_service/templates/nginx-upstream-bg.conf.j2"
+        dest: "/etc/nginx/conf.d/{{ app_name }}.conf"
+        mode: "0644"
+      notify: Reload nginx
+      vars:
+        bg_color_active: "{{ next_color }}"
+
+    - name: Blue-Green: switch SLB attachment (optional)
+      when: deploy_strategy == 'blue_green' and slb_enabled
+      block:
+        - include_tasks: "../roles/deploy_service/tasks/traffic_drain.yml"
+        - include_tasks: "../roles/deploy_service/tasks/traffic_attach.yml"
+
+    # —— 金丝雀：先 canary，再全量 —— #
+    - name: Canary batch deploy
+      when: deploy_strategy == 'canary'
+      include_role:
+        name: deploy_service
+      delegate_to: "{{ inventory_hostname }}"
+      run_once: false
+      with_items: "{{ groups['canary'] | default([]) }}"
+      loop_control:
+        loop_var: inventory_hostname
+
+    - name: Observe canary
+      when: deploy_strategy == 'canary'
+      ansible.builtin.pause:
+        seconds: "{{ promote_wait }}"
+
+    - name: Rolling rest after canary
+      when: deploy_strategy == 'canary'
+      include_role:
+        name: deploy_service
+      throttle: 10
+      serial: "{{ rolling_serial }}"
+      with_items: "{{ groups['non_canary'] | default([]) }}"
+      loop_control:
+        loop_var: inventory_hostname
+      delegate_to: "{{ inventory_hostname }}"
+
+    # —— 纯滚动 —— #
+    - name: Rolling deploy
+      when: deploy_strategy == 'rolling'
+      include_role:
+        name: deploy_service
+      serial: "{{ rolling_serial }}"
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

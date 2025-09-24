@@ -1,0 +1,27 @@
+---
+- name: Prepare release dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ service_group }}"
+    mode: "0755"
+  loop:
+    - "{{ releases_dir }}"
+    - "{{ shared_dir }}/config"
+    - "{{ shared_dir }}/logs"
+    - "{{ shared_dir }}/data"
+
+- name: Define release_id
+  ansible.builtin.set_fact:
+    release_id: "{{ app_version | default(ansible_date_time.iso8601_basic) }}"
+
+- name: Create current release dir
+  ansible.builtin.file:
+    path: "{{ releases_dir }}/{{ release_id }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ service_group }}"
+    mode: "0755"
+
+# 下载/准备工件（根据类型在后续任务中处理，这里仅放公共路径）

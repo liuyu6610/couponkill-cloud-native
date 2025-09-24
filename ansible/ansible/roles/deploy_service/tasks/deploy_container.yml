@@ -1,0 +1,18 @@
+---
+- name: Write compose file to release dir
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ releases_dir }}/{{ release_id }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Symlink current -> new release
+  ansible.builtin.file:
+    src: "{{ releases_dir }}/{{ release_id }}"
+    dest: "{{ current_dir }}"
+    state: link
+    force: true
+
+- name: Compose up
+  ansible.builtin.shell: |
+    {{ 'docker compose' if container_runtime == 'docker' else 'nerdctl compose' }} -f {{ current_dir }}/docker-compose.yml up -d
+  args: { warn: false }

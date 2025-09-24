@@ -1,0 +1,2 @@
+container_runtime: docker   # docker | containerd
+docker_enable_compose_plugin: true

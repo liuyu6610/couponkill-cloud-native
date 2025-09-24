@@ -1,0 +1,11 @@
+arms_enabled: true
+arms_app_name: "{{ app_name }}"
+arms_namespace: "{{ app_env | default('prod') }}"
+arms_agent_dir: /opt/arms-agent
+arms_java_agent_url: ""   # 你们的离线包/镜像仓地址（zip/jar）
+arms_java_agent_jar: "{{ arms_agent_dir }}/arms-agent.jar"
+arms_access_key: "{{ lookup('env','ARMS_AK') | default('') }}"
+arms_access_secret: "{{ lookup('env','ARMS_SK') | default('') }}"
+arms_endpoint: ""         # 可留空走默认
+# Node 等非 Java：保留变量占位
+arms_node_enabled: false
