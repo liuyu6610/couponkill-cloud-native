@@ -20,12 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker images
-        run: make build-all-images  # 复用项目现有Makefile命令
-      - name: Push to registry
+      - name: Login to ACR
         run: |
-          echo ${{ secrets.REGISTRY_TOKEN }} | docker login -u ${{ secrets.REGISTRY_USER }} --password-stdin
-          make build-and-push-all  # 推送镜像到阿里云仓库
+          echo ${{ secrets.ACR_PASSWORD }} | docker login -u ${{ secrets.ACR_USERNAME }} --password-stdin ${{ secrets.ACR_REPOSITORY }}
+      - name: Build Docker images
+        run:
+         make build-all-images-registry
+         make push-all-images
+
 
   deploy:
     needs: build
