@@ -1,0 +1,39 @@
+name: CouponKill CI/CD
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Java services
+        run: ./mvnw test -f couponkill-coupon-service/pom.xml
+      - name: Test Go service
+        run: cd couponkill-go-service && go test -v ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images
+        run: make build-all-images  # 复用项目现有Makefile命令
+      - name: Push to registry
+        run: |
+          echo ${{ secrets.REGISTRY_TOKEN }} | docker login -u ${{ secrets.REGISTRY_USER }} --password-stdin
+          make build-and-push-all  # 推送镜像到阿里云仓库
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'  # 仅main分支触发生产部署
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Helm Chart version
+        run: ./scripts/bump-chart-version.sh  # 自动更新Chart版本
+      - name: Push changes
+        run: git push origin main  # 触发Argo CD同步
