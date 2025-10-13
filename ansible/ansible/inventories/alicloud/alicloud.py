@@ -40,6 +40,9 @@ try:
     import footmark.regioninfo
     HAS_FOOTMARK = True
 except ImportError:
+    footmark = None
+    footmark.ecs = None
+    footmark.regioninfo = None
     HAS_FOOTMARK = False
 
 
