@@ -1,0 +1,45 @@
+<!--pages/login/index.wxml-->
+<view class="page-container">
+  <view class="login-container">
+    <!-- Logo区域 -->
+    <view class="login-logo">
+      <view class="logo-icon">🎫</view>
+      <view class="logo-text">CouponKill</view>
+      <view class="logo-subtitle">云原生秒杀系统</view>
+    </view>
+
+    <!-- 登录按钮 -->
+    <view class="login-actions">
+      <button
+        class="btn-login {{isLoading ? 'loading' : ''}}"
+        bindtap="wechatLogin"
+        disabled="{{isLoading}}"
+      >
+        <view wx:if="{{!isLoading}}" class="btn-content">
+          <view class="wechat-icon">💬</view>
+          <view class="btn-text">微信登录</view>
+        </view>
+        <view wx:if="{{isLoading}}" class="loading-content">
+          <view class="loading-spinner"></view>
+          <view class="loading-text">登录中...</view>
+        </view>
+      </button>
+    </view>
+
+    <!-- 功能介绍 -->
+    <view class="features">
+      <view class="feature-item">
+        <view class="feature-icon">⚡</view>
+        <view class="feature-text">限时秒杀</view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">🎫</view>
+        <view class="feature-text">优质优惠券</view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">🚀</view>
+        <view class="feature-text">极速体验</view>
+      </view>
+    </view>
+  </view>
+</view>

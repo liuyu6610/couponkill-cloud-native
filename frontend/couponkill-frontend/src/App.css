@@ -1,0 +1,493 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 布局样式 */
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.app-content {
+  min-height: calc(100vh - 128px);
+  padding: 24px 0;
+}
+
+.app-footer {
+  background: #001529;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* 头部样式 */
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+}
+
+.main-menu {
+  background: transparent !important;
+}
+
+.main-menu .ant-menu-item {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.main-menu .ant-menu-item:hover {
+  color: white !important;
+}
+
+.main-menu .ant-menu-item-selected {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  max-width: 400px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.username {
+  font-size: 14px;
+}
+
+/* 加载容器 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* 容器样式 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* 首页样式 */
+.home-page {
+  background: #f5f5f5;
+}
+
+/* 轮播图样式 */
+.hero-section {
+  margin-bottom: 48px;
+}
+
+.carousel-slide {
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.carousel-title {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: white !important;
+}
+
+.carousel-description {
+  font-size: 18px;
+  margin-bottom: 32px;
+  opacity: 0.9;
+}
+
+/* 统计数据样式 */
+.stats-section {
+  background: white;
+  padding: 48px 0;
+  margin-bottom: 48px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 秒杀专区样式 */
+.seckill-section {
+  margin-bottom: 48px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 特色服务样式 */
+.features-section {
+  background: white;
+  padding: 64px 0;
+  margin-bottom: 48px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card {
+  text-align: center;
+  height: 100%;
+  transition: transform 0.3s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-center {
+    width: 100%;
+    max-width: none;
+  }
+
+  .carousel-title {
+    font-size: 32px;
+  }
+
+  .carousel-description {
+    font-size: 16px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* 登录页面样式 */
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-background {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-form {
+  margin-bottom: 24px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-password {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.login-button {
+  height: 48px;
+  font-size: 16px;
+}
+
+.social-login {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-footer {
+  text-align: center;
+}
+
+/* 优惠券卡片样式 */
+.coupon-card {
+  height: 100%;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.coupon-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.seckill-card {
+  border: 2px solid #ff4d4f;
+}
+
+.coupon-image {
+  height: 160px;
+  object-fit: cover;
+}
+
+.coupon-placeholder {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.coupon-content {
+  padding: 16px;
+}
+
+.coupon-header {
+  margin-bottom: 12px;
+}
+
+.coupon-title {
+  margin: 0 !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.coupon-description {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.stock-info {
+  margin-top: 4px;
+}
+
+.min-amount {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.countdown {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.coupon-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.coupon-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.coupon-actions {
+  flex-shrink: 0;
+}
+
+/* 页脚样式 */
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.footer-section h3 {
+  color: white;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  margin-bottom: 8px;
+}
+
+.footer-section a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-section a:hover {
+  color: white;
+}
+
+.social-links {
+  display: flex;
+  gap: 16px;
+}
+
+.social-link {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.social-link:hover {
+  color: white;
+  border-color: white;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+}
+
+.footer-info {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.footer-info p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.separator {
+  margin: 0 8px;
+  color: rgba(255, 255, 255, 0.3);
+}
