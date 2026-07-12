@@ -14,8 +14,10 @@ spring:
         enabled: true
         max-retries-on-next-service-instance: 1
   datasource:
+    # 注意：业务真实连接池由 ShardingSphere YAML 的 Hikari maximumPoolSize 决定（order/coupon=300）。
+    # 此处仅作兜底/误导性默认，已从 100 上调，避免「卡在百级」的假天花板认知。
     hikari:
-      maximum-pool-size: 100
+      maximum-pool-size: 200
       minimum-idle: 20
       connection-timeout: 30000
       idle-timeout: 600000
@@ -51,20 +53,15 @@ ribbon:
   MaxAutoRetries: 0
   MaxAutoRetriesNextServer: 1
 
-# RocketMQ 配置
-rocketmq:
-  name-server: rocketmq-namesrv:9876
-  producer:
-    group: order-service-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
+# Kafka 主题与消费者组配置（bootstrap-servers 由 common.yaml 统一提供）
+kafka:
   consumer:
     group:
       seckill-result: seckill-order-result-group
   topic:
-    seckill-order-result: seckill_order_result  # 修改为下划线
-    seckill-order-create: seckill_order_create  # 修改为下划线
-    seckill-compensation: seckill_compensation  # 修改为下划线
+    seckill-order-result: seckill_order_result
+    seckill-order-create: seckill_order_create
+    seckill-compensation: seckill_compensation
 
 # 秒杀相关配置
 couponkill:
@@ -72,6 +69,20 @@ couponkill:
     cooldown-seconds: 0
     deduct-ttl-seconds: 300
     compensation-amount: 10.0
+    # 热路径 Kafka send.get 有界超时（毫秒）；超时走 Redis 补偿
+    kafka-send-timeout-ms: 500
+    # 消费侧 listener 并发（配合虚拟线程执行器）
+    listener-concurrency: 8
+    result-listener-concurrency: 4
+    # JDK25 Structured Concurrency（preview，需 --enable-preview）；默认关
+    structured-concurrency: false
+    # Go 引擎已对齐分片/键名/多 DS 后可按需开启
+    go:
+      enabled: false
+      url: http://seckill-go-svc:8083
+    java:
+      qps-threshold: 500
+    fallback-to-go: false
 
 # 订单服务集群配置
 order:

@@ -119,8 +119,8 @@ pipeline {
                     sh 'docker push ${REGISTRY}/rocketmq-broker'
                     
                     // Nacos
-                    sh 'docker pull nacos/nacos-server:v2.2.3'
-                    sh 'docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}/nacos-server'
+                    sh 'docker pull nacos/nacos-server:v3.1.1'
+                    sh 'docker tag nacos/nacos-server:v3.1.1 ${REGISTRY}/nacos-server'
                     sh 'docker push ${REGISTRY}/nacos-server'
                     
                     // Sentinel

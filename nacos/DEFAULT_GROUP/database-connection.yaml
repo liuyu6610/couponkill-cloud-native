@@ -1,12 +1,14 @@
 # 数据库连接配置
+# 警告：本文件为历史抽象配置，业务真实连接池以 ShardingSphere YAML 为准。
+# MySQLConfig 等代码路径未必消费此处；调并发请改 nacos/shard/*/ *-service-sharding.yaml。
 database:
   connection:
-    # 连接池配置
+    # 连接池配置（误导性「100」已上调，避免与压测结论混淆）
     pool:
-      max-active: 100
-      max-idle: 20
-      min-idle: 5
-      initial-size: 10
+      max-active: 200
+      max-idle: 40
+      min-idle: 10
+      initial-size: 20
       max-wait: 60000
       time-between-eviction-runs-millis: 60000
       min-evictable-idle-time-millis: 300000
@@ -33,15 +35,15 @@ database:
     # 连接配置
     connection:
       auto-commit: true
-      catalog: console
-      schema: 
+      catalog: 
+      schema: public
       network-timeout: 30000
       holdability: HOLD_CURSORS_OVER_COMMIT
       
     # 驱动配置
     driver:
-      class-name: com.mysql.cj.jdbc.Driver
-      url-params: "useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      class-name: org.postgresql.Driver
+      url-params: "reWriteBatchedInserts=true&ApplicationName=couponkill&sslmode=disable"
       
     # SSL配置
     ssl:

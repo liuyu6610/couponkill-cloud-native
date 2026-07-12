@@ -1,0 +1,37 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: couponkill-connector-service
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      namespace: couponkill
+  datasource:
+    url: jdbc:postgresql://postgres:5432/connector_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+connector:
+  sync:
+    enabled: true
+    cron: "0 */1 * * * *"
+    default-mock-stock: 500
+  internal-token: ${CONNECTOR_INTERNAL_TOKEN:couponkill-internal}
+  internal-token-strict: false
+  admin:
+    user-ids: ${CONNECTOR_ADMIN_USER_IDS:10000}
+    token: ${CONNECTOR_ADMIN_TOKEN:}
+    allow-unauthenticated-local: false
+  jd:
+    enabled: false
+    server-url: https://api.jd.com/routerjson
+    app-key: ${JD_APP_KEY:}
+    app-secret: ${JD_APP_SECRET:}
+    access-token: ${JD_ACCESS_TOKEN:}
+    default-area: "1_72_2799_0"

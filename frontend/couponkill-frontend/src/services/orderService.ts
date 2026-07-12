@@ -1,70 +1,35 @@
-import apiClient from './authService'
+import { http } from '../lib/apiClient'
+import type { Order } from '../types/api'
 
-// 订单相关API
+// 订单 / 秒杀接口：身份由网关 JWT → X-User-Id 注入，不再传可伪造的 userId
 export const orderService = {
-  // 获取订单列表
-  async getOrders(params: {
-    page?: number
-    size?: number
-    status?: string
-    startDate?: string
-    endDate?: string
-  } = {}) {
-    const response = await apiClient.get('/api/v1/orders', { params })
-    return response.data
-  },
-
-  // 获取订单详情
-  async getOrderDetail(orderId: string) {
-    const response = await apiClient.get(`/api/v1/orders/${orderId}`)
-    return response.data
-  },
-
-  // 创建订单
-  async createOrder(orderData: {
-    couponId: string
-    quantity?: number
-    shippingAddress?: {
-      name: string
-      phone: string
-      province: string
-      city: string
-      district: string
-      address: string
-      postalCode?: string
-    }
-    remark?: string
-  }) {
-    const response = await apiClient.post('/api/v1/orders', orderData)
-    return response.data
-  },
-
-  // 取消订单
-  async cancelOrder(orderId: string, reason?: string) {
-    const response = await apiClient.put(`/api/v1/orders/${orderId}/cancel`, {
-      reason
+  async getUserOrders(pageNum = 1, pageSize = 10): Promise<Order[]> {
+    return http.get<Order[]>('/order/user/me', {
+      params: { pageNum, pageSize },
     })
-    return response.data
   },
 
-  // 申请退款
-  async requestRefund(orderId: string, reason: string) {
-    const response = await apiClient.post(`/api/v1/orders/${orderId}/refund`, {
-      reason
+  async createOrder(couponId: string): Promise<Order> {
+    return http.post<Order>('/order/create', null, {
+      params: { couponId },
     })
-    return response.data
   },
 
-  // 确认收货
-  async confirmReceive(orderId: string) {
-    const response = await apiClient.put(`/api/v1/orders/${orderId}/receive`)
-    return response.data
+  async seckill(couponId: string): Promise<unknown> {
+    return http.post<unknown>('/order/seckill', null, {
+      params: { couponId },
+    })
+  },
+
+  async cancelOrder(orderId: string): Promise<boolean> {
+    return http.post<boolean>('/order/cancel', null, {
+      params: { orderId },
+    })
+  },
+
+  async checkReceived(couponId: string): Promise<boolean> {
+    return http.get<boolean>(`/order/check/${couponId}`)
   },
 }
-
-// 导出便捷方法
-export const getOrders = orderService.getOrders
-export const getOrderDetail = orderService.getOrderDetail
-export const createOrder = orderService.createOrder
 
 export default orderService

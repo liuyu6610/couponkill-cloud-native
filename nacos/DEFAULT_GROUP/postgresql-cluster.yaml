@@ -1,0 +1,80 @@
+# PostgreSQL集群配置
+postgresql:
+  cluster:
+    # 集群模式开关
+    enabled: false
+
+    # 主从（流复制）配置
+    master-slave:
+      enabled: false
+      master:
+        host: postgres-master
+        port: 5432
+        username: postgres
+        password: postgres
+      slaves:
+        - host: postgres-slave-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-slave-1
+          port: 5432
+          username: postgres
+          password: postgres
+
+    # Patroni 高可用集群配置
+    patroni-cluster:
+      enabled: false
+      nodes:
+        - host: postgres-node-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-node-1
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-node-2
+          port: 5432
+          username: postgres
+          password: postgres
+
+    # 读写分离配置
+    read-write-splitting:
+      enabled: false
+      strategy: ROUND_ROBIN
+      master:
+        host: postgres-master
+        port: 5432
+        username: postgres
+        password: postgres
+      slaves:
+        - host: postgres-slave-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-slave-1
+          port: 5432
+          username: postgres
+          password: postgres
+
+    # 连接池配置
+    pool:
+      max-active: 100
+      max-idle: 20
+      min-idle: 5
+      initial-size: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+
+    # 故障转移配置
+    failover:
+      enabled: true
+      retry-count: 3
+      retry-interval: 1000
+      timeout: 5000

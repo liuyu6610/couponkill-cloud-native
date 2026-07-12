@@ -18,10 +18,11 @@
         <module>couponkill-coupon-service</module>
         <module>couponkill-order-service</module>
         <module>couponkill-user-service</module>
+        <module>couponkill-connector-service</module>
     </modules>
 
     <repositories>
-        <!-- Maven中央仓库（优先使用） -->
+        <!-- 中央仓库 + 阿里云公共镜像即可；避免里程碑/快照仓库拖慢解析 -->
         <repository>
             <id>central</id>
             <name>Maven Central Repository</name>
@@ -29,63 +30,11 @@
             <releases><enabled>true</enabled></releases>
             <snapshots><enabled>false</enabled></snapshots>
         </repository>
-
-        <!-- 阿里云中央仓库镜像 -->
-        <repository>
-            <id>aliyun-central</id>
-            <url>https://maven.aliyun.com/repository/central</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>false</enabled></snapshots>
-        </repository>
-
-        <!-- 阿里云公共仓库 -->
         <repository>
             <id>aliyun-public</id>
             <url>https://maven.aliyun.com/repository/public</url>
             <releases><enabled>true</enabled></releases>
             <snapshots><enabled>false</enabled></snapshots>
-        </repository>
-
-        <!-- 阿里云Spring镜像 -->
-        <repository>
-            <id>aliyun-spring</id>
-            <url>https://maven.aliyun.com/repository/spring</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>false</enabled></snapshots>
-        </repository>
-        <repository>
-            <id>apache-snapshots</id>
-            <name>Apache Snapshot Repository</name>
-            <url>https://repository.apache.org/content/repositories/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>apache-releases</id>
-            <name>Apache Release Repository</name>
-            <url>https://repository.apache.org/content/repositories/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <!-- Spring官方仓库 -->
-        <repository>
-            <id>spring-milestones</id>
-            <url>https://repo.spring.io/milestone</url>
-        </repository>
-
-        <!-- JitPack仓库 -->
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -102,45 +51,40 @@
     </pluginRepositories>
 
     <properties>
-        <!-- Java版本保持为21 -->
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <!-- JDK 25：虚拟线程/并发能力与本地开发环境对齐 -->
+        <java.version>25</java.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <!-- Spring Boot 版本更新为3.3.4-->
-        <spring.boot.version>3.3.4</spring.boot.version>
-        <!-- Spring Cloud Alibaba 2023版本 (与Spring Boot 3.4.x兼容) -->
-        <spring.cloud.alibaba.version>2023.0.1.0</spring.cloud.alibaba.version>
-        <!-- Spring Cloud 版本 (与Spring Boot 3.4.x兼容) -->
-        <spring.cloud.version>2023.0.3</spring.cloud.version>
+        <!-- Boot 4.0 + SCA 2025.1（对齐 Spring Cloud 2025.1；Nacos 配置改 spring.config.import，不再用 bootstrap） -->
+        <spring.boot.version>4.0.5</spring.boot.version>
+        <spring.cloud.alibaba.version>2025.1.0.0</spring.cloud.alibaba.version>
+        <spring.cloud.version>2025.1.0</spring.cloud.version>
 
-        <!-- 数据库相关 -->
-        <mysql.version>8.0.33</mysql.version>
-        <mybatis.version>3.5.13</mybatis.version>
-        <mybatis-spring-boot-starter.version>3.0.3</mybatis-spring-boot-starter.version>
-        <nacos.version>2.2.3</nacos.version>
-        <pagehelper.version>1.4.6</pagehelper.version>
-        <redis.version>2.7.18</redis.version> <!-- 替换为data-redis -->
-        <redisson.version>3.23.3</redisson.version>
-        <aliyun-sdk-oss.version>3.16.1</aliyun-sdk-oss.version> <!-- 升级至新版 -->
-        <fastdfs-client.version>1.29.0</fastdfs-client.version> <!-- 社区维护版 -->
+        <!-- 数据库相关（驱动/ORM；连接池大小真源在 ShardingSphere YAML，勿与 spring.datasource.hikari 双真源打架） -->
+        <postgresql.version>42.7.4</postgresql.version>
+        <mybatis.version>3.5.19</mybatis.version>
+        <mybatis-spring-boot-starter.version>4.0.1</mybatis-spring-boot-starter.version>
+        <nacos.version>3.1.1</nacos.version>
+        <pagehelper.version>4.1.0</pagehelper.version>
+        <!-- redis starter 由 spring-boot-dependencies BOM 管理，禁止再钉死 2.7.x -->
+        <redisson.version>3.45.1</redisson.version>
+        <aliyun-sdk-oss.version>3.16.1</aliyun-sdk-oss.version>
+        <fastdfs-client.version>1.29.0</fastdfs-client.version>
         <alipay-sdk-java.version>4.34.0.ALL</alipay-sdk-java.version>
         <admin-starter-server.version>2.7.16</admin-starter-server.version>
-        <!-- 其他工具 -->
-        <lombok.version>1.18.30</lombok.version>
-        <guava.version>31.1-jre</guava.version>
-        <commons.lang3.version>3.4</commons.lang3.version>
-        <hutool.version>5.8.26</hutool.version>
-        <spring-boot-starter-security.version>2.7.18</spring-boot-starter-security.version>
+        <!-- JDK 25 需要 Lombok >= 1.18.40 -->
+        <lombok.version>1.18.46</lombok.version>
+        <guava.version>33.4.0-jre</guava.version>
+        <commons.lang3.version>3.17.0</commons.lang3.version>
+        <hutool.version>5.8.35</hutool.version>
         <jjwt.version>0.11.5</jjwt.version>
-        <sentinel.version>1.8.6</sentinel.version>
-        <rocketmq.version>4.9.4</rocketmq.version>
-        <rocketmq.starter.version>2.2.3</rocketmq.starter.version> <!-- Starter专用版本 -->
-        <!-- SpringDoc OpenAPI 版本 (替代Knife4j) -->
-        <springdoc.version>2.5.0</springdoc.version>
-        <sentinel.version>1.8.6</sentinel.version>
+        <!-- 与 SCA 2025.1.0.0 组件矩阵对齐 -->
+        <sentinel.version>1.8.9</sentinel.version>
+        <springdoc.version>3.0.3</springdoc.version>
+        <druid.version>1.2.24</druid.version>
         <fastjson.version>1.2.83</fastjson.version>
     </properties>
 
@@ -176,11 +120,11 @@
             <!--spring cloud nacos配置和发现-->
 
 
-            <!-- MySQL 驱动 -->
+            <!-- PostgreSQL 驱动 -->
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.version}</version>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
             <!--mybatis-->
             <dependency>
@@ -189,35 +133,19 @@
                 <version>${mybatis-spring-boot-starter.version}</version>
             </dependency>
 
-            <!-- Redis -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>${redis.version}</version>
-            </dependency>
+            <!-- Redis：starter 交给 Boot BOM；Redisson 仅作可选能力，业务代码暂未使用 -->
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
-            <!-- 引入jedis jar包 -->
-            <dependency>
-                <groupId>redis.clients</groupId>
-                <artifactId>jedis</artifactId>
-                <version>2.9.0</version>
-            </dependency>
 
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid-spring-boot-starter</artifactId>
-                <version>1.2.16</version> <!-- 修复systemPath错误的版本 -->
+                <version>${druid.version}</version>
             </dependency>
-            <!--spring-boot-starter-security-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-security</artifactId>
-                <version>${spring-boot-starter-security.version}</version>
-            </dependency>
+            <!-- spring-boot-starter-security 由 spring-boot-dependencies BOM 管理，勿覆盖为 2.x -->
 
             <!-- Lombok -->
             <dependency>
@@ -243,10 +171,19 @@
                 <artifactId>guava</artifactId>
                  <version>${guava.version}</version>
             </dependency>
-            <!--sentinel-core-->
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-core</artifactId>
+                <version>${sentinel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-spring-cloud-gateway-adapter</artifactId>
+                <version>${sentinel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-transport-simple-http</artifactId>
                 <version>${sentinel.version}</version>
             </dependency>
 
@@ -281,30 +218,22 @@
                 <artifactId>pagehelper-spring-boot-starter</artifactId>
                 <version>${pagehelper.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.rocketmq</groupId>
-                <artifactId>rocketmq-client</artifactId>
-                <version>${rocketmq.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.rocketmq</groupId>
-                <artifactId>rocketmq-remoting</artifactId>
-                <version>${rocketmq.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.rocketmq</groupId>
-                <artifactId>rocketmq-spring-boot-starter</artifactId>
-                <version>${rocketmq.starter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
-                <version>${spring.cloud.alibaba.version}</version>
-            </dependency>
+            <!-- spring-kafka 由 spring-boot-dependencies BOM 统一管理版本，无需在此声明 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons.lang3.version}</version>
+            </dependency>
+            <!-- SpringDoc OpenAPI 3（Boot 3 专用 starter） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid</artifactId>
+                <version>${druid.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -316,11 +245,14 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring.boot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                     <configuration>
-                        <compilerArguments>
-                            <!-- 添加 -parameters 参数 -->
-                            <parameters/>
-                        </compilerArguments>
                         <excludes>
                             <exclude>
                                 <groupId>org.projectlombok</groupId>
@@ -333,18 +265,31 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
+                    <version>3.14.0</version>
                     <configuration>
-                        <source>21</source>
-                        <target>21</target>
+                        <release>25</release>
                         <encoding>UTF-8</encoding>
+                        <proc>full</proc>
                         <compilerArgs>
                             <arg>-parameters</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 
 </project>

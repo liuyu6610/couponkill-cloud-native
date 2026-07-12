@@ -6,12 +6,17 @@ import (
 	"strings"
 )
 
+// 分片公式与 Java ShardingSphere（nacos/shard）严格对齐：
+// - order:  db = user_id % 2 ，表 = user_id % 16
+// - coupon: db = (shard_index / 16) % 2 ，表 = shard_index % 16
+// - user:   db = user_id % 2
+
 // OrderSharding 订单分库分表策略
 type OrderSharding struct{}
 
-// GetDatabaseIndex 获取订单数据库索引 (user_id % 4)
+// GetDatabaseIndex 获取订单数据库索引 (user_id % 2) —— 对齐 Java
 func (s *OrderSharding) GetDatabaseIndex(userID int64) int {
-	return int(userID % 4)
+	return int(userID % 2)
 }
 
 // GetTableIndex 获取订单表索引 (user_id % 16)
@@ -34,37 +39,29 @@ func (s *OrderSharding) GetDataSourceName(userID int64) string {
 	return fmt.Sprintf("order-db-%d", s.GetDatabaseIndex(userID))
 }
 
-// CouponSharding 优惠券分库分表策略
+// CouponSharding 优惠券分库分表策略（virtual_id = couponId_shardIndex）
 type CouponSharding struct{}
 
-// GetDatabaseIndex 获取优惠券数据库索引 (virtual_id后缀 % 4)
-func (s *CouponSharding) GetDatabaseIndex(virtualID string) int {
+func parseShardIndex(virtualID string) int {
 	parts := strings.Split(virtualID, "_")
 	if len(parts) < 2 {
 		return 0
 	}
-
 	suffix, err := strconv.Atoi(parts[len(parts)-1])
 	if err != nil {
 		return 0
 	}
-
-	return suffix % 4
+	return suffix
 }
 
-// GetTableIndex 获取优惠券表索引 (virtual_id后缀 % 16)
+// GetDatabaseIndex 对齐 Java: (shard_index / 16) % 2
+func (s *CouponSharding) GetDatabaseIndex(virtualID string) int {
+	return (parseShardIndex(virtualID) / 16) % 2
+}
+
+// GetTableIndex 对齐 Java: shard_index % 16
 func (s *CouponSharding) GetTableIndex(virtualID string) int {
-	parts := strings.Split(virtualID, "_")
-	if len(parts) < 2 {
-		return 0
-	}
-
-	suffix, err := strconv.Atoi(parts[len(parts)-1])
-	if err != nil {
-		return 0
-	}
-
-	return suffix % 16
+	return parseShardIndex(virtualID) % 16
 }
 
 // GetTableName 获取优惠券表名

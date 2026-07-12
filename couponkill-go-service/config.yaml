@@ -1,5 +1,5 @@
 server:
-  port: 8090
+  port: 8083
 
 seckill:
   max-concurrency: 2000
@@ -8,8 +8,21 @@ seckill:
   redis:
     stock-key-prefix: "coupon:stock:"
 
+# 本地开发：多 PG 库对齐 Java 分片（docker-compose.migration.yml）
 mysql:
-  dataSources: {}
+  dataSources:
+    order-db-0:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=order_db_0 sslmode=disable"
+    order-db-1:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=order_db_1 sslmode=disable"
+    coupon-db-0:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=coupon_db_0 sslmode=disable"
+    coupon-db-1:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=coupon_db_1 sslmode=disable"
+    user-db-0:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=user_db_0 sslmode=disable"
+    user-db-1:
+      dsn: "host=localhost port=5432 user=postgres password=postgres dbname=user_db_1 sslmode=disable"
 
 data.redis:
   host: "localhost:6379"
@@ -19,4 +32,4 @@ data.redis:
 
 nacos:
   server-addr: "localhost:8848"
-  namespace-id: "120"
+  namespace-id: "couponkill"

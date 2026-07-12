@@ -1,10 +1,10 @@
 import React from 'react'
-import { Form, Input, Button, Card, Typography, Divider, Space, message } from 'antd'
+import { Form, Input, Button, Card, Typography, Divider, Space, App } from 'antd'
 import { UserOutlined, LockOutlined, GoogleOutlined, GithubOutlined } from '@ant-design/icons'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, clearError } from '../store/slices/authSlice'
-import type { RootState } from '../store'
+import type { RootState, AppDispatch } from '../store'
 
 const { Title, Text } = Typography
 
@@ -17,11 +17,12 @@ interface LoginFormData {
 const Login: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const dispatch = useDispatch()
-  const { isLoading, error } = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch<AppDispatch>()
+  const { message } = App.useApp()
+  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.auth)
 
   // 从state中获取重定向路径
-  const from = (location.state as any)?.from?.pathname || '/'
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/'
 
   React.useEffect(() => {
     // 清除之前的错误信息
@@ -29,19 +30,19 @@ const Login: React.FC = () => {
   }, [dispatch])
 
   React.useEffect(() => {
-    // 如果登录成功，重定向到之前的页面
-    if (localStorage.getItem('token')) {
+    // 已登录则重定向到之前的页面
+    if (isAuthenticated) {
       navigate(from, { replace: true })
     }
-  }, [navigate, from])
+  }, [navigate, from, isAuthenticated])
 
   const onFinish = async (values: LoginFormData) => {
     try {
-      await dispatch(loginUser(values) as any).unwrap()
+      await dispatch(loginUser({ username: values.username, password: values.password })).unwrap()
       message.success('登录成功！')
       navigate(from, { replace: true })
-    } catch (error) {
-      message.error(error as string || '登录失败，请检查用户名和密码')
+    } catch (err) {
+      message.error((err as string) || '登录失败，请检查用户名和密码')
     }
   }
 

@@ -11,7 +11,7 @@ spec:
   containers:
     # nacos模块
     - name: nacos
-      image: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker:nacos-server
+      image: nacos/nacos-server:v3.1.1
       resources:
         requests:
           memory: "512Mi"

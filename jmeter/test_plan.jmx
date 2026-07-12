@@ -9,11 +9,11 @@
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="用户定义的变量" enabled="true">
         <collectionProp name="Arguments.arguments">
           <elementProp name="couponId" elementType="Argument">
-            <stringProp name="Argument.value">10</stringProp> <!-- 固定秒杀商品ID -->
+            <stringProp name="Argument.value">1001</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="serverPort" elementType="Argument">
-            <stringProp name="Argument.value">80</stringProp> <!-- 服务端口，可根据实际修改 -->
+            <stringProp name="Argument.value">8088</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -27,10 +27,10 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">-1</stringProp> <!-- 配合调度器持续运行 -->
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">500</stringProp> <!-- 并发用户数 -->
-        <stringProp name="ThreadGroup.ramp_time">10</stringProp> <!-- 梯度启动时间 -->
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">5</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
-        <stringProp name="ThreadGroup.duration">300</stringProp> <!-- 测试持续时间（秒） -->
+        <stringProp name="ThreadGroup.duration">30</stringProp>
         <stringProp name="ThreadGroup.delay"></stringProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp> <!-- 每次迭代使用新用户数据 -->
       </ThreadGroup>
@@ -81,7 +81,7 @@
           <stringProp name="HTTPSampler.port">${serverPort}</stringProp> <!-- 使用变量端口 -->
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
-          <stringProp name="HTTPSampler.path">/api/v1/order/seckill</stringProp>
+          <stringProp name="HTTPSampler.path">/order/seckill</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>

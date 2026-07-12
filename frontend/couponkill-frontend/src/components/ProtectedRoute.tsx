@@ -1,18 +1,21 @@
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { Spin } from 'antd'
+import { Result, Spin } from 'antd'
 import type { RootState } from '../store'
+import { selectIsAdmin } from '../store/slices/authSlice'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
+  /** 需要 admin 角色（Connector 管理页） */
+  requireAdmin?: boolean
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
   const location = useLocation()
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
+  const isAdmin = useSelector(selectIsAdmin)
 
-  // 如果还在加载中，显示加载状态
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -21,12 +24,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     )
   }
 
-  // 如果未认证，重定向到登录页
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // 已认证，返回子组件
+  if (requireAdmin && !isAdmin) {
+    return (
+      <Result
+        status="403"
+        title="需要管理员权限"
+        subTitle="Connector 管理仅对 admin 角色开放。本地可将 userId 加入 CONNECTOR_ADMIN_USER_IDS（默认 demo=10000）。"
+      />
+    )
+  }
+
   return <>{children}</>
 }
 

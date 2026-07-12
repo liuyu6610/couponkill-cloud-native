@@ -21,7 +21,7 @@
     </resultMap>
 
     <insert id="insert">
-        INSERT INTO `order` (
+        INSERT INTO "order" (
             id, user_id, coupon_id, virtual_id, status, get_time, expire_time,
             use_time, cancel_time, create_time, update_time, created_by_java,
             created_by_go, request_id, version
@@ -33,73 +33,116 @@
     </insert>
 
     <select id="selectById" resultMap="OrderMap">
-        SELECT * FROM `order` WHERE id = #{id}
+        SELECT * FROM "order" WHERE id = #{id}
     </select>
 
     <select id="selectByUserId" resultMap="OrderMap">
-        SELECT * FROM `order` 
-        WHERE user_id = #{userId} 
-        ORDER BY create_time DESC 
-        LIMIT 100
+        SELECT * FROM "order"
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        OFFSET #{offset} LIMIT #{limit}
     </select>
 
     <select id="selectByCouponId" resultMap="OrderMap">
-        SELECT * FROM `order` 
-        WHERE coupon_id = #{couponId} 
-        ORDER BY create_time DESC 
+        SELECT * FROM "order"
+        WHERE coupon_id = #{couponId}
+        ORDER BY create_time DESC
         LIMIT 100
     </select>
 
     <select id="selectByVirtualId" resultMap="OrderMap">
-        SELECT * FROM `order` WHERE virtual_id = #{virtualId}
+        SELECT * FROM "order" WHERE virtual_id = #{virtualId}
     </select>
 
     <select id="selectByUserIdAndCouponId" resultMap="OrderMap">
-        SELECT * FROM `order` 
-        WHERE user_id = #{userId} AND coupon_id = #{couponId} 
-        ORDER BY create_time DESC 
+        SELECT * FROM "order"
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+        ORDER BY create_time DESC
         LIMIT 10
     </select>
 
     <select id="selectByUserIdAndStatus" resultMap="OrderMap">
-        SELECT * FROM `order` 
-        WHERE user_id = #{userId} AND status = #{status} 
-        ORDER BY create_time DESC 
+        SELECT * FROM "order"
+        WHERE user_id = #{userId} AND status = #{status}
+        ORDER BY create_time DESC
         LIMIT 100
     </select>
 
+    <select id="selectByUserIdAndVirtualId" resultMap="OrderMap">
+        SELECT * FROM "order"
+        WHERE user_id = #{userId} AND virtual_id = #{virtualId}
+        LIMIT 1
+    </select>
+
+    <select id="countByUserAndCoupon" resultType="long">
+        SELECT COUNT(*) FROM "order"
+        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2)
+    </select>
+
+    <select id="countUserCouponsByVirtualId" resultType="int">
+        SELECT COUNT(*) FROM "order"
+        WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2)
+    </select>
+
+    <select id="selectAllByCondition" resultMap="OrderMap">
+        SELECT * FROM "order"
+        <where>
+            <if test="startTime != null and startTime != ''">
+                AND create_time &gt;= CAST(#{startTime} AS TIMESTAMP)
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= CAST(#{endTime} AS TIMESTAMP)
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM "order"
+    </select>
+
+    <!-- 与 OrderMapper.java 参数名对齐：orderId / status / updateTime -->
     <update id="updateStatus">
-        UPDATE `order` 
-        SET status = #{status}, update_time = NOW(), version = version + 1
-        WHERE id = #{id} AND version = #{version}
+        UPDATE "order"
+        SET status = #{status}, update_time = #{updateTime}, version = version + 1
+        WHERE id = #{orderId}
+    </update>
+
+    <update id="updateStatusWithCancelTime">
+        UPDATE "order"
+        SET status = #{status},
+            cancel_time = #{cancelTime},
+            update_time = #{updateTime},
+            version = version + 1
+        WHERE id = #{orderId} AND status = 1
     </update>
 
     <update id="updateUseTime">
-        UPDATE `order` 
+        UPDATE "order"
         SET use_time = #{useTime}, status = 2, update_time = NOW(), version = version + 1
         WHERE id = #{id} AND version = #{version}
     </update>
 
     <update id="updateCancelTime">
-        UPDATE `order` 
+        UPDATE "order"
         SET cancel_time = #{cancelTime}, status = 4, update_time = NOW(), version = version + 1
         WHERE id = #{id} AND version = #{version}
     </update>
 
     <select id="selectExpiredOrders" resultMap="OrderMap">
-        SELECT * FROM `order` 
-        WHERE status = 1 AND expire_time &lt; NOW() 
-        ORDER BY expire_time 
+        SELECT * FROM "order"
+        WHERE status = 1 AND expire_time &lt; NOW()
+        ORDER BY expire_time
         LIMIT #{limit}
     </select>
 
     <select id="selectByRequestId" resultMap="OrderMap">
-        SELECT * FROM `order` WHERE request_id = #{requestId}
+        SELECT * FROM "order" WHERE request_id = #{requestId}
     </select>
 
-    <!-- 添加唯一性约束检查查询，用于防止重复秒杀 -->
     <select id="checkDuplicateSeckill" resultType="int">
-        SELECT COUNT(*) FROM `order`
+        SELECT COUNT(*) FROM "order"
         WHERE user_id = #{userId} AND coupon_id = #{couponId} AND status IN (1, 2)
     </select>
 

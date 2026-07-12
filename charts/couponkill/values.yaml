@@ -16,21 +16,21 @@ examples:
 dependencies:
   enabled: true
 
-# 数据库配置 - 支持集群模式和主从复制
+# 数据库配置 - PostgreSQL，支持流复制/集群模式
 db:
   # 单节点模式配置
-  host: mysql
-  port: 3306
-  username: root
-  password: root
-  database: console
+  host: postgres
+  port: 5432
+  username: postgres
+  password: postgres
+  database: postgres
   # 初始化配置
   init:
     enabled: false
     name: db-init
     image:
-      repository: mysql
-      tag: latest
+      repository: postgres
+      tag: "16"
       pullPolicy: IfNotPresent
     resources:
       requests:
@@ -132,9 +132,9 @@ services:
       maxReplicas: 10
       targetCPUUtilizationPercentage: 80
 
-# RocketMQ配置
+# RocketMQ配置（已迁移至 Kafka，默认关闭；保留结构以便回滚对比）
 rocketmq:
-  enabled: true
+  enabled: false
   name: rocketmq
   namesrv:
     replicas: 1
@@ -189,16 +189,30 @@ redis:
         memory: "512Mi"
         cpu: "200m"
 
-# MySQL配置
-mysql:
+# Kafka 配置（消息中间件，替代 RocketMQ）
+kafka:
   enabled: true
-  name: mysql
-  port: 3306
-  rootPassword: root
-  database: console
+  name: broker
+  port: 9092
+  # 单节点 KRaft；生产多副本 broker 需提供 StatefulSet 或外部托管 Kafka
+  bootstrapServers: broker:9092
+  topics:
+    - seckill_order_create
+    - seckill_order_result
+    - seckill_compensation
+  partitions: 16
+  replicationFactor: 1
+
+# PostgreSQL配置（数据库，替代 MySQL；key 保留为 mysql 以兼容既有模板引用，值已切换为 PG）
+mysql:
+  enabled: false
+  name: postgres
+  port: 5432
+  rootPassword: postgres
+  database: postgres
   image:
-    repository: mysql
-    tag: latest
+    repository: postgres
+    tag: "16"
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -250,8 +264,9 @@ nacos:
   enabled: true
   name: nacos
   image:
-    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-    tag: nacos-server
+    # 官方镜像与 nacos-client 3.1.1 对齐；若用私有 ACR 请自行同步 tag v3.1.1
+    repository: nacos/nacos-server
+    tag: v3.1.1
     pullPolicy: IfNotPresent
   replicas: 1
   cluster:
@@ -293,12 +308,16 @@ nacos:
         memory: "128Mi"
         cpu: "100m"
   storage:
-    type: mysql
-    mysql:
-      host: mysql
-      port: 3306
-      user: root
-      password: root
+    # 本地/开发用内置 Derby，避免外部元数据库依赖。
+    # 生产若要用 PostgreSQL 作为 Nacos 元数据库，需引入社区插件
+    # nacos-datasource-plugin-ext / nacos-postgresql-datasource-plugin（Nacos 原生仅支持 MySQL+Derby），
+    # 并将 type 改为 postgresql、填写下方连接信息。
+    type: embedded
+    postgresql:
+      host: postgres
+      port: 5432
+      user: postgres
+      password: postgres
       database: nacos
       
 # Sentinel配置

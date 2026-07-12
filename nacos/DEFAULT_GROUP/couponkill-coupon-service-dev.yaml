@@ -6,8 +6,9 @@ spring:
   application:
     name: couponkill-coupon-service
   datasource:
+    # 真实池在 ShardingSphere YAML（coupon maximumPoolSize=300）；此处仅兜底
     hikari:
-      maximum-pool-size: 100
+      maximum-pool-size: 200
       minimum-idle: 20
       connection-timeout: 30000
       idle-timeout: 600000

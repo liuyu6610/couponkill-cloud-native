@@ -5,9 +5,13 @@ import (
 	"couponkill-go-service/pkg/sharding"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"couponkill-go-service/internal/model"
+
+	"github.com/lib/pq"
 )
 
 // MysqlRepository MySQL数据访问层
@@ -42,7 +46,7 @@ func (r *MysqlRepository) CreateOrder(ctx context.Context, order *model.Order) e
 	query := fmt.Sprintf(`
 		INSERT INTO %s
 		(id, user_id, coupon_id, virtual_id, status, get_time, expire_time, created_by_java, created_by_go, create_time, update_time, request_id, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`, tableName)
 
 	_, err = db.ExecContext(
@@ -82,7 +86,7 @@ func (r *MysqlRepository) DeleteOrder(ctx context.Context, orderID string, userI
 		return fmt.Errorf("获取数据源失败: %v", err)
 	}
 
-	query := fmt.Sprintf("DELETE FROM %s WHERE id = ?", tableName)
+	query := fmt.Sprintf("DELETE FROM %s WHERE id = $1", tableName)
 	_, err = db.ExecContext(ctx, query, orderID)
 	return err
 }
@@ -100,8 +104,8 @@ func (r *MysqlRepository) CheckUserReceived(ctx context.Context, userID, couponI
 	}
 
 	query := fmt.Sprintf(
-		"SELECT COUNT(1) FROM `%s`"+
-			" WHERE user_id = ? AND coupon_id = ? "+
+		"SELECT COUNT(1) FROM %s"+
+			" WHERE user_id = $1 AND coupon_id = $2 "+
 			" AND status IN (1, 2) "+
 			"AND (created_by_java = 1 OR created_by_go = 1)", tableName)
 
@@ -116,18 +120,16 @@ func (r *MysqlRepository) CheckUserReceived(ctx context.Context, userID, couponI
 	return count > 0, nil
 }
 
-// isDuplicateEntryError 检查是否为重复条目错误
+// isDuplicateEntryError 检查是否为唯一约束冲突错误（PostgreSQL SQLSTATE 23505）
 func isDuplicateEntryError(err error) bool {
 	if err == nil {
 		return false
 	}
-	// MySQL重复条目错误
-	return err.Error() == "Error 1062: Duplicate entry" ||
-		// 兼容其他可能的错误信息格式
-		(err.Error() != "" &&
-			(err.Error()[:6] == "Error " ||
-				err.Error()[:9] == "duplicate" ||
-				err.Error()[:9] == "Duplicate"))
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return pqErr.Code == "23505" // unique_violation
+	}
+	return false
 }
 
 // UpdateUserCouponCount 更新用户优惠券数量统计
@@ -144,12 +146,12 @@ func (r *MysqlRepository) UpdateUserCouponCount(ctx context.Context, userID int6
 
 	query := fmt.Sprintf(`
 		INSERT INTO %s (user_id, total_count, seckill_count, update_time) 
-		VALUES (?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE 
-		total_count = total_count + VALUES(total_count),
-		seckill_count = seckill_count + VALUES(seckill_count),
-		update_time = VALUES(update_time)
-	`, tableName)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id) DO UPDATE SET 
+		total_count = %s.total_count + EXCLUDED.total_count,
+		seckill_count = %s.seckill_count + EXCLUDED.seckill_count,
+		update_time = EXCLUDED.update_time
+	`, tableName, tableName, tableName)
 
 	_, err = db.ExecContext(ctx, query, userID, totalChange, seckillChange, time.Now())
 	return err
@@ -170,13 +172,14 @@ func (r *MysqlRepository) UpdateCouponStock(ctx context.Context, couponID int64,
 
 	query := fmt.Sprintf(`
 		UPDATE %s 
-		SET stock_count = stock_count + ?,
+		SET seckill_remaining_stock = seckill_remaining_stock + $1,
 		    version = version + 1,
-		    update_time = ?
-		WHERE id = ? AND version >= 0
+		    update_time = $2
+		WHERE id = $3 AND shard_index = $4 AND version >= 0
+		  AND seckill_remaining_stock + $1 >= 0
 	`, tableName)
 
-	result, err := db.ExecContext(ctx, query, change, time.Now(), couponID)
+	result, err := db.ExecContext(ctx, query, change, time.Now(), couponID, parseVirtualShardIndex(virtualID))
 	if err != nil {
 		return err
 	}
@@ -206,9 +209,10 @@ func (r *MysqlRepository) CheckShardStock(ctx context.Context, couponID int64, v
 		return false, fmt.Errorf("获取数据源失败: %v", err)
 	}
 
-	query := fmt.Sprintf("SELECT stock_count FROM %s WHERE id = ? AND stock_count > 0", tableName)
+	query := fmt.Sprintf("SELECT seckill_remaining_stock FROM %s WHERE id = $1 AND shard_index = $2 AND seckill_remaining_stock > 0", tableName)
 	var stockCount int
-	err = db.QueryRowContext(ctx, query, couponID).Scan(&stockCount)
+	shardIndex := parseVirtualShardIndex(virtualID)
+	err = db.QueryRowContext(ctx, query, couponID, shardIndex).Scan(&stockCount)
 	if err != nil {
 		// 如果查询出错或者没有找到记录，认为库存不足
 		return false, nil
@@ -231,13 +235,15 @@ func (r *MysqlRepository) DeductShardStock(ctx context.Context, couponID int64, 
 
 	query := fmt.Sprintf(`
 		UPDATE %s 
-		SET stock_count = stock_count - 1,
+		SET seckill_remaining_stock = seckill_remaining_stock - 1,
 		    version = version + 1,
-		    update_time = ?
-		WHERE id = ? AND stock_count > 0 AND version >= 0
+		    update_time = $1
+		WHERE id = $2 AND shard_index = $3 AND seckill_remaining_stock > 0 AND version >= 0
 	`, tableName)
 
-	result, err := db.ExecContext(ctx, query, time.Now(), couponID)
+	shardIndex := parseVirtualShardIndex(virtualID)
+
+	result, err := db.ExecContext(ctx, query, time.Now(), couponID, shardIndex)
 	if err != nil {
 		return false, err
 	}
@@ -256,4 +262,16 @@ func (r *MysqlRepository) WaitForDataSync(ctx context.Context, order *model.Orde
 	// 简化处理，实际项目中可能需要更复杂的同步确认机制
 	time.Sleep(100 * time.Millisecond)
 	return nil
+}
+
+func parseVirtualShardIndex(virtualID string) int {
+	parts := strings.Split(virtualID, "_")
+	if len(parts) < 2 {
+		return 0
+	}
+	n, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		return 0
+	}
+	return n
 }

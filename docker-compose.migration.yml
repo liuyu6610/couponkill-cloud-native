@@ -1,0 +1,104 @@
+# =============================================================================
+# CouponKill 迁移后本地联调基础设施（PostgreSQL + Kafka + Redis + Nacos）
+# 用法：
+#   docker compose -f docker-compose.migration.yml up -d
+# 验证：
+#   - postgres 会自动执行 init-postgres.sql 建库建表，再执行 02-seed-demo.sql 写入演示数据
+#   - kafka 单节点 KRaft：宿主机 localhost:9092，容器内 kafka:29092
+#   - nacos standalone v3.1.1（内置 Derby，避免元数据库插件依赖；生产元数据库迁移见 README）
+# =============================================================================
+services:
+  postgres:
+    image: postgres:16
+    container_name: couponkill-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./charts/couponkill/scripts/init-postgres.sql:/docker-entrypoint-initdb.d/01-init-postgres.sql:ro
+      - ./charts/couponkill/scripts/02-seed-demo.sql:/docker-entrypoint-initdb.d/02-seed-demo.sql:ro
+      - ./charts/couponkill/scripts/03-init-connector.sql:/docker-entrypoint-initdb.d/03-init-connector.sql:ro
+      - couponkill-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: couponkill-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: couponkill-kafka
+    environment:
+      # KRaft 单节点（无 ZooKeeper）；双 listener：容器互联 + 宿主机联调
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:29092,PLAINTEXT_HOST://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # Kafka 主题初始化（对齐业务 topic：下划线命名，16 分区）
+  kafka-init:
+    image: apache/kafka:3.8.0
+    container_name: couponkill-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        for t in seckill_order_create seckill_order_result seckill_compensation order_created; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists \
+            --topic "$$t" --partitions 16 --replication-factor 1;
+        done;
+        echo "kafka topics ready";
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --list
+    restart: "no"
+
+  nacos:
+    # 与 SCA 2025.1 / nacos-client 3.1.1 对齐
+    image: nacos/nacos-server:v3.1.1
+    container_name: couponkill-nacos
+    environment:
+      MODE: standalone
+      # standalone 使用内置 Derby，避免依赖外部元数据库；
+      # 若需 PostgreSQL 元数据库，见 README 中 nacos-postgresql-datasource-plugin 说明。
+      # Nacos 3.x 镜像强制要求 AUTH_*（即使关闭鉴权也要提供占位）
+      NACOS_AUTH_ENABLE: "false"
+      # 原始密钥 ≥32 字符后的 Base64；本地 demo 固定值，生产务必轮换
+      NACOS_AUTH_TOKEN: "Q291cG9uS2lsbExvY2FsRGVtb1NlY3JldEtleTMyQiE="
+      NACOS_AUTH_IDENTITY_KEY: "couponkill"
+      NACOS_AUTH_IDENTITY_VALUE: "couponkillLocal"
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  couponkill-pgdata:

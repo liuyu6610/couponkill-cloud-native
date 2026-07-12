@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aliyun.seckill.couponkillconnectorservice.mapper.PlatformSkuBindingMapper">
+
+    <resultMap id="BindingMap" type="com.aliyun.seckill.couponkillconnectorservice.domain.PlatformSkuBinding">
+        <id column="id" property="id"/>
+        <result column="platform" property="platform"/>
+        <result column="external_sku_id" property="externalSkuId"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="sync_enabled" property="syncEnabled"/>
+        <result column="last_stock" property="lastStock"/>
+        <result column="last_sync_at" property="lastSyncAt"/>
+        <result column="last_sync_status" property="lastSyncStatus"/>
+        <result column="last_error" property="lastError"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO platform_sku_binding (
+            platform, external_sku_id, coupon_id, sync_enabled,
+            last_stock, last_sync_at, last_sync_status, last_error,
+            create_time, update_time
+        ) VALUES (
+            #{platform}, #{externalSkuId}, #{couponId}, #{syncEnabled},
+            #{lastStock}, #{lastSyncAt}, #{lastSyncStatus}, #{lastError},
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE platform_sku_binding SET
+            coupon_id = #{couponId},
+            sync_enabled = #{syncEnabled},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateSyncResult">
+        UPDATE platform_sku_binding SET
+            last_stock = #{lastStock},
+            last_sync_at = CURRENT_TIMESTAMP,
+            last_sync_status = #{lastSyncStatus},
+            last_error = #{lastError},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BindingMap">
+        SELECT * FROM platform_sku_binding WHERE id = #{id}
+    </select>
+
+    <select id="selectByPlatformSku" resultMap="BindingMap">
+        SELECT * FROM platform_sku_binding
+        WHERE platform = #{platform} AND external_sku_id = #{externalSkuId}
+    </select>
+
+    <select id="selectByCouponId" resultMap="BindingMap">
+        SELECT * FROM platform_sku_binding WHERE coupon_id = #{couponId} LIMIT 1
+    </select>
+
+    <select id="selectAll" resultMap="BindingMap">
+        SELECT * FROM platform_sku_binding ORDER BY id DESC
+    </select>
+
+    <select id="selectSyncEnabled" resultMap="BindingMap">
+        SELECT * FROM platform_sku_binding WHERE sync_enabled = TRUE ORDER BY id
+    </select>
+</mapper>

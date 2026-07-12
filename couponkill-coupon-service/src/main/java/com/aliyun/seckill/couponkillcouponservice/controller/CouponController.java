@@ -1,6 +1,8 @@
 package com.aliyun.seckill.couponkillcouponservice.controller;
 
 import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.connector.SyncStockRequest;
+import com.aliyun.seckill.common.connector.SyncStockResult;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -23,6 +26,9 @@ public class CouponController {
 
     @Autowired
     private CouponService couponService;
+
+    @Value("${connector.internal-token:${CONNECTOR_INTERNAL_TOKEN:couponkill-internal}}")
+    private String internalToken;
 
     @Operation(summary = "查询可用优惠券列表", description = "获取所有可用的优惠券")
     @GetMapping("/available")
@@ -143,6 +149,53 @@ public class CouponController {
         }
     }
 
+    @Operation(summary = "按分片回补秒杀库存", description = "virtualId 格式 couponId_shardIndex，仅服务间调用")
+    @PostMapping("/increase-seckill-by-shard")
+    public ApiResponse<Boolean> increaseSeckillStockByShardId(
+            @Parameter(description = "虚拟分片ID") @RequestParam String virtualId) {
+        log.info("按分片回补秒杀库存: virtualId={}", virtualId);
+        try {
+            boolean result = couponService.increaseSeckillStockByShardId(virtualId);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("按分片回补秒杀库存失败，virtualId: {}", virtualId, e);
+            return ApiResponse.fail(500, "按分片回补秒杀库存失败: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "预热单券 Redis 库存", description = "内部接口：秒杀缺 key 时补救")
+    @PostMapping("/preheat-stock/{id}")
+    public ApiResponse<Boolean> preheatStock(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        return ApiResponse.success(couponService.preheatCouponStock(id));
+    }
+
+    @Operation(summary = "全量预热 Redis 库存", description = "内部接口")
+    @PostMapping("/preheat-stock")
+    public ApiResponse<Boolean> preheatAllStock() {
+        couponService.asyncPreheatStockToRedis();
+        return ApiResponse.success(true);
+    }
+
+    @Operation(summary = "电商 Connector 同步 Redis 库存", description = "内部接口，禁止经网关暴露")
+    @PostMapping("/internal/sync-stock")
+    public ApiResponse<SyncStockResult> syncStockFromConnector(
+            @RequestBody SyncStockRequest request,
+            @RequestHeader(value = "X-Internal-Token", required = false) String token) {
+        if (internalToken == null || internalToken.isBlank() || !internalToken.equals(token)) {
+            return ApiResponse.fail(403, "forbidden: invalid internal token");
+        }
+        if (request == null || request.getCouponId() == null || request.getTargetStock() == null) {
+            return ApiResponse.fail(400, "couponId/targetStock 必填");
+        }
+        boolean force = Boolean.TRUE.equals(request.getForce());
+        SyncStockResult result = couponService.syncRedisStock(request.getCouponId(), request.getTargetStock(), force);
+        if (result != null && result.isSuccess()) {
+            return ApiResponse.success(result);
+        }
+        String msg = result != null && result.getMessage() != null ? result.getMessage() : "同步 Redis 库存失败";
+        return ApiResponse.fail(500, msg);
+    }
+
     @Operation(summary = "扣减优惠券库存并返回使用的分片ID")
     @PostMapping("/deduct-with-shard-id/{id}")
     public ApiResponse<String> deductStockWithShardId(@Parameter(description = "优惠券ID") @PathVariable Long id) {
@@ -157,6 +210,22 @@ public class CouponController {
         } catch (Exception e) {
             log.error("扣减库存并获取分片ID失败，couponId: {}", id, e);
             return ApiResponse.fail(500, "扣减库存并获取分片ID失败: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "仅扣 DB 分片秒杀库存（Redis 已由热路径 Lua 预扣）", description = "内部接口，禁止经网关暴露给客户端")
+    @PostMapping("/deduct-db-only/{id}")
+    public ApiResponse<String> deductDbSeckillStockOnly(@Parameter(description = "优惠券ID") @PathVariable Long id) {
+        log.info("仅扣 DB 秒杀库存: id={}", id);
+        try {
+            String shardId = couponService.deductDbSeckillStockOnly(id);
+            if (shardId != null) {
+                return ApiResponse.success(shardId);
+            }
+            return ApiResponse.fail(500, "扣减DB库存失败");
+        } catch (Exception e) {
+            log.error("仅扣 DB 秒杀库存失败，couponId: {}", id, e);
+            return ApiResponse.fail(500, "仅扣DB库存失败: " + e.getMessage());
         }
     }
     

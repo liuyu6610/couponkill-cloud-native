@@ -79,11 +79,9 @@ spec:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
-            # JVM优化参数
-            {{- if .Values.services.gateway.jvmOpts }}
-            - name: JAVA_OPTS
-              value: "{{ .Values.services.gateway.jvmOpts }}"
-            {{- end }}
+            # JVM 单真源 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders）
+            - name: JAVA_TOOL_OPTIONS
+              value: "{{ .Values.services.gateway.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0\" }}"
             {{- if .Values.services.gateway.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.gateway.threadPoolOpts }}"

@@ -15,14 +15,6 @@ user:
   # 登录相关配置
   login:
     token-expire: 86400  # JWT令牌过期时间（秒）
-
-# JWT配置
-jwt:
-  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
-  expiration: 86400000 # 24小时，单位毫秒
-
-# 用户服务集群配置
-user:
   cluster:
     # 是否启用集群模式
     enabled: false
@@ -36,3 +28,13 @@ user:
       sync:
         enabled: true
         timeout: 3000
+
+# JWT配置
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+  expiration: 86400000 # 24小时，单位毫秒
+
+# 登录签发 admin 角色的 userId 列表（demo=10000）
+connector:
+  admin:
+    user-ids: ${CONNECTOR_ADMIN_USER_IDS:10000}

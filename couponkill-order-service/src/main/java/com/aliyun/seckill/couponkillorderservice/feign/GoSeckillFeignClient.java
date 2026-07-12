@@ -1,4 +1,3 @@
-// couponkill-order-service/src/main/java/com/aliyun/seckill/order/feign/GoSeckillFeignClient.java
 package com.aliyun.seckill.couponkillorderservice.feign;
 
 import com.aliyun.seckill.common.result.Result;
@@ -7,7 +6,13 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "go-service", url = "${go.service.url:http://go-service:8090}")
+/**
+ * Go 秒杀 Feign。url 与 ServiceGoConfig / nacos couponkill.seckill.go.url 对齐。
+ */
+@FeignClient(
+        name = "seckill-go-svc",
+        url = "${couponkill.seckill.go.url:http://seckill-go-svc:8083}"
+)
 public interface GoSeckillFeignClient {
 
     @PostMapping(value = "/seckill", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -24,7 +29,6 @@ public interface GoSeckillFeignClient {
             this.coupon_id = couponId;
         }
 
-        // getters and setters
         public Long getUser_id() { return user_id; }
         public void setUser_id(Long user_id) { this.user_id = user_id; }
         public Long getCoupon_id() { return coupon_id; }

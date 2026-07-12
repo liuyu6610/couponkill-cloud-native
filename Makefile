@@ -232,8 +232,8 @@ pull-dependency-images: ## Pull all dependency images to local registry
 	docker push ${REGISTRY}:rocketmq-broker
 	
 	# Pull and retag Nacos image
-	docker pull nacos/nacos-server:v2.2.3
-	docker tag nacos/nacos-server:v2.2.3 ${REGISTRY}:nacos-server
+	docker pull nacos/nacos-server:v3.1.1
+	docker tag nacos/nacos-server:v3.1.1 ${REGISTRY}:nacos-server
 	docker push ${REGISTRY}:nacos-server
 	
 	# Pull and retag Sentinel image

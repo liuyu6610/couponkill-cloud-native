@@ -1,9 +1,27 @@
 spring:
+  # JDK 25 虚拟线程：请求处理路径；后置异步见 thread-pool.async.virtual-enabled
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      acks: all
+      retries: 3
+      linger-ms: 5
+      batch-size: 32768
+      request-timeout-ms: 3000
+      delivery-timeout-ms: 10000
+    consumer:
+      auto-offset-reset: latest
+      enable-auto-commit: true
   data:
     redis:
       # 单节点模式配置
       host: redis-master
       port: 6379
+      timeout: 2s
+      connect-timeout: 2s
       # 集群模式配置（注释掉单节点配置后启用）
       # cluster:
       #   nodes: redis-node-0:6379,redis-node-1:6379,redis-node-2:6379
@@ -14,7 +32,6 @@ spring:
           max-idle: 50
           min-idle: 20
           max-wait: 2000ms
-
   cloud:
     sentinel:
       transport:
@@ -31,22 +48,17 @@ spring:
             group: SENTINEL_GROUP
             rule-type: flow
 
-# RocketMQ配置
-rocketmq:
-  name-server: rocketmq-namesrv:9876
-  # 集群模式配置
-  # name-server: rocketmq-namesrv-0:9876;rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
-  producer:
-    group: common-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 1
-    max-message-size: 4096
-    transaction-listener:
-      enabled: true
+# Kafka 主题默认名（可被各服务 *-dev.yaml 覆盖）
+kafka:
+  topic:
+    seckill-order-create: seckill_order_create
+    seckill-order-result: seckill_order_result
+    seckill-compensation: seckill_compensation
 
-# 线程池配置
+# 线程池配置（订单后置任务等：默认虚拟线程，避免固定池成为隐藏背压）
 thread-pool:
   async:
+    virtual-enabled: true
     core-pool-size: 50
     max-pool-size: 100
     queue-capacity: 500
@@ -62,22 +74,22 @@ thread-pool:
 
 # 数据库配置
 database:
-  # MySQL主从配置
-  mysql:
+  # PostgreSQL 主从配置
+  postgresql:
     master:
-      host: mysql-master
-      port: 3306
-      username: root
-      password: root
+      host: postgres-master
+      port: 5432
+      username: postgres
+      password: postgres
     slaves:
-      - host: mysql-slave-0
-        port: 3306
-        username: root
-        password: root
-      - host: mysql-slave-1
-        port: 3306
-        username: root
-        password: root
+      - host: postgres-slave-0
+        port: 5432
+        username: postgres
+        password: postgres
+      - host: postgres-slave-1
+        port: 5432
+        username: postgres
+        password: postgres
 
 # 集群配置引用
 cluster:
@@ -90,7 +102,7 @@ cluster:
     cache: cache-connection.yaml
     # 消息队列连接配置
     messaging: messaging-connection.yaml
-    # MySQL集群配置
-    mysql: mysql-cluster.yaml
+    # PostgreSQL集群配置
+    postgresql: postgresql-cluster.yaml
     # Redis集群配置
     redis: redis-cluster.yaml

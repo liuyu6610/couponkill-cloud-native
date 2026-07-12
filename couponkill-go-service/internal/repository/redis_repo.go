@@ -80,16 +80,14 @@ func (r *RedisRepository) SetUserReceivedCache(ctx context.Context, userID, coup
 	return r.client.Set(ctx, receivedKey, "1", 0).Err()
 }
 
-// UpdateUserCouponCountCache 更新用户优惠券数量缓存
+// UpdateUserCouponCountCache 更新用户优惠券数量缓存（键序对齐 Java: user:coupon:count:{uid}:total|seckill）
 func (r *RedisRepository) UpdateUserCouponCountCache(ctx context.Context, userID int64, totalCountChange, seckillCountChange int64) error {
-	// 更新总数量缓存
-	totalCountKey := fmt.Sprintf("user:coupon:count:total:%d", userID)
+	totalCountKey := fmt.Sprintf("user:coupon:count:%d:total", userID)
 	if totalCountChange != 0 {
 		r.client.IncrBy(ctx, totalCountKey, totalCountChange)
 	}
 
-	// 更新秒杀券数量缓存
-	seckillCountKey := fmt.Sprintf("user:coupon:count:seckill:%d", userID)
+	seckillCountKey := fmt.Sprintf("user:coupon:count:%d:seckill", userID)
 	if seckillCountChange != 0 {
 		r.client.IncrBy(ctx, seckillCountKey, seckillCountChange)
 	}

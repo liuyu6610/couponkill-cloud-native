@@ -1,39 +1,39 @@
 {{- if .Values.dependencies.enabled }}
 ---
-# MySQL Service definition
+# PostgreSQL Service definition
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql
+  name: postgres
   namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - port: 3306
-      targetPort: 3306
+    - port: 5432
+      targetPort: 5432
   clusterIP: None
 ---
-# MySQL Master Service for master-slave setup
+# PostgreSQL Master Service for streaming replication setup
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-master
+  name: postgres-master
   namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - port: 3306
-      targetPort: 3306
+    - port: 5432
+      targetPort: 5432
   clusterIP: None
 ---
-# MySQL Slave Service for master-slave setup
+# PostgreSQL Slave Service for streaming replication setup
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-slave
+  name: postgres-slave
   namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - port: 3306
-      targetPort: 3306
+    - port: 5432
+      targetPort: 5432
   clusterIP: None
 ---
 # Redis Service definition

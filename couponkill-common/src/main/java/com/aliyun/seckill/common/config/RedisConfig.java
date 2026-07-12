@@ -6,24 +6,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
+import io.lettuce.core.TimeoutOptions;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.*;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisSentinelConfiguration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Redis 连接工厂：显式接入 Lettuce 连接池与命令超时，避免手写 factory 绕过 spring.data.redis.lettuce.pool。
+ */
 @Configuration
 public class RedisConfig {
 
-    // 单节点配置
     @Value("${spring.data.redis.host:redis}")
     private String redisHost;
 
@@ -33,26 +46,40 @@ public class RedisConfig {
     @Value("${spring.data.redis.password:}")
     private String redisPassword;
 
-    // 集群配置
     @Value("${spring.data.redis.cluster.nodes:}")
     private String clusterNodes;
 
-    // 哨兵配置
     @Value("${spring.data.redis.sentinel.master:}")
     private String sentinelMaster;
 
     @Value("${spring.data.redis.sentinel.nodes:}")
     private String sentinelNodes;
 
+    @Value("${spring.data.redis.lettuce.pool.max-active:64}")
+    private int poolMaxActive;
+
+    @Value("${spring.data.redis.lettuce.pool.max-idle:32}")
+    private int poolMaxIdle;
+
+    @Value("${spring.data.redis.lettuce.pool.min-idle:8}")
+    private int poolMinIdle;
+
+    @Value("${spring.data.redis.lettuce.pool.max-wait:2000ms}")
+    private Duration poolMaxWait;
+
+    @Value("${spring.data.redis.timeout:2s}")
+    private Duration commandTimeout;
+
+    @Value("${spring.data.redis.connect-timeout:2s}")
+    private Duration connectTimeout;
+
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
-        // 注册 JavaTimeModule 以支持 LocalDateTime 等时间类型
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        javaTimeModule.addSerializer(LocalDateTime.class,
+                new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         objectMapper.registerModule(javaTimeModule);
-
-        // 启用默认类型信息，确保序列化时保留完整类型信息
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL
@@ -62,42 +89,55 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // 检查是否配置了集群模式
         if (clusterNodes != null && !clusterNodes.isEmpty()) {
-            return redisClusterConnectionFactory();
+            return new LettuceConnectionFactory(buildClusterConfig(), lettuceClientConfiguration());
         }
-        
-        // 检查是否配置了哨兵模式
-        if (sentinelMaster != null && !sentinelMaster.isEmpty() && sentinelNodes != null && !sentinelNodes.isEmpty()) {
-            return redisSentinelConnectionFactory();
+        if (sentinelMaster != null && !sentinelMaster.isEmpty()
+                && sentinelNodes != null && !sentinelNodes.isEmpty()) {
+            return new LettuceConnectionFactory(buildSentinelConfig(), lettuceClientConfiguration());
         }
-        
-        // 默认使用单节点模式
-        return redisStandaloneConnectionFactory();
+        return new LettuceConnectionFactory(buildStandaloneConfig(), lettuceClientConfiguration());
     }
 
-    /**
-     * 单节点Redis连接工厂
-     */
-    private RedisConnectionFactory redisStandaloneConnectionFactory() {
+    private LettucePoolingClientConfiguration lettuceClientConfiguration() {
+        GenericObjectPoolConfig<io.lettuce.core.api.StatefulConnection<?, ?>> poolConfig =
+                new GenericObjectPoolConfig<>();
+        poolConfig.setMaxTotal(poolMaxActive);
+        poolConfig.setMaxIdle(poolMaxIdle);
+        poolConfig.setMinIdle(poolMinIdle);
+        poolConfig.setMaxWait(poolMaxWait);
+        poolConfig.setTestOnBorrow(true);
+
+        SocketOptions socketOptions = SocketOptions.builder()
+                .connectTimeout(connectTimeout)
+                .keepAlive(true)
+                .build();
+        ClientOptions clientOptions = ClientOptions.builder()
+                .socketOptions(socketOptions)
+                .timeoutOptions(TimeoutOptions.enabled(commandTimeout))
+                .autoReconnect(true)
+                .build();
+
+        return LettucePoolingClientConfiguration.builder()
+                .poolConfig(poolConfig)
+                .clientOptions(clientOptions)
+                .commandTimeout(commandTimeout)
+                .build();
+    }
+
+    private RedisStandaloneConfiguration buildStandaloneConfig() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisHost);
         config.setPort(redisPort);
         if (redisPassword != null && !redisPassword.isEmpty()) {
             config.setPassword(RedisPassword.of(redisPassword));
         }
-        return new LettuceConnectionFactory(config);
+        return config;
     }
 
-    /**
-     * Redis集群连接工厂
-     */
-    private RedisConnectionFactory redisClusterConnectionFactory() {
+    private RedisClusterConfiguration buildClusterConfig() {
         RedisClusterConfiguration config = new RedisClusterConfiguration();
-        
-        // 解析集群节点
-        String[] nodes = clusterNodes.split(",");
-        for (String node : nodes) {
+        for (String node : clusterNodes.split(",")) {
             if (!node.trim().isEmpty()) {
                 String[] parts = node.trim().split(":");
                 if (parts.length == 2) {
@@ -105,25 +145,17 @@ public class RedisConfig {
                 }
             }
         }
-        
         if (redisPassword != null && !redisPassword.isEmpty()) {
             config.setPassword(RedisPassword.of(redisPassword));
         }
-        
-        return new LettuceConnectionFactory(config);
+        return config;
     }
 
-    /**
-     * Redis哨兵连接工厂
-     */
-    private RedisConnectionFactory redisSentinelConnectionFactory() {
+    private RedisSentinelConfiguration buildSentinelConfig() {
         RedisSentinelConfiguration config = new RedisSentinelConfiguration();
         config.master(sentinelMaster);
-        
-        // 解析哨兵节点
-        String[] nodes = sentinelNodes.split(",");
         List<RedisNode> sentinelNodesList = new ArrayList<>();
-        for (String node : nodes) {
+        for (String node : sentinelNodes.split(",")) {
             if (!node.trim().isEmpty()) {
                 String[] parts = node.trim().split(":");
                 if (parts.length == 2) {
@@ -132,95 +164,30 @@ public class RedisConfig {
             }
         }
         config.setSentinels(sentinelNodesList);
-        
         if (redisPassword != null && !redisPassword.isEmpty()) {
             config.setPassword(RedisPassword.of(redisPassword));
         }
-        
-        return new LettuceConnectionFactory(config);
+        return config;
     }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-
-        // 使用自定义 ObjectMapper 的序列化器
         ObjectMapper customMapper = objectMapper();
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(customMapper);
-
-        // 使用更快的序列化方式
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setHashValueSerializer(serializer);
-
-        // 关闭事务支持秒杀场景
         template.setEnableTransactionSupport(false);
-
-        // 设置连接池参数
         template.afterPropertiesSet();
         return template;
     }
-    
-    /**
-     * 动态更新Redis连接工厂
-     * 用于在运行时根据配置变化重新创建连接工厂
-     */
-    public RedisConnectionFactory updateRedisConnectionFactory(String mode, List<String> nodes, String password, String masterName) {
-        switch (mode.toLowerCase()) {
-            case "cluster":
-                if (nodes != null && !nodes.isEmpty()) {
-                    RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(nodes);
-                    if (password != null && !password.isEmpty()) {
-                        clusterConfig.setPassword(RedisPassword.of(password));
-                    }
-                    return new LettuceConnectionFactory(clusterConfig);
-                }
-                break;
-                
-            case "sentinel":
-                if (masterName != null && !masterName.isEmpty() && nodes != null && !nodes.isEmpty()) {
-                    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration();
-                    sentinelConfig.master(masterName);
-                    
-                    List<RedisNode> sentinelNodesList = new ArrayList<>();
-                    for (String node : nodes) {
-                        if (!node.trim().isEmpty()) {
-                            String[] parts = node.trim().split(":");
-                            if (parts.length == 2) {
-                                sentinelNodesList.add(new RedisNode(parts[0], Integer.parseInt(parts[1])));
-                            }
-                        }
-                    }
-                    sentinelConfig.setSentinels(sentinelNodesList);
-                    
-                    if (password != null && !password.isEmpty()) {
-                        sentinelConfig.setPassword(RedisPassword.of(password));
-                    }
-                    
-                    return new LettuceConnectionFactory(sentinelConfig);
-                }
-                break;
-                
-            case "standalone":
-            default:
-                // 默认使用单节点模式
-                RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-                if (nodes != null && !nodes.isEmpty()) {
-                    String[] parts = nodes.get(0).split(":");
-                    if (parts.length == 2) {
-                        standaloneConfig.setHostName(parts[0]);
-                        standaloneConfig.setPort(Integer.parseInt(parts[1]));
-                    }
-                }
-                if (password != null && !password.isEmpty()) {
-                    standaloneConfig.setPassword(RedisPassword.of(password));
-                }
-                return new LettuceConnectionFactory(standaloneConfig);
-        }
-        
-        // 如果没有匹配的配置，返回默认单节点连接
-        return redisStandaloneConnectionFactory();
+
+    @Bean
+    public org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
+        return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
     }
 }

@@ -7,57 +7,44 @@ middleware:
     
   # 数据库集群配置
   database:
-    mysql:
-      # 集群类型: standalone, master-slave, group-replication, innodb-cluster
+    postgresql:
+      # 集群类型: standalone, master-slave, patroni-cluster
       type: standalone
       standalone:
-        host: mysql
-        port: 3306
-        username: root
-        password: root
+        host: postgres
+        port: 5432
+        username: postgres
+        password: postgres
       master-slave:
         master:
-          host: mysql-master
-          port: 3306
-          username: root
-          password: root
+          host: postgres-master
+          port: 5432
+          username: postgres
+          password: postgres
         slaves:
-          - host: mysql-slave-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-slave-1
-            port: 3306
-            username: root
-            password: root
-      group-replication:
+          - host: postgres-slave-0
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-slave-1
+            port: 5432
+            username: postgres
+            password: postgres
+      # Patroni/流复制高可用集群
+      patroni-cluster:
         nodes:
-          - host: mysql-gr-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-gr-1
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-gr-2
-            port: 3306
-            username: root
-            password: root
-      innodb-cluster:
-        nodes:
-          - host: mysql-innodb-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-innodb-1
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-innodb-2
-            port: 3306
-            username: root
-            password: root
+          - host: postgres-node-0
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-node-1
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-node-2
+            port: 5432
+            username: postgres
+            password: postgres
             
   # 缓存集群配置
   cache:
@@ -111,23 +98,16 @@ middleware:
         
   # 消息队列集群配置
   messaging:
-    rocketmq:
+    kafka:
       # 集群类型: standalone, cluster
       type: standalone
       standalone:
-        name-server: rocketmq-namesrv:9876
+        bootstrap-servers: kafka:9092
       cluster:
-        name-servers:
-          - rocketmq-namesrv-0:9876
-          - rocketmq-namesrv-1:9876
-          - rocketmq-namesrv-2:9876
-        broker-clusters:
-          - name: DefaultCluster
-            brokers:
-              - broker-master-0:10911
-              - broker-slave-0:10911
-              - broker-master-1:10911
-              - broker-slave-1:10911
+        bootstrap-servers:
+          - kafka-0:9092
+          - kafka-1:9092
+          - kafka-2:9092
               
   # 配置中心集群配置
   config:

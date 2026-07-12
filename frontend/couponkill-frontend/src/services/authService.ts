@@ -1,87 +1,32 @@
-import axios from 'axios'
-import type { User } from '../store/slices/authSlice'
+import { http, STORAGE_KEYS } from '../lib/apiClient'
+import type { LoginResult, UserInfo } from '../types/api'
 
-// 创建axios实例
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// 请求拦截器：添加认证token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// 响应拦截器：处理通用错误
-apiClient.interceptors.response.use(
-  (response) => {
-    return response.data
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // token过期或无效，清除本地存储
-      localStorage.removeItem('token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error.response?.data || error.message)
-  }
-)
-
-// 认证相关API
+// 认证 / 用户账户相关接口（对齐 user-service: /api/v1/user/**）
 export const authService = {
-  // 用户登录
-  async login(username: string, password: string) {
-    const response = await apiClient.post('/api/v1/auth/login', {
-      username,
-      password,
+  async login(username: string, password: string): Promise<LoginResult> {
+    const data = await http.post<LoginResult>('/api/v1/user/login', null, {
+      params: { username, password },
     })
-    return response.data
+    return data
   },
 
-  // 用户注册
-  async register(userData: {
-    username: string
-    password: string
-    email: string
-    phone?: string
-  }) {
-    const response = await apiClient.post('/api/v1/auth/register', userData)
-    return response.data
+  async register(username: string, password: string, phone: string): Promise<UserInfo> {
+    return http.post<UserInfo>('/api/v1/user/register', null, {
+      params: { username, password, phone },
+    })
   },
 
-  // 用户登出
-  async logout() {
-    await apiClient.post('/api/v1/auth/logout')
+  // 身份取自网关 X-User-Id，无需再传 userId
+  async getProfile(): Promise<UserInfo> {
+    return http.get<UserInfo>('/api/v1/user/profile')
   },
 
-  // 获取当前用户信息
-  async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get('/api/v1/auth/me')
-    return response.data
-  },
-
-  // 刷新token
-  async refreshToken() {
-    const response = await apiClient.post('/api/v1/auth/refresh')
-    return response.data
+  logout(): void {
+    localStorage.removeItem(STORAGE_KEYS.token)
+    localStorage.removeItem(STORAGE_KEYS.userId)
+    localStorage.removeItem(STORAGE_KEYS.username)
+    localStorage.removeItem(STORAGE_KEYS.roles)
   },
 }
 
-// 导出便捷方法
-export const login = authService.login
-export const register = authService.register
-export const logout = authService.logout
-
-export default apiClient
+export default authService

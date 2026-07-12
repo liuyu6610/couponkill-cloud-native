@@ -1,70 +1,13 @@
 package com.aliyun.seckill.common.config;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
-
+/**
+ * 仅开启 @Async。执行器真源见 {@link com.aliyun.seckill.common.thread.TpConfig}（默认虚拟线程）。
+ * 已移除未使用的平台线程池 seckillAsyncExecutor / orderAsyncExecutor，避免与 VT 叙事冲突。
+ */
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-    @Value("${thread-pool.order.core-pool-size:20}")
-    private int corePoolSize;
-
-    @Value("${thread-pool.order.max-pool-size:40}")
-    private int maxPoolSize;
-
-    @Value("${thread-pool.order.queue-capacity:500}")
-    private int queueCapacity;
-
-    @Value("${thread-pool.order.keep-alive-seconds:60}")
-    private int keepAliveSeconds;
-
-    @Value("${thread-pool.order.thread-name-prefix:order-async-}")
-    private String threadNamePrefix;
-
-    @Value("${thread-pool.order.rejected-policy:CALLER_RUNS}")
-    private String rejectedPolicy;
-    @Bean("seckillAsyncExecutor")
-    public Executor seckillAsyncExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(20);
-        executor.setMaxPoolSize(100);
-        executor.setQueueCapacity(500);
-        executor.setKeepAliveSeconds(60);
-        executor.setThreadNamePrefix("seckill-async-");
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        executor.initialize();
-        return executor;
-    }
-    @Bean("orderAsyncExecutor")
-    public Executor orderAsyncExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(queueCapacity);
-        executor.setKeepAliveSeconds(keepAliveSeconds);
-        executor.setThreadNamePrefix(threadNamePrefix);
-
-        // 根据配置设置拒绝策略
-        switch (rejectedPolicy) {
-            case "CALLER_RUNS":
-                executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-                break;
-            case "DISCARD_OLDEST":
-                executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
-                break;
-            case "DISCARD":
-                executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
-                break;
-            default:
-                executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        }
-
-        executor.initialize();
-        return executor;
-    }
 }

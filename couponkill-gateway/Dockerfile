@@ -1,6 +1,6 @@
-FROM maven:3.9.6-eclipse-temurin-21 AS builder
+FROM maven:3.9.9-eclipse-temurin-25 AS builder
 WORKDIR /app
-#复制pom.xml和源码
+#复制pom.xml和源�?
 COPY couponkill-gateway/pom.xml .
 COPY couponkill-gateway/src ./src
 COPY pom.xml ../pom.xml
@@ -9,7 +9,7 @@ COPY pom.xml ../pom.xml
 RUN mvn -f pom.xml clean package -DskipTests
 
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 

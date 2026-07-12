@@ -13,6 +13,7 @@ import Seckill from './pages/Seckill'
 import OrderList from './pages/OrderList'
 import OrderDetail from './pages/OrderDetail'
 import UserCenter from './pages/UserCenter'
+import ConnectorAdmin from './pages/ConnectorAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -65,6 +66,13 @@ function App() {
             <Route path="/user/*" element={
               <ProtectedRoute>
                 <UserCenter />
+              </ProtectedRoute>
+            } />
+
+            {/* Connector 管理（绑定/同步需登录；页内健康区可匿名刷新） */}
+            <Route path="/admin/connector" element={
+              <ProtectedRoute requireAdmin>
+                <ConnectorAdmin />
               </ProtectedRoute>
             } />
 

@@ -66,11 +66,18 @@ public class UserController {
     }
 
 
-    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
+    @Operation(summary = "获取用户信息", description = "根据网关注入的身份获取当前用户信息")
     @GetMapping("/profile")
-    public ApiResponse<User> getProfile(
-            @Parameter(description = "用户ID") @RequestParam Long userId) {
+    public ApiResponse<User> getProfile() {
+        Long userId = com.aliyun.seckill.common.context.UserContext.requireCurrentUserId();
         return ApiResponse.success(userService.getUserById(userId));
+    }
+
+    @Operation(summary = "获取用户优惠券统计", description = "返回用户优惠券计数，供订单服务限领校验")
+    @GetMapping("/coupon/count")
+    public ApiResponse<com.aliyun.seckill.common.pojo.UserCouponCount> getUserCouponCount(
+            @Parameter(description = "用户ID") @RequestParam Long userId) {
+        return ApiResponse.success(userService.getUserCouponCount(userId));
     }
     
     @Operation(summary = "更新用户秒杀优惠券数量", description = "更新用户秒杀优惠券数量")

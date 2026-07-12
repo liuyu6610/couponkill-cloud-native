@@ -1,0 +1,52 @@
+# Kafka 专题配置（原 ROCKETMQ_GROUP/rocketmq-config.yaml 的替代）
+kafka:
+  # 单节点模式
+  bootstrap-servers: kafka:9092
+  # 集群模式（多 broker）：kafka-0:9092,kafka-1:9092,kafka-2:9092
+
+  # 生产者配置
+  producer:
+    acks: all
+    retries: 3
+    enable-idempotence: true
+    batch-size: 16384
+    linger-ms: 5
+    buffer-memory: 33554432
+    compression-type: lz4
+    max-request-size: 1048576
+
+  # 消费者配置
+  consumer:
+    group:
+      seckill-result: seckill-order-result-group   # 秒杀结果消费组
+      order-create: seckill-order-create-group      # 订单创建消费组
+    auto-offset-reset: latest
+    enable-auto-commit: true
+    max-poll-records: 500
+    fetch-min-bytes: 1
+    session-timeout-ms: 15000
+
+  # 主题配置（分区/副本数用于 topic 初始化）
+  topic:
+    seckill-order-create: seckill_order_create
+    seckill-order-result: seckill_order_result
+    seckill-compensation: seckill_compensation
+    partitions: 16
+    replication-factor: 1
+
+  # 重试与死信配置
+  retry:
+    max-attempts: 3
+    backoff-ms: 1000
+    dlq-suffix: .DLT
+
+  # 集群配置
+  cluster:
+    enabled: false
+    bootstrap-servers:
+      - kafka-0.kafka-headless:9092
+      - kafka-1.kafka-headless:9092
+      - kafka-2.kafka-headless:9092
+    communication:
+      timeout: 3000
+      retries: 3

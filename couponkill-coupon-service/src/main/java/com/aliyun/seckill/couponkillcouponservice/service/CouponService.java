@@ -1,5 +1,6 @@
 package com.aliyun.seckill.couponkillcouponservice.service;
 
+import com.aliyun.seckill.common.connector.SyncStockResult;
 import com.aliyun.seckill.common.pojo.Coupon;
 
 import java.util.List;
@@ -41,6 +42,11 @@ public interface CouponService {
     boolean increaseStock(Long couponId);
 
     /**
+     * 按 virtualId（couponId_shardIndex）回补秒杀分片库存
+     */
+    boolean increaseSeckillStockByShardId(String virtualId);
+
+    /**
      * 更新库存
      */
     void updateStock(Long couponId, int newStock);
@@ -54,11 +60,17 @@ public interface CouponService {
      * 扣减库存并返回分片索引
      */
     Integer deductStockWithShardIndex(Long couponId);
-    
+
     /**
-     * 扣减库存并返回分片ID（couponId_shardIndex格式）
+     * 扣减库存并返回分片ID（couponId_shardIndex格式），同时异步更新 Redis
      */
     String deductStockWithShardId(Long couponId);
+    
+    /**
+     * 仅扣减 DB 分片秒杀库存并返回 virtualId（couponId_shardIndex）。
+     * 不触碰 Redis coupon:stock（供热路径 Lua 已预扣后的异步消费者使用）。
+     */
+    String deductDbSeckillStockOnly(Long couponId);
     
     /**
      * 获取优惠券的所有分片
@@ -71,7 +83,19 @@ public interface CouponService {
     Coupon getRandomAvailableShard(Long couponId);
     
     /**
-     * 异步预热库存到Redis
+     * 异步预热全部有效券库存到 Redis（coupon:stock 为全分片合计）
      */
     void asyncPreheatStockToRedis();
+
+    /**
+     * 预热单张券库存到 Redis（供秒杀热路径缺 key 时补救）
+     */
+    boolean preheatCouponStock(Long couponId);
+
+    /**
+     * 将目标库存写入 Redis coupon:stock:{couponId}（电商 Connector 旁路同步用）。
+     * @param force true 强制覆盖；false 安全合并（永不抬高已有库存）
+     * @return 含 appliedStock 的同步结果（失败时 success=false）
+     */
+    SyncStockResult syncRedisStock(Long couponId, Long targetStock, boolean force);
 }

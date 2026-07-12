@@ -3,6 +3,8 @@ package sharding
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
 )
 
@@ -19,19 +21,30 @@ func NewMultiDataSource() *MultiDataSource {
 	}
 }
 
-// AddDataSource 添加数据源
+func poolIntEnv(key string, defaultVal int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultVal
+}
+
+// AddDataSource 添加数据源。
+// 默认 MaxOpenConns=64（可通过 GO_DB_MAX_OPEN_CONNS 覆盖），避免旧默认 25 在多 DS 下成为隐藏并发天花板。
 func (m *MultiDataSource) AddDataSource(name, dsn string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %v", err)
 	}
 
-	// 设置连接池参数
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
+	maxOpen := poolIntEnv("GO_DB_MAX_OPEN_CONNS", 64)
+	maxIdle := poolIntEnv("GO_DB_MAX_IDLE_CONNS", 16)
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
 
 	m.dataSources[name] = db
 	return nil

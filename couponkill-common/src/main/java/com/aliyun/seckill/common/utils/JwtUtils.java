@@ -16,7 +16,7 @@ import java.util.UUID;
 @Component
 public class JwtUtils {
 
-    @Value("${jwt.secret:myDefaultSecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong}")
+    @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
@@ -32,7 +32,7 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // 修复后的静态方法
+    // 修复后的静态方法：subject + userId claim 双写，兼容网关解析
     public static String createToken(String secret, String issuer, String audience, String userId, List<String> roles, long ttlSeconds) {
         Key signingKey = Keys.hmacShaKeyFor(secret.getBytes());
         long now = System.currentTimeMillis();
@@ -44,27 +44,46 @@ public class JwtUtils {
                 .setSubject(userId)
                 .setIssuer(issuer)
                 .setAudience(audience)
+                .claim("userId", userId)
                 .claim("roles", roles)
                 .setIssuedAt(iat)
                 .setExpiration(exp)
                 .signWith(signingKey, SignatureAlgorithm.HS256)
-                .compact(); // 添加.compact()以生成完整的JWT字符串
+                .compact();
     }
 
     // 生成令牌 (原有方法)
     public String generateToken(Long userId) {
+        return generateToken(userId, List.of("user"));
+    }
+
+    /** 带角色签发：roles 如 ["admin","user"] */
+    public String generateToken(Long userId, List<String> roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
+        claims.put("roles", roles == null || roles.isEmpty() ? List.of("user") : roles);
         return createToken(claims);
     }
 
     private String createToken(Map<String, Object> claims) {
         return Jwts.builder()
                 .setClaims(claims)
+                .setSubject(String.valueOf(claims.get("userId")))
+                .setIssuer(issuer)
+                .setAudience(audience)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        Object roles = extractClaim(token, c -> c.get("roles"));
+        if (roles instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        return List.of("user");
     }
 
 

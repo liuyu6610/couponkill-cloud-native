@@ -54,11 +54,12 @@ func initializeMySQLCluster(cfg *Config) (*sharding.MultiDataSource, error) {
 		host := parts[0]
 		port := parts[1]
 
-		// 构建DSN
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		// 构建 PostgreSQL DSN
+		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			host, port,
 			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Username,
 			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Password,
-			host, port, cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Database)
+			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Database)
 
 		// 添加数据源
 		if err := multiDS.AddDataSource(fmt.Sprintf("mysql-cluster-node-%d", i), dsn); err != nil {
@@ -75,11 +76,11 @@ func initializeMySQLReplication(cfg *Config) (*sharding.MultiDataSource, error) 
 	multiDS := sharding.NewMultiDataSource()
 
 	// 添加主节点
-	masterDSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.Mysql.Replication.Master.Username,
-		cfg.Mysql.Replication.Master.Password,
+	masterDSN := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Middleware.Mysql.Replication.Master.Host,
 		cfg.Middleware.Mysql.Replication.Master.Port,
+		cfg.Mysql.Replication.Master.Username,
+		cfg.Mysql.Replication.Master.Password,
 		cfg.Mysql.Replication.Master.Database)
 
 	if err := multiDS.AddDataSource("mysql-master", masterDSN); err != nil {
@@ -88,11 +89,11 @@ func initializeMySQLReplication(cfg *Config) (*sharding.MultiDataSource, error) 
 
 	// 添加从节点
 	for i, slave := range cfg.Middleware.Mysql.Replication.Slaves {
-		slaveDSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-			cfg.Mysql.Replication.Slaves[i].Username,
-			cfg.Mysql.Replication.Slaves[i].Password,
+		slaveDSN := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			slave.Host,
 			slave.Port,
+			cfg.Mysql.Replication.Slaves[i].Username,
+			cfg.Mysql.Replication.Slaves[i].Password,
 			cfg.Mysql.Replication.Slaves[i].Database)
 
 		if err := multiDS.AddDataSource(fmt.Sprintf("mysql-slave-%d", i), slaveDSN); err != nil {

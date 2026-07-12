@@ -71,11 +71,11 @@ spec:
             - name: SERVER_PORT
               value: "{{ .Values.services.user.port }}"
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://mysql:3306/couponkill?useSSL=false&serverTimezone=UTC"
+              value: "jdbc:postgresql://postgres:5432/user_db_0?sslmode=disable"
             - name: SPRING_DATASOURCE_USERNAME
-              value: "root"
+              value: "postgres"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "password"
+              value: "postgres"
             - name: SPRING_REDIS_HOST
               value: "redis"
             - name: SPRING_REDIS_PORT
@@ -93,10 +93,10 @@ spec:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
-            # JVM优化参数
+            # JVM 单真源 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders）
             - name: JAVA_TOOL_OPTIONS
-              value: "{{ .Values.services.user.jvmOpts | default \"-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=100\" }}"
-            # 线程池优化参数
+              value: "{{ .Values.services.user.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0\" }}"
+            # 线程池优化参数（VT 对齐；勿再注入巨大 Tomcat 平台线程）
             {{- if .Values.services.user.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.user.threadPoolOpts }}"

@@ -1,6 +1,7 @@
-// 文件路径: com/aliyun/seckill/common/context/UserContext.java
 package com.aliyun.seckill.common.context;
 
+import com.aliyun.seckill.common.enums.ResultCode;
+import com.aliyun.seckill.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -10,23 +11,42 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 请求用户上下文。JDK25：优先读 {@link ScopedValue}（由 {@code UserContextFilter} 绑定），
+ * 回退到 Request 头，避免高并发 VT 下 ThreadLocal 膨胀。
+ */
 @Slf4j
-public class UserContext {
+public final class UserContext {
 
     public static final String USER_ID_HEADER = "X-User-Id";
     public static final String USER_ROLES_HEADER = "X-User-Roles";
     public static final String AUTHENTICATED_HEADER = "X-Authenticated";
 
-    /**
-     * 获取当前用户ID
-     * @return 用户ID，如果未认证则返回null
-     */
+    /** JDK 25 正式 Scoped Values（JEP 506） */
+    public static final ScopedValue<String> SCOPED_USER_ID = ScopedValue.newInstance();
+    public static final ScopedValue<String> SCOPED_USER_ROLES = ScopedValue.newInstance();
+    public static final ScopedValue<Boolean> SCOPED_AUTHENTICATED = ScopedValue.newInstance();
+
+    private UserContext() {
+    }
+
     public static String getCurrentUserId() {
+        if (SCOPED_USER_ID.isBound()) {
+            String scoped = SCOPED_USER_ID.get();
+            if (scoped != null && !scoped.isEmpty()) {
+                return scoped;
+            }
+        }
         try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                return request.getHeader(USER_ID_HEADER);
+                String userId = request.getHeader(USER_ID_HEADER);
+                if (userId == null || userId.isEmpty()) {
+                    userId = request.getHeader("X-User-ID");
+                }
+                return userId;
             }
         } catch (Exception e) {
             log.warn("Failed to get current user id", e);
@@ -34,13 +54,28 @@ public class UserContext {
         return null;
     }
 
-    /**
-     * 获取当前用户角色
-     * @return 用户角色列表
-     */
-    public static List<String> getCurrentUserRoles() {
+    public static Long requireCurrentUserId() {
+        String userId = getCurrentUserId();
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ResultCode.TOKEN_INVALID.getCode(), "未登录或身份无效");
+        }
         try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            return Long.parseLong(userId.trim());
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ResultCode.AUTH_FAIL.getCode(), "用户身份格式错误");
+        }
+    }
+
+    public static List<String> getCurrentUserRoles() {
+        if (SCOPED_USER_ROLES.isBound()) {
+            String roles = SCOPED_USER_ROLES.get();
+            if (roles != null && !roles.isEmpty()) {
+                return Arrays.asList(roles.split(","));
+            }
+        }
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
                 String roles = request.getHeader(USER_ROLES_HEADER);
@@ -54,17 +89,19 @@ public class UserContext {
         return Collections.emptyList();
     }
 
-    /**
-     * 检查是否已认证
-     * @return 是否已认证
-     */
     public static boolean isAuthenticated() {
+        if (SCOPED_AUTHENTICATED.isBound()) {
+            Boolean auth = SCOPED_AUTHENTICATED.get();
+            if (auth != null) {
+                return auth;
+            }
+        }
         try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                String authenticated = request.getHeader(AUTHENTICATED_HEADER);
-                return "true".equals(authenticated);
+                return "true".equals(request.getHeader(AUTHENTICATED_HEADER));
             }
         } catch (Exception e) {
             log.warn("Failed to check authentication status", e);
@@ -72,20 +109,10 @@ public class UserContext {
         return false;
     }
 
-    /**
-     * 检查用户是否有指定角色
-     * @param role 角色
-     * @return 是否有指定角色
-     */
     public static boolean hasRole(String role) {
         return getCurrentUserRoles().contains(role);
     }
 
-    /**
-     * 检查用户是否有任意一个指定角色
-     * @param roles 角色列表
-     * @return 是否有任意一个指定角色
-     */
     public static boolean hasAnyRole(String... roles) {
         List<String> userRoles = getCurrentUserRoles();
         for (String role : roles) {

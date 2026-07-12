@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: couponkill-connector-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import:
+      - optional:nacos:common.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+      - optional:nacos:${spring.application.name}.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:120}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: ${NACOS_NAMESPACE:120}
+        refresh-enabled: true
+  datasource:
+    url: jdbc:postgresql://${CONNECTOR_DB_HOST:127.0.0.1}:5432/connector_db
+    username: ${CONNECTOR_DB_USER:postgres}
+    password: ${CONNECTOR_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+logging:
+  level:
+    com.aliyun.seckill: info
+
+connector:
+  sync:
+    cron: "0 */1 * * * *"
+    enabled: true
+    default-mock-stock: 500
+  internal-token: ${CONNECTOR_INTERNAL_TOKEN:couponkill-internal}
+  internal-token-strict: ${CONNECTOR_INTERNAL_TOKEN_STRICT:false}
+  admin:
+    # 与网关共用：管理员 userId；本地 demo=10000
+    user-ids: ${CONNECTOR_ADMIN_USER_IDS:10000}
+    token: ${CONNECTOR_ADMIN_TOKEN:}
+    # 仅本地应急；生产必须 false
+    allow-unauthenticated-local: ${CONNECTOR_ADMIN_ALLOW_LOCAL:false}
+  jd:
+    enabled: ${JD_CONNECTOR_ENABLED:false}
+    server-url: ${JD_SERVER_URL:https://api.jd.com/routerjson}
+    app-key: ${JD_APP_KEY:}
+    app-secret: ${JD_APP_SECRET:}
+    access-token: ${JD_ACCESS_TOKEN:}
+    default-area: ${JD_DEFAULT_AREA:1_72_2799_0}

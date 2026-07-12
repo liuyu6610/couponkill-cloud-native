@@ -60,13 +60,9 @@ spec:
             - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
               value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
             {{- end }}
-            # JVM优化参数
-            {{- if .Values.services.order.jvmOpts }}
-            - name: JAVA_OPTS
-              value: "{{ .Values.services.order.jvmOpts }}"
-            {{- end }}
+            # JVM 单真源：仅 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders；禁止与 JAVA_OPTS 双源打架）
             - name: JAVA_TOOL_OPTIONS
-              value: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+              value: "{{ .Values.services.order.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 --enable-preview\" }}"
             {{- if .Values.services.order.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.order.threadPoolOpts }}"

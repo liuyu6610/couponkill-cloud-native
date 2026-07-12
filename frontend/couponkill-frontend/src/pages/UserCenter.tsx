@@ -1,47 +1,35 @@
-import React, { useEffect } from 'react'
-import { Card, Typography, Avatar, Button, Row, Col, List, Tag } from 'antd'
-import { UserOutlined, EditOutlined } from '@ant-design/icons'
-import { useDispatch, useSelector } from 'react-redux'
-import { Routes, Route, useNavigate } from 'react-router-dom'
-import { fetchUserProfile, fetchUserCoupons, fetchUserStats } from '../store/slices/userSlice'
+import React, { useMemo } from 'react'
+import { Card, Typography, Avatar, Button, Row, Col, List, Tag, Spin } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
+import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import type { RootState } from '../store'
+import { useUserProfile } from '../hooks/useUser'
+import { useUserOrders } from '../hooks/useOrders'
+import { OrderStatus, orderStatusColor, orderStatusText } from '../types/api'
 
 const { Title, Text } = Typography
+
 const UserCenter: React.FC = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { profile, coupons, stats, isLoading } = useSelector((state: RootState) => state.user)
+  const { user } = useSelector((state: RootState) => state.auth)
 
-  useEffect(() => {
-    dispatch(fetchUserProfile() as any)
-    dispatch(fetchUserCoupons({}) as any)
-    dispatch(fetchUserStats() as any)
-  }, [dispatch])
+  const { data: profile, isLoading } = useUserProfile(user?.id)
+  const { data: orders = [] } = useUserOrders(user?.id)
 
-  const getCouponStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-      AVAILABLE: '可用',
-      USED: '已使用',
-      EXPIRED: '已过期'
+  // 用户“优惠券”统计由订单派生（每个订单 = 一次领取）
+  const stats = useMemo(() => {
+    return {
+      total: orders.length,
+      active: orders.filter((o) => o.status === OrderStatus.CREATED).length,
+      used: orders.filter((o) => o.status === OrderStatus.USED).length,
     }
-    return statusMap[status] || status
-  }
-
-  const getCouponStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      AVAILABLE: 'green',
-      USED: 'blue',
-      EXPIRED: 'red'
-    }
-    return colorMap[status] || 'default'
-  }
+  }, [orders])
 
   if (isLoading && !profile) {
     return (
-      <div className="loading-container">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div>加载中...</div>
-        </div>
+      <div className="loading-container" style={{ textAlign: 'center', padding: 50 }}>
+        <Spin size="large" />
       </div>
     )
   }
@@ -49,119 +37,86 @@ const UserCenter: React.FC = () => {
   return (
     <div className="user-center-page">
       <div className="container">
-        <Routes>
-          <Route path="/" element={
-            <>
-              {/* 用户资料卡片 */}
-              <Card style={{ marginBottom: 24 }}>
-                <div className="user-profile">
-                  <div className="profile-left">
-                    <Avatar size={80} icon={<UserOutlined />} src={profile?.avatar} />
-                    <div className="profile-info">
-                      <Title level={3}>{profile?.username}</Title>
-                      <Text type="secondary">{profile?.email}</Text>
-                      <br />
-                      <Text type="secondary">
-                        注册时间：{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : ''}
-                      </Text>
-                    </div>
-                  </div>
-                  <div className="profile-actions">
-                    <Button
-                      icon={<EditOutlined />}
-                      onClick={() => navigate('/user/profile')}
-                    >
-                      编辑资料
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+        <Card style={{ marginBottom: 24 }}>
+          <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Avatar size={80} icon={<UserOutlined />} />
+            <div className="profile-info">
+              <Title level={3} style={{ marginBottom: 4 }}>
+                {profile?.username || user?.username}
+              </Title>
+              {profile?.phone && <Text type="secondary">手机号：{profile.phone}</Text>}
+              <br />
+              <Text type="secondary">
+                注册时间：{profile?.createTime ? new Date(profile.createTime).toLocaleDateString() : '-'}
+              </Text>
+            </div>
+          </div>
+        </Card>
 
-              {/* 统计数据 */}
-              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                <Col xs={24} sm={8}>
-                  <Card>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
-                        {stats?.totalCoupons || 0}
-                      </div>
-                      <Text type="secondary">累计获得优惠券</Text>
-                    </div>
-                  </Card>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Card>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
-                        {stats?.availableCoupons || 0}
-                      </div>
-                      <Text type="secondary">可用优惠券</Text>
-                    </div>
-                  </Card>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Card>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#faad14' }}>
-                        ¥{stats?.totalSavings?.toFixed(2) || '0.00'}
-                      </div>
-                      <Text type="secondary">累计节省金额</Text>
-                    </div>
-                  </Card>
-                </Col>
-              </Row>
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} sm={8}>
+            <Card>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 'bold', color: '#fa541c' }}>{stats.total}</div>
+                <Text type="secondary">累计领取</Text>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{stats.active}</div>
+                <Text type="secondary">未使用</Text>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{stats.used}</div>
+                <Text type="secondary">已使用</Text>
+              </div>
+            </Card>
+          </Col>
+        </Row>
 
-              {/* 我的优惠券 */}
-              <Card>
-                <div className="section-header">
-                  <Title level={4}>我的优惠券</Title>
-                  <Button onClick={() => navigate('/user/coupons')}>
-                    查看全部
-                  </Button>
-                </div>
+        <Card>
+          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={4} style={{ margin: 0 }}>
+              最近领取
+            </Title>
+            <Button onClick={() => navigate('/orders')}>查看全部</Button>
+          </div>
 
-                <List
-                  dataSource={coupons.slice(0, 5)}
-                  renderItem={coupon => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <div>
-                            <Text strong>{coupon.couponName}</Text>
-                            <Tag
-                              color={getCouponStatusColor(coupon.status)}
-                              style={{ marginLeft: 8 }}
-                            >
-                              {getCouponStatusText(coupon.status)}
-                            </Tag>
-                          </div>
-                        }
-                        description={
-                          <div>
-                            <Text type="secondary">
-                              获得时间：{new Date(coupon.obtainedAt).toLocaleDateString()}
-                            </Text>
-                            <br />
-                            <Text type="secondary">
-                              到期时间：{new Date(coupon.expiresAt).toLocaleDateString()}
-                            </Text>
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                  locale={{
-                    emptyText: '暂无优惠券'
-                  }}
+          <List
+            style={{ marginTop: 16 }}
+            dataSource={orders.slice(0, 5)}
+            locale={{ emptyText: '暂无领取记录' }}
+            renderItem={(order) => (
+              <List.Item
+                actions={[
+                  <Button key="detail" type="link" onClick={() => navigate(`/orders/${order.id}`)}>
+                    详情
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={
+                    <span>
+                      订单 {order.id}
+                      <Tag color={orderStatusColor(order.status)} style={{ marginLeft: 8 }}>
+                        {orderStatusText(order.status)}
+                      </Tag>
+                    </span>
+                  }
+                  description={`优惠券ID：${order.couponId} · 领取时间：${
+                    order.getTime ? new Date(order.getTime).toLocaleString() : '-'
+                  }`}
                 />
-              </Card>
-            </>
-          } />
-
-          <Route path="/profile" element={<div>编辑资料页面（待实现）</div>} />
-          <Route path="/coupons" element={<div>优惠券管理页面（待实现）</div>} />
-          <Route path="/orders" element={<div>订单管理页面（待实现）</div>} />
-        </Routes>
+              </List.Item>
+            )}
+          />
+        </Card>
       </div>
     </div>
   )

@@ -1,208 +1,111 @@
-import React, { useEffect, useState } from 'react'
-import { Row, Col, Typography, Input, Select, Pagination, Empty, Spin } from 'antd'
-import { useDispatch, useSelector } from 'react-redux'
-import { useSearchParams } from 'react-router-dom'
-import { fetchCoupons, setFilters, setPagination } from '../store/slices/couponSlice'
+import React, { useMemo, useState } from 'react'
+import { Row, Col, Typography, Input, Select, Empty, Spin, App } from 'antd'
+import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import type { RootState } from '../store'
 import CouponCard from '../components/CouponCard'
+import { useAvailableCoupons } from '../hooks/useCoupons'
+import { useSeckill } from '../hooks/useSeckill'
+import { CouponType } from '../types/api'
+import type { Coupon } from '../types/api'
 
 const { Title, Text } = Typography
 const { Search } = Input
-const { Option } = Select
 
 const CouponList: React.FC = () => {
-  const dispatch = useDispatch()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const { coupons, isLoading, filters, pagination } = useSelector((state: RootState) => state.coupon)
+  const navigate = useNavigate()
+  const { message } = App.useApp()
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
 
-  const [searchText, setSearchText] = useState(filters.search || '')
-  const [typeFilter, setTypeFilter] = useState(filters.type || '')
-  const [statusFilter, setStatusFilter] = useState(filters.status || '')
+  const { data: coupons = [], isLoading } = useAvailableCoupons()
+  const seckill = useSeckill()
+  const [seckillingId, setSeckillingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    // 从URL参数初始化筛选条件
-    const search = searchParams.get('search') || ''
-    const type = searchParams.get('type') || ''
-    const status = searchParams.get('status') || ''
+  const [keyword, setKeyword] = useState('')
+  const [typeFilter, setTypeFilter] = useState<number | ''>('')
 
-    if (search || type || status) {
-      dispatch(setFilters({ search, type, status }) as any)
-      setSearchText(search)
-      setTypeFilter(type)
-      setStatusFilter(status)
+  const filtered = useMemo(() => {
+    return coupons.filter((c) => {
+      const matchKeyword = keyword ? c.name.includes(keyword) : true
+      const matchType = typeFilter === '' ? true : c.type === typeFilter
+      return matchKeyword && matchType
+    })
+  }, [coupons, keyword, typeFilter])
+
+  const handleSeckill = (coupon: Coupon) => {
+    if (!isAuthenticated || !user) {
+      message.info('请先登录后再参与秒杀')
+      navigate('/login', { state: { from: { pathname: '/coupons' } } })
+      return
     }
-
-    // 获取优惠券列表
-    dispatch(fetchCoupons({
-      page: pagination.page,
-      size: pagination.size,
-      search,
-      type,
-      status
-    }) as any)
-  }, [dispatch, searchParams, pagination.page, pagination.size])
-
-  const handleSearch = (value: string) => {
-    setSearchText(value)
-    const newFilters = { ...filters, search: value, page: 1 }
-    dispatch(setFilters(newFilters) as any)
-
-    // 更新URL参数
-    const params = new URLSearchParams()
-    if (value) params.set('search', value)
-    if (typeFilter) params.set('type', typeFilter)
-    if (statusFilter) params.set('status', statusFilter)
-    setSearchParams(params)
-
-    dispatch(fetchCoupons({
-      page: 1,
-      size: pagination.size,
-      search: value,
-      type: typeFilter,
-      status: statusFilter
-    }) as any)
-  }
-
-  const handleTypeFilter = (value: string) => {
-    setTypeFilter(value)
-    const newFilters = { ...filters, type: value, page: 1 }
-    dispatch(setFilters(newFilters) as any)
-
-    const params = new URLSearchParams()
-    if (searchText) params.set('search', searchText)
-    if (value) params.set('type', value)
-    if (statusFilter) params.set('status', statusFilter)
-    setSearchParams(params)
-
-    dispatch(fetchCoupons({
-      page: 1,
-      size: pagination.size,
-      search: searchText,
-      type: value,
-      status: statusFilter
-    }) as any)
-  }
-
-  const handleStatusFilter = (value: string) => {
-    setStatusFilter(value)
-    const newFilters = { ...filters, status: value, page: 1 }
-    dispatch(setFilters(newFilters) as any)
-
-    const params = new URLSearchParams()
-    if (searchText) params.set('search', searchText)
-    if (typeFilter) params.set('type', typeFilter)
-    if (value) params.set('status', value)
-    setSearchParams(params)
-
-    dispatch(fetchCoupons({
-      page: 1,
-      size: pagination.size,
-      search: searchText,
-      type: typeFilter,
-      status: value
-    }) as any)
-  }
-
-  const handlePageChange = (page: number, size: number) => {
-    dispatch(setPagination({ page, size }) as any)
-    dispatch(fetchCoupons({
-      page,
-      size,
-      search: searchText,
-      type: typeFilter,
-      status: statusFilter
-    }) as any)
+    if (seckill.isPending) return // 防抖：进行中禁止重复提交
+    setSeckillingId(coupon.id)
+    seckill.mutate(
+      { couponId: coupon.id },
+      {
+        onSuccess: () => message.success('秒杀成功！可在“我的订单”中查看'),
+        onError: (err) => message.error((err as Error).message || '秒杀失败，请稍后重试'),
+        onSettled: () => setSeckillingId(null),
+      }
+    )
   }
 
   return (
     <div className="coupon-list-page">
       <div className="container">
-        {/* 页面标题 */}
         <div className="page-header">
           <Title level={2}>优惠券列表</Title>
           <Text type="secondary">发现更多优质优惠，总有一款适合你</Text>
         </div>
 
-        {/* 搜索和筛选 */}
-        <div className="filters-section">
+        <div className="filters-section" style={{ margin: '24px 0' }}>
           <Row gutter={[16, 16]} align="middle">
-            <Col xs={24} sm={8}>
+            <Col xs={24} sm={12}>
               <Search
-                placeholder="搜索优惠券..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onSearch={handleSearch}
+                placeholder="搜索优惠券名称..."
                 allowClear
                 size="large"
+                onSearch={setKeyword}
+                onChange={(e) => !e.target.value && setKeyword('')}
               />
             </Col>
-            <Col xs={24} sm={8}>
+            <Col xs={24} sm={12}>
               <Select
                 placeholder="选择类型"
-                value={typeFilter}
-                onChange={handleTypeFilter}
+                value={typeFilter === '' ? undefined : typeFilter}
+                onChange={(v) => setTypeFilter(v ?? '')}
                 style={{ width: '100%' }}
                 size="large"
                 allowClear
-              >
-                <Option value="DISCOUNT">折扣券</Option>
-                <Option value="CASH">现金券</Option>
-                <Option value="PERCENTAGE">百分比券</Option>
-              </Select>
-            </Col>
-            <Col xs={24} sm={8}>
-              <Select
-                placeholder="选择状态"
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                style={{ width: '100%' }}
-                size="large"
-                allowClear
-              >
-                <Option value="ACTIVE">进行中</Option>
-                <Option value="INACTIVE">未开始</Option>
-                <Option value="EXPIRED">已过期</Option>
-              </Select>
+                options={[
+                  { value: CouponType.NORMAL, label: '常驻优惠券' },
+                  { value: CouponType.SECKILL, label: '秒杀优惠券' },
+                ]}
+              />
             </Col>
           </Row>
         </div>
 
-        {/* 优惠券列表 */}
         <div className="coupon-list-section">
           {isLoading ? (
-            <div className="loading-container">
+            <div className="loading-container" style={{ textAlign: 'center', padding: 50 }}>
               <Spin size="large" />
             </div>
-          ) : coupons.length > 0 ? (
-            <>
-              <Row gutter={[16, 16]}>
-                {coupons.map((coupon) => (
-                  <Col xs={24} sm={12} lg={8} xl={6} key={coupon.id}>
-                    <CouponCard coupon={coupon} showActions={true} />
-                  </Col>
-                ))}
-              </Row>
-
-              {/* 分页 */}
-              <div className="pagination-container">
-                <Pagination
-                  current={pagination.page}
-                  total={pagination.total}
-                  pageSize={pagination.size}
-                  onChange={handlePageChange}
-                  showSizeChanger
-                  showQuickJumper
-                  showTotal={(total, range) =>
-                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-                  }
-                />
-              </div>
-            </>
+          ) : filtered.length > 0 ? (
+            <Row gutter={[16, 16]}>
+              {filtered.map((coupon) => (
+                <Col xs={24} sm={12} lg={8} xl={6} key={coupon.id}>
+                  <CouponCard
+                    coupon={coupon}
+                    showActions
+                    seckillLoading={seckillingId === coupon.id}
+                    onSeckill={handleSeckill}
+                  />
+                </Col>
+              ))}
+            </Row>
           ) : (
-            <Empty
-              description="暂无优惠券数据"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
+            <Empty description="暂无优惠券数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           )}
         </div>
       </div>

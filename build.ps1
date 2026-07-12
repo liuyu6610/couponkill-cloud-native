@@ -1,7 +1,7 @@
 # PowerShell script to build Docker images for couponkill project
 
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [string]$Command = "help"
 )
 
@@ -148,8 +148,8 @@ function Pull-Dependency-Images {
     docker push "${REGISTRY}/rocketmq-broker"
     
     # Pull and retag Nacos image
-    docker pull nacos/nacos-server:v2.2.3
-    docker tag nacos/nacos-server:v2.2.3 "${REGISTRY}/nacos-server"
+    docker pull nacos/nacos-server:v3.1.1
+    docker tag nacos/nacos-server:v3.1.1 "${REGISTRY}/nacos-server"
     docker push "${REGISTRY}/nacos-server"
     
     # Pull and retag Sentinel image

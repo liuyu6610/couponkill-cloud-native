@@ -1,17 +1,19 @@
 package com.aliyun.seckill.couponkillgateway.utils;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.Base64;
+import java.util.List;
+
+/**
+ * 网关 JWT 工具。密钥算法与签发端 JwtUtils 保持一致：Keys.hmacShaKeyFor(rawSecretBytes)。
+ */
 @Slf4j
 @Component
 public class JwtUtil {
@@ -19,66 +21,58 @@ public class JwtUtil {
     @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong}")
     private String secret;
 
-    private String encodedSecret;
-
-    @PostConstruct
-    public void init() {
-        // 确保密钥正确编码
-        this.encodedSecret = Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8));
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public Claims parse(String secret, String token) {
-        try {
-            Key signingKey = new SecretKeySpec(
-                    Base64.getDecoder().decode(secret),
-                    "HmacSHA256"
-            );
-
-            Jws<Claims> claimsJws = Jwts.parserBuilder()
-                    .setSigningKey(signingKey)
-                    .build()
-                    .parseClaimsJws(token);
-
-            return claimsJws.getBody();
-        } catch (Exception e) {
-            // 记录详细错误信息便于排查
-            log.warn("JWT解析失败: token={}, error={}", token, e.getMessage());
-            throw e; // 重新抛出异常
-        }
+    public Claims parse(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public boolean verifyToken(String token) {
         if (token == null || token.isEmpty()) {
             return false;
         }
-
         try {
-            return parse(encodedSecret, token) != null;
+            return parse(token) != null;
         } catch (Exception e) {
             log.debug("Token验证失败: {}", e.getMessage());
             return false;
         }
     }
 
+    /**
+     * 优先读 claim userId（登录签发），兼容 subject（mock token）。
+     */
     public String getUserId(String token) {
         try {
-            Object userIdObj = parse(encodedSecret, token).get("userId");
-            if (userIdObj == null) {
-                throw new IllegalArgumentException("Token中不包含userId");
-            }
-
-            if (userIdObj instanceof Integer) {
+            Claims claims = parse(token);
+            Object userIdObj = claims.get("userId");
+            if (userIdObj != null) {
                 return String.valueOf(userIdObj);
-            } else if (userIdObj instanceof String) {
-                return (String) userIdObj;
-            } else if (userIdObj instanceof Long) {
-                return String.valueOf(userIdObj);
-            } else {
-                throw new IllegalArgumentException("userId claim类型不正确: " + userIdObj.getClass());
             }
+            String subject = claims.getSubject();
+            if (subject != null && !subject.isEmpty()) {
+                return subject;
+            }
+            throw new IllegalArgumentException("Token中不包含userId/subject");
         } catch (Exception e) {
-            log.warn("获取userId失败: token={}, error={}", token, e.getMessage());
+            log.warn("获取userId失败: error={}", e.getMessage());
             throw e;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getRoles(String token) {
+        Claims claims = parse(token);
+        Object roles = claims.get("roles");
+        if (roles instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        return List.of("user");
     }
 }

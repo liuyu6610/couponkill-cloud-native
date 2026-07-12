@@ -7,12 +7,15 @@ import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.common.pojo.Order;
 import com.aliyun.seckill.common.pojo.OrderMessage;
+import com.aliyun.seckill.common.pojo.SeckillOrderCommand;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
 import com.aliyun.seckill.common.utils.SnowflakeIdGenerator;
+import com.aliyun.seckill.common.util.Backoff;
 import com.aliyun.seckill.couponkillorderservice.feign.CouponServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.feign.GoSeckillFeignClient;
 import com.aliyun.seckill.couponkillorderservice.feign.UserServiceFeignClient;
 import com.aliyun.seckill.couponkillorderservice.mapper.OrderMapper;
+import com.aliyun.seckill.couponkillorderservice.service.AsyncSeckillEnterService;
 import com.aliyun.seckill.couponkillorderservice.service.OrderService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -21,14 +24,13 @@ import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +43,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -84,21 +84,19 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
     @Autowired
-    private RocketMQTemplate rocketMQTemplate;
+    private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired
     private GoSeckillFeignClient goSeckillFeignClient;
     
     // 添加用户服务Feign客户端（用于更新用户优惠券统计）
     @Autowired
     private UserServiceFeignClient userServiceFeignClient;
-    
-    // 添加本地缓存
 
-    // 用于统计当前处理请求数量
-    private final AtomicLong currentRequestCount = new AtomicLong(0);
+    @Autowired
+    private AsyncSeckillEnterService asyncSeckillEnterService;
 
-    @Value("${couponkill.seckill.java.threshold:100}")
-    private int javaServiceThreshold;
+    @Autowired
+    private org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
 
     // 本地缓存 - 用户优惠券计数
     private final Cache<String, UserCouponCount> userCouponCountCache = Caffeine.newBuilder()
@@ -118,202 +116,218 @@ public class OrderServiceImpl implements OrderService {
             .expireAfterWrite(Duration.ofSeconds(30))
             .build();
 
-    // 异步执行器
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
+    /** 后置异步任务执行器：默认虚拟线程，避免 FixedThreadPool(10) 成为隐藏背压 */
+    @Autowired
+    @Qualifier("asyncExecutor")
+    private Executor asyncExecutor;
 
     /**
-     * 批量更新Redis缓存 - 创建订单时使用
+     * 批量更新Redis缓存 - 创建订单时：仅维护领取标记。
+     * 计数由 updateUserCouponCount 单一写点负责，禁止在此对 total/seckill 再 incr。
      */
     private void batchUpdateRedisOnCreate(Long userId, Long couponId, int couponType) {
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
-        String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
-        String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
-
         redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-            // 设置用户领取状态
             connection.set(userReceivedKey.getBytes(), "true".getBytes());
-            connection.expire(userReceivedKey.getBytes(), 3600); // 1小时过期
-
-            // 增加用户总优惠券计数
-            connection.stringCommands().incr(userTotalCountKey.getBytes());
-
-            // 如果是秒杀优惠券，增加秒杀优惠券计数
-            if (couponType == 2) {
-                connection.stringCommands().incr(userSeckillCountKey.getBytes());
-            }
+            connection.expire(userReceivedKey.getBytes(), 3600);
             return null;
         });
     }
 
     /**
-     * 批量更新Redis缓存 - 取消订单时使用
+     * 批量更新Redis缓存 - 取消订单时：仅清理领取标记。
+     * 计数由 updateUserCouponCount 单一写点负责，禁止在此对 total/seckill 再 decr。
      */
     private void batchUpdateRedisOnCancel(Long userId, Long couponId, int couponType) {
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
-        String userTotalCountKey = USER_COUPON_COUNT_KEY + userId + ":total";
-        String userSeckillCountKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
-
-        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-            // 删除用户领取状态
-            connection.del(userReceivedKey.getBytes());
-
-            // 减少用户总优惠券计数
-            connection.stringCommands().decr(userTotalCountKey.getBytes());
-
-            // 如果是秒杀优惠券，减少秒杀优惠券计数
-            if (couponType == 2) {
-                connection.stringCommands().decr(userSeckillCountKey.getBytes());
-            }
-            return null;
-        });
+        redisTemplate.delete(userReceivedKey);
     }
 
     // 异步处理非关键业务逻辑
+    /**
+     * 订单生命周期通知。严禁发到 seckill_order_create（该 topic 只承载 SeckillOrderCommand）。
+     */
     @Async("asyncExecutor")
     public void asyncSendMessage(OrderMessage message) {
         try {
-            rocketMQTemplate.convertAndSend(seckillOrderCreateTopic, message);
+            String key = message.getOrderId() != null ? message.getOrderId() : UUID.randomUUID().toString();
+            kafkaTemplate.send(orderCreatedTopic, key, message);
         } catch (Exception e) {
-            log.error("异步发送消息失败", e);
+            log.error("异步发送订单生命周期消息失败", e);
         }
     }
 
-    // 在OrderServiceImpl类中添加缺少的字段
     @Value("${couponkill.seckill.compensation-amount:10.0}")
     private double compensationAmount;
 
-    @Value("${rocketmq.topic.seckill-order-create:seckill_order_create}")
-    private String seckillOrderCreateTopic;
+    @Value("${kafka.topic.seckill-order-result:seckill_order_result}")
+    private String seckillOrderResultTopic;
 
-    @Value("${rocketmq.topic.seckill-compensation:seckill_compensation}")
+    @Value("${kafka.topic.seckill-compensation:seckill_compensation}")
     private String seckillCompensationTopic;
 
-    // 初始化雪花算法ID生成器
-    private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
+    /** 订单已落库后的生命周期/审计通知（与秒杀预扣命令 topic 隔离） */
+    @Value("${kafka.topic.order-created:order_created}")
+    private String orderCreatedTopic;
+
+    /** 消费侧 Structured Concurrency（JDK25 preview）；默认关，开启需 --enable-preview */
+    @Value("${couponkill.seckill.structured-concurrency:false}")
+    private boolean structuredConcurrency;
+
+    // 初始化雪花算法ID生成器（多实例动态 workerId，见 SnowflakeConfig）
+    @Autowired
+    private SnowflakeIdGenerator idGenerator;
 
     private static final int MAX_TOTAL_COUPONS = 15;
     private static final int MAX_SECKILL_COUPONS = 5;
     private static final String USER_COUPON_COUNT_KEY = "user:coupon:count:";
     private static final String USER_RECEIVED_KEY = "user:received:";
 
+    /**
+     * 创建订单。Feign / sleep 绝不进入本地事务；仅 order 插入是本地写。
+     * 扣库存成功但落库失败时回补库存并清理 Redis 占位。
+     */
     @Override
-    @Transactional
     public Order createOrder(Long userId, Long couponId) {
         String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
+        boolean redisMarked = false;
+        boolean stockDeducted = false;
+        String selectedVirtualId = null;
 
         try {
-            // 1. 使用Lua脚本原子性检查和设置（防止重复秒杀）
-            String luaScript =
-                    "local key = KEYS[1] " +
-                            "local exists = redis.call('EXISTS', key) " +
-                            "if exists == 1 then " +
-                            "   return 0 " +  // 已存在
-                            "else " +
-                            "   redis.call('SET', key, '1') " +
-                            "   redis.call('EXPIRE', key, 3600) " +
-                            "   return 1 " +  // 设置成功
-                            "end";
-            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setScriptText(luaScript);
-            redisScript.setResultType(Long.class);
-
-            Long result = redisTemplate.execute(redisScript,
-                    Collections.singletonList(userReceivedKey));
-
-            if (result == 0) {
+            // 1. Redis 原子占位（防重复领取）
+            if (!tryMarkUserReceived(userReceivedKey)) {
                 log.warn("用户 {} 重复领取优惠券 {}", userId, couponId);
                 throw new BusinessException(ResultCode.REPEAT_SECKILL);
             }
+            redisMarked = true;
 
-            // 2. 检查用户限制
+            // 2. 业务校验（本地读 / Feign 读，无事务）
             Coupon coupon = getCouponById(couponId);
             if (coupon == null) {
                 log.warn("未找到优惠券: couponId={}", couponId);
-                redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
             }
-
-            // 检查用户是否已达到领取限制
+            // 秒杀券禁止走同步 /order/create，避免与热路径双重扣库存语义混用
+            if (coupon.getType() != null && coupon.getType() == 2) {
+                throw new BusinessException(ResultCode.SECKILL_USE_DEDICATED_API);
+            }
             if (!checkCouponCountLimit(userId, coupon.getType())) {
                 log.warn("用户 {} 达到优惠券领取限制，优惠券类型: {}", userId, coupon.getType());
-                redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
             }
 
-            // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
-            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
-            String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
-
-            // 增加重试机制，提高在高并发下的成功率
-            int retryCount = 0;
-            final int maxRetries = 3;
-            while ((selectedVirtualId == null || selectedVirtualId.isEmpty()) && retryCount < maxRetries) {
-                try {
-                    Thread.sleep(50 * (retryCount + 1)); // 指数退避延迟
-                } catch (InterruptedException ignored) {
-                }
-                deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
-                selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
-                retryCount++;
-            }
-
-            // 处理最终结果
-            if (selectedVirtualId == null || selectedVirtualId.isEmpty()) {
-                // 扣减库存失败，清理Redis标记
-                log.warn("扣减优惠券库存失败: couponId={}, 重试次数={}",
-                        couponId, retryCount);
-                redisTemplate.delete(userReceivedKey);
-
+            // 3. 普通券：扣 remaining_stock（非秒杀分片路径）
+            if (!deductNormalStockWithRetry(couponId)) {
+                log.warn("扣减普通优惠券库存失败: couponId={}", couponId);
                 throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
             }
+            stockDeducted = true;
+            selectedVirtualId = String.valueOf(couponId);
 
-            // 4. 创建订单
-            Order order = new Order();
-            order.setId(String.valueOf(idGenerator.nextId()));
-            order.setUserId(userId);
-            order.setCouponId(couponId);
-            order.setVirtualId(selectedVirtualId); // 设置使用的虚拟分片ID
-
-            order.setStatus(1); // 已创建
-            order.setGetTime(LocalDateTime.now());
-            order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
-            order.setCreateTime(LocalDateTime.now());
-            order.setUpdateTime(LocalDateTime.now());
-            order.setRequestId(UUID.randomUUID().toString());
-            order.setVersion(0);
-
-            // 插入数据库
+            // 4. 落库订单（单条 insert，无需外层事务包住 RPC）
+            Order order = buildNewOrder(userId, couponId, selectedVirtualId, coupon);
             try {
                 orderMapper.insert(order);
             } catch (Exception e) {
-                // 检查是否是唯一性约束违反异常
                 if (isDuplicateEntryException(e)) {
-                    log.warn("用户 {} 重复参与秒杀活动 {}，数据库唯一性约束违反", userId, couponId);
-                    // 清理Redis缓存
-                    redisTemplate.delete(userReceivedKey);
+                    log.warn("用户 {} 重复领取优惠券 {}，数据库唯一性约束违反", userId, couponId);
                     throw new BusinessException(ResultCode.REPEAT_SECKILL);
-                } else {
-                    // 其他异常继续抛出
-                    throw e;
                 }
+                throw e;
             }
 
-            // 5. 异步处理后续操作
+            // 5. 后置异步（计数 / Redis / MQ），失败不回滚已成功订单
             handlePostOrderCreation(userId, couponId, coupon.getType(), order);
 
             log.info("成功创建订单: orderId={}, userId={}, couponId={}", order.getId(), userId, couponId);
             return order;
 
         } catch (Exception e) {
-            // 清理Redis缓存
-            redisTemplate.delete(userReceivedKey);
+            if (redisMarked) {
+                redisTemplate.delete(userReceivedKey);
+            }
+            if (stockDeducted) {
+                safeIncreaseNormalStock(couponId);
+            }
             log.error("创建订单失败: userId={}, couponId={}", userId, couponId, e);
-
             if (e instanceof BusinessException) {
                 throw (BusinessException) e;
-            } else {
-                throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
             }
+            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
+        }
+    }
+
+    private boolean tryMarkUserReceived(String userReceivedKey) {
+        String luaScript =
+                "local key = KEYS[1] " +
+                        "local exists = redis.call('EXISTS', key) " +
+                        "if exists == 1 then " +
+                        "   return 0 " +
+                        "else " +
+                        "   redis.call('SET', key, '1') " +
+                        "   redis.call('EXPIRE', key, 3600) " +
+                        "   return 1 " +
+                        "end";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        redisScript.setScriptText(luaScript);
+        redisScript.setResultType(Long.class);
+        Long result = redisTemplate.execute(redisScript, Collections.singletonList(userReceivedKey));
+        return result != null && result == 1L;
+    }
+
+    private boolean deductNormalStockWithRetry(Long couponId) {
+        ApiResponse<Boolean> deductResponse = couponServiceFeignClient.deductStock(couponId);
+        Boolean ok = deductResponse != null ? deductResponse.getData() : null;
+        int retryCount = 0;
+        final int maxRetries = 3;
+        while ((ok == null || !ok) && retryCount < maxRetries) {
+            Backoff.linear(retryCount, 50L, 200L);
+            if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
+            deductResponse = couponServiceFeignClient.deductStock(couponId);
+            ok = deductResponse != null ? deductResponse.getData() : null;
+            retryCount++;
+        }
+        return ok != null && ok;
+    }
+
+    private void safeIncreaseNormalStock(Long couponId) {
+        try {
+            couponServiceFeignClient.increaseStock(couponId);
+            log.info("普通订单失败后已回补库存: couponId={}", couponId);
+        } catch (Exception ex) {
+            log.error("普通订单失败后回补库存失败，需人工对账: couponId={}", couponId, ex);
+        }
+    }
+
+    private Order buildNewOrder(Long userId, Long couponId, String selectedVirtualId, Coupon coupon) {
+        Order order = new Order();
+        order.setId(String.valueOf(idGenerator.nextId()));
+        order.setUserId(userId);
+        order.setCouponId(couponId);
+        order.setVirtualId(selectedVirtualId);
+        order.setStatus(1);
+        order.setGetTime(LocalDateTime.now());
+        order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
+        order.setCreateTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
+        order.setRequestId(UUID.randomUUID().toString());
+        order.setVersion(0);
+        return order;
+    }
+
+    private void safeIncreaseSeckillStock(String virtualId, Long couponId) {
+        try {
+            if (virtualId != null && !virtualId.isBlank()) {
+                couponServiceFeignClient.increaseSeckillStockByShardId(virtualId);
+                log.info("订单失败后已按分片回补秒杀库存: virtualId={}", virtualId);
+            } else {
+                log.error("缺少 virtualId，无法精确回补秒杀库存，需人工对账: couponId={}", couponId);
+            }
+        } catch (Exception ex) {
+            log.error("订单失败后回补秒杀库存失败，需人工对账: virtualId={}, couponId={}", virtualId, couponId, ex);
         }
     }
 
@@ -323,17 +337,17 @@ public class OrderServiceImpl implements OrderService {
             // 并行执行互不依赖的任务
             CompletableFuture<Void> updateUserCountFuture = CompletableFuture.runAsync(() ->
                             updateUserCouponCount(userId, couponType, 1),
-                    executorService
+                    asyncExecutor
             );
             CompletableFuture<Void> updateRedisFuture = CompletableFuture.runAsync(() ->
                             batchUpdateRedisOnCreate(userId, couponId, couponType),
-                    executorService
+                    asyncExecutor
             );
 
             // 异步发送消息，不阻塞主流程
             CompletableFuture<Void> sendMessageFuture = CompletableFuture.runAsync(() ->
                             sendOrderMessage(order, userId, couponId),
-                    executorService
+                    asyncExecutor
             );
 
             // 等待关键任务完成
@@ -363,15 +377,9 @@ public class OrderServiceImpl implements OrderService {
             orderMessage.setCreateTime(new Date());
             orderMessage.setStatus("PENDING");
 
-            // 将OrderMessage包装成Message对象
-            Message<OrderMessage> message = MessageBuilder.withPayload(orderMessage).build();
-
-            // 发送事务消息（确保本地事务提交后消息才被消费）
-            rocketMQTemplate.sendMessageInTransaction(
-                    seckillOrderCreateTopic,
-                    message, // 使用包装后的Message对象
-                    order // 附加参数，用于事务回调判断
-            );
+            // Kafka 生产者在 send() 内同步完成序列化，随后归还对象到池是安全的。
+            // 订单本地事务已提交，这里直接发送创建消息（原 RocketMQ 事务消息回查恒为 COMMIT，属无操作）。
+            kafkaTemplate.send(orderCreatedTopic, order.getId(), orderMessage);
         } catch (Exception e) {
             log.error("获取消息对象失败", e);
         } finally {
@@ -424,12 +432,22 @@ public class OrderServiceImpl implements OrderService {
         // 异步执行非关键操作
         CompletableFuture.runAsync(() -> {
             try {
-                // 4. 恢复优惠券库存 (通过Feign调用)
-                couponServiceFeignClient.increaseStock(order.getCouponId());
-
-                // 5. 获取优惠券类型
                 ApiResponse<Coupon> couponResponse = couponServiceFeignClient.getCouponById(order.getCouponId());
                 Coupon coupon = couponResponse != null && couponResponse.getData() != null ? couponResponse.getData() : null;
+
+                // 4. 按券类型回补库存：秒杀走分片；普通券走 remaining_stock
+                if (coupon != null && coupon.getType() != null && coupon.getType() == 2) {
+                    if (order.getVirtualId() != null && !order.getVirtualId().isBlank()) {
+                        couponServiceFeignClient.increaseSeckillStockByShardId(order.getVirtualId());
+                    } else {
+                        log.error("取消秒杀订单缺少 virtualId，无法精确回补: orderId={}, couponId={}",
+                                orderId, order.getCouponId());
+                    }
+                } else {
+                    couponServiceFeignClient.increaseStock(order.getCouponId());
+                }
+
+                // 5. 获取优惠券类型后更新用户券计数
                 if (coupon == null || coupon.getType() == null) {
                     log.warn("获取优惠券信息失败，无法更新用户优惠券数量: couponId={}", order.getCouponId());
                     return;
@@ -448,7 +466,7 @@ public class OrderServiceImpl implements OrderService {
             } catch (Exception e) {
                 log.error("异步处理订单取消后续操作失败: orderId={}, userId={}", orderId, userId, e);
             }
-        }, executorService);
+        }, asyncExecutor);
 
         return true;
     }
@@ -506,45 +524,55 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public boolean checkCouponCountLimit(Long userId, int couponType) {
-        // 先查缓存
         String totalKey = USER_COUPON_COUNT_KEY + userId + ":total";
         String seckillKey = USER_COUPON_COUNT_KEY + userId + ":seckill";
 
-        Integer totalCount = (Integer) redisTemplate.opsForValue().get(totalKey);
-        Integer seckillCount = (Integer) redisTemplate.opsForValue().get(seckillKey);
+        // Redis 可能序列化为 Integer / Long，统一经 Number 取值
+        Integer totalCount = toInteger(redisTemplate.opsForValue().get(totalKey));
+        Integer seckillCount = toInteger(redisTemplate.opsForValue().get(seckillKey));
 
-        // 缓存未命中，查数据库
         if (totalCount == null || seckillCount == null) {
-            // 通过Feign调用UserService获取用户优惠券计数信息
             try {
-                // 注意：这里需要UserService提供相应的Feign接口
-                // 暂时使用默认值0，后续通过Feign调用获取真实数据
-                totalCount = 0;
-                seckillCount = 0;
+                ApiResponse<UserCouponCount> response = userServiceFeignClient.getUserCouponCount(userId);
+                if (response == null || !response.success() || response.getData() == null) {
+                    // 失败关闭：拿不到真值则拒绝领取，禁止默认 0 绕过限领
+                    log.warn("获取用户优惠券计数失败(空响应)，拒绝领取: userId={}", userId);
+                    return false;
+                }
+                UserCouponCount count = response.getData();
+                totalCount = count.getTotalCount() != null ? count.getTotalCount() : 0;
+                seckillCount = count.getSeckillCount() != null ? count.getSeckillCount() : 0;
+                redisTemplate.opsForValue().set(totalKey, totalCount, 300, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set(seckillKey, seckillCount, 300, TimeUnit.SECONDS);
             } catch (Exception e) {
-                log.warn("获取用户优惠券计数失败，使用默认值: userId={}", userId, e);
-                totalCount = 0;
-                seckillCount = 0;
+                log.warn("获取用户优惠券计数异常，拒绝领取: userId={}", userId, e);
+                return false;
             }
-
-            // 更新缓存，设置较长的过期时间以减少数据库访问
-            redisTemplate.opsForValue().set(totalKey, totalCount, 300, TimeUnit.SECONDS);
-            redisTemplate.opsForValue().set(seckillKey, seckillCount, 300, TimeUnit.SECONDS);
         }
 
-        // 检查总优惠券数量限制
         if (totalCount >= MAX_TOTAL_COUPONS) {
             log.info("用户 {} 达到总优惠券数量上限: {}", userId, totalCount);
             return false;
         }
-
-        // 检查秒杀优惠券数量限制
         if (couponType == 2 && seckillCount >= MAX_SECKILL_COUPONS) {
             log.info("用户 {} 达到秒杀优惠券数量上限: {}", userId, seckillCount);
             return false;
         }
-
         return true;
+    }
+
+    private static Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -646,16 +674,26 @@ public class OrderServiceImpl implements OrderService {
         try {
             log.info("开始处理秒杀失败补偿，orderId={}, userId={}, couponId={}", orderId, userId, couponId);
 
-            // 1. 恢复库存 - 调用Coupon服务的增加库存方法
+            // 1. 恢复秒杀分片库存：若有订单则按 virtualId；否则仅打日志待人工（无分片信息不可乱写 remaining_stock）
             try {
-                ApiResponse<Boolean> response = couponServiceFeignClient.increaseStock(couponId);
-                if (response != null && response.getData() != null && response.getData()) {
-                    log.info("恢复库存成功，couponId={}", couponId);
+                if (orderId != null) {
+                    Order order = orderMapper.selectById(orderId);
+                    if (order != null && order.getVirtualId() != null && !order.getVirtualId().isBlank()) {
+                        ApiResponse<Boolean> response =
+                                couponServiceFeignClient.increaseSeckillStockByShardId(order.getVirtualId());
+                        if (response != null && Boolean.TRUE.equals(response.getData())) {
+                            log.info("恢复秒杀分片库存成功，virtualId={}", order.getVirtualId());
+                        } else {
+                            log.warn("恢复秒杀分片库存可能失败，virtualId={}", order.getVirtualId());
+                        }
+                    } else {
+                        log.error("秒杀失败补偿缺少 virtualId，需人工对账: orderId={}, couponId={}", orderId, couponId);
+                    }
                 } else {
-                    log.warn("恢复库存可能失败，couponId={}", couponId);
+                    log.error("秒杀失败补偿无 orderId/virtualId，跳过库存回补以免写错字段: couponId={}", couponId);
                 }
             } catch (Exception e) {
-                log.error("调用Coupon服务恢复库存时发生异常，couponId={}", couponId, e);
+                log.error("调用Coupon服务恢复秒杀库存时发生异常，couponId={}", couponId, e);
             }
 
             // 2. 清理用户领取状态缓存，允许用户重新参与秒杀
@@ -676,12 +714,12 @@ public class OrderServiceImpl implements OrderService {
             compensationMsg.setCreateTime(new Date());
 
             try {
-                // 检查 RocketMQTemplate 是否正确初始化
-                if (rocketMQTemplate != null) {
-                    rocketMQTemplate.convertAndSend(seckillCompensationTopic, compensationMsg);
+                // 检查 KafkaTemplate 是否正确初始化
+                if (kafkaTemplate != null) {
+                    kafkaTemplate.send(seckillCompensationTopic, orderId, compensationMsg);
                     log.info("发送补偿消息成功，订单ID: {}", orderId);
                 } else {
-                    log.warn("RocketMQTemplate 未正确初始化，跳过发送补偿消息");
+                    log.warn("KafkaTemplate 未正确初始化，跳过发送补偿消息");
                 }
             } catch (Exception e) {
                 log.error("发送补偿消息时发生异常，订单ID: {}", orderId, e);
@@ -846,140 +884,156 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 处理秒杀逻辑
-     *
-     * @param userId   用户ID
-     * @param couponId 优惠券ID
-     * @return 是否秒杀成功
+     * 秒杀热路径：Lua 预扣 Redis + Kafka 异步落单（无同步 Feign 扣库存）。
      */
     @Override
-    @Transactional
-    public boolean processSeckill(Long userId, Long couponId) {
-        String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
+    public com.aliyun.seckill.common.pojo.EnterSeckillResp enterSeckillAsync(Long userId, Long couponId) {
+        return asyncSeckillEnterService.enter(userId, couponId);
+    }
 
+    /**
+     * 消费 seckill_order_create：DB 对齐扣减 + 落单。Redis 已在热路径扣过。
+     */
+    @Override
+    public void fulfillSeckillOrder(SeckillOrderCommand command) {
+        if (command == null || command.getRequestId() == null
+                || command.getUserId() == null || command.getCouponId() == null) {
+            log.warn("非法秒杀落单命令: {}", command);
+            return;
+        }
+        long userId;
+        long couponId;
         try {
-            // 1. 使用Lua脚本原子性检查和设置（防止重复秒杀）
-            String luaScript =
-                    "local key = KEYS[1] " +
-                            "local exists = redis.call('EXISTS', key) " +
-                            "if exists == 1 then " +
-                            "   return 0 " +  // 已存在
-                            "else " +
-                            "   redis.call('SET', key, '1') " +
-                            "   redis.call('EXPIRE', key, 3600) " +
-                            "   return 1 " +  // 设置成功
-                            "end";
-            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setScriptText(luaScript);
-            redisScript.setResultType(Long.class);
+            userId = Long.parseLong(command.getUserId());
+            couponId = Long.parseLong(command.getCouponId());
+        } catch (NumberFormatException e) {
+            log.error("秒杀命令 ID 非法: {}", command);
+            return;
+        }
+        String requestId = command.getRequestId();
 
-            Long result = redisTemplate.execute(redisScript,
-                    Collections.singletonList(userReceivedKey));
+        // 消费幂等：同一 requestId 只处理一次（防 Kafka 至少一次投递）
+        String consumeLockKey = "seckill:consume:" + requestId;
+        Boolean firstConsume = stringRedisTemplate.opsForValue()
+                .setIfAbsent(consumeLockKey, "1", Duration.ofMinutes(30));
+        if (Boolean.FALSE.equals(firstConsume)) {
+            log.info("秒杀落单消费幂等跳过: requestId={}", requestId);
+            return;
+        }
 
-            if (result == 0) {
-                log.warn("用户 {} 重复参与秒杀活动 {}", userId, couponId);
-                throw new BusinessException(ResultCode.REPEAT_SECKILL);
+        if (hasUserReceivedCoupon(userId, couponId)) {
+            log.info("秒杀落单幂等跳过: userId={}, couponId={}, requestId={}", userId, couponId, requestId);
+            asyncSeckillEnterService.markSuccess(requestId, "EXISTING");
+            return;
+        }
+
+        String virtualId = null;
+        boolean dbDeducted = false;
+        try {
+            ApiResponse<String> deductResponse = couponServiceFeignClient.deductDbSeckillStockOnly(couponId);
+            virtualId = deductResponse != null ? deductResponse.getData() : null;
+            int retry = 0;
+            while ((virtualId == null || virtualId.isEmpty()) && retry < 3) {
+                Backoff.linear(retry, 30L, 120L);
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+                deductResponse = couponServiceFeignClient.deductDbSeckillStockOnly(couponId);
+                virtualId = deductResponse != null ? deductResponse.getData() : null;
+                retry++;
             }
+            if (virtualId == null || virtualId.isEmpty()) {
+                log.error("异步落单 DB 扣库存失败，回补 Redis: requestId={}, couponId={}", requestId, couponId);
+                asyncSeckillEnterService.compensateRedis(userId, couponId, requestId);
+                stringRedisTemplate.delete(consumeLockKey);
+                return;
+            }
+            dbDeducted = true;
 
-            // 2. 检查用户限制
-            Coupon coupon = getCouponById(couponId);
+            Coupon coupon = loadCouponForFulfill(couponId);
             if (coupon == null) {
-                log.warn("未找到秒杀优惠券: couponId={}", couponId);
-                redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
             }
-
-            // 检查用户是否已达到领取限制
             if (!checkCouponCountLimit(userId, coupon.getType())) {
-                log.warn("用户 {} 达到秒杀优惠券领取限制", userId);
-                redisTemplate.delete(userReceivedKey);
                 throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
             }
 
-            // 3. 调用Coupon服务扣减库存并获取使用的虚拟分片ID
-            ApiResponse<String> deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
-            String selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
-
-            // 增加重试机制，提高在高并发下的成功率
-            int retryCount = 0;
-            final int maxRetries = 3;
-            while ((selectedVirtualId == null || selectedVirtualId.isEmpty()) && retryCount < maxRetries) {
-                try {
-                    Thread.sleep(50 * (retryCount + 1)); // 指数退避延迟
-                } catch (InterruptedException ignored) {
-                }
-                deductResponse = couponServiceFeignClient.deductStockWithShardId(couponId);
-                selectedVirtualId = deductResponse != null ? deductResponse.getData() : null;
-                retryCount++;
-            }
-
-            if (selectedVirtualId == null || selectedVirtualId.isEmpty()) {
-                // 扣减库存失败，清理Redis标记
-                log.warn("扣减秒杀优惠券库存失败: couponId={}", couponId);
-                redisTemplate.delete(userReceivedKey);
-                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
-            }
-
-            // 4. 创建订单
-            Order order = new Order();
-            order.setId(String.valueOf(idGenerator.nextId()));
-            order.setUserId(userId);
-            order.setCouponId(couponId);
-            order.setVirtualId(selectedVirtualId); // 设置使用的虚拟分片ID
-
-            order.setStatus(1); // 已创建
-            order.setGetTime(LocalDateTime.now());
-            order.setExpireTime(LocalDateTime.now().plus(coupon.getValidDays(), ChronoUnit.DAYS));
-            order.setCreateTime(LocalDateTime.now());
-            order.setUpdateTime(LocalDateTime.now());
-            order.setRequestId(UUID.randomUUID().toString());
-            order.setVersion(0);
-
-            // 插入数据库
+            Order order = buildNewOrder(userId, couponId, virtualId, coupon);
+            order.setRequestId(requestId);
             try {
                 orderMapper.insert(order);
             } catch (Exception e) {
-                // 检查是否是唯一性约束违反异常
                 if (isDuplicateEntryException(e)) {
-                    log.warn("用户 {} 重复参与秒杀活动 {}，数据库唯一性约束违反", userId, couponId);
-                    // 清理Redis缓存
-                    redisTemplate.delete(userReceivedKey);
-                    throw new BusinessException(ResultCode.REPEAT_SECKILL);
-                } else {
-                    // 其他异常继续抛出
-                    throw e;
+                    log.warn("异步落单唯一约束命中，视为成功: userId={}, couponId={}", userId, couponId);
+                    asyncSeckillEnterService.markSuccess(requestId, "DUP");
+                    // DB 多扣了一份，回补分片
+                    safeIncreaseSeckillStock(virtualId, couponId);
+                    return;
                 }
+                throw e;
             }
 
-            // 5. 异步处理后续操作
+            String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
+            redisTemplate.opsForValue().set(userReceivedKey, true, 1, TimeUnit.HOURS);
+
             handlePostOrderCreation(userId, couponId, coupon.getType(), order);
+            asyncSeckillEnterService.markSuccess(requestId, order.getId());
 
-            // 6. 处理秒杀成功后的操作
-            handleSeckillSuccess(order.getId(), userId, couponId, selectedVirtualId);
+            try {
+                OrderMessage resultMsg = new OrderMessage();
+                resultMsg.setOrderId(order.getId());
+                resultMsg.setUserId(userId);
+                resultMsg.setCouponId(couponId);
+                resultMsg.setVirtualId(virtualId);
+                resultMsg.setStatus("SUCCESS");
+                resultMsg.setCreateTime(new Date());
+                kafkaTemplate.send(seckillOrderResultTopic, order.getId(), resultMsg);
+            } catch (Exception e) {
+                log.warn("发送 seckill_order_result 失败（订单已落库）: orderId={}", order.getId(), e);
+            }
 
-            log.info("秒杀成功: orderId={}, userId={}, couponId={}", order.getId(), userId, couponId);
-            return true;
-
+            log.info("异步秒杀落单成功: orderId={}, requestId={}, userId={}, couponId={}",
+                    order.getId(), requestId, userId, couponId);
         } catch (Exception e) {
-            // 清理Redis缓存
-            redisTemplate.delete(userReceivedKey);
-            log.error("秒杀处理失败: userId={}, couponId={}", userId, couponId, e);
-
-            if (e instanceof BusinessException) {
-                throw (BusinessException) e;
-            } else {
-                // 仅在真正系统错误时才进行补偿，重复秒杀不补偿
-                if (!isDuplicateEntryException(e)) {
-                    // 处理秒杀失败补偿
-                    try {
-                        handleSeckillFailure(null, userId, couponId);
-                    } catch (Exception ex) {
-                        log.error("秒杀失败补偿处理异常", ex);
-                    }
-                }
-                throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
+            log.error("异步秒杀落单失败: requestId={}, userId={}, couponId={}", requestId, userId, couponId, e);
+            if (dbDeducted) {
+                safeIncreaseSeckillStock(virtualId, couponId);
+            }
+            asyncSeckillEnterService.compensateRedis(userId, couponId, requestId);
+            // 释放消费锁，允许 Kafka 重试 / 用户重新入队后的合法消费
+            try {
+                stringRedisTemplate.delete(consumeLockKey);
+            } catch (Exception ignore) {
+                // ignore
             }
         }
+    }
+
+    /**
+     * 落单前加载券元数据。开启 structured-concurrency 时用 JDK25 StructuredTaskScope（preview）封装，
+     * 便于后续扩展并行只读准备；未开启或预览不可用则直调。
+     */
+    private Coupon loadCouponForFulfill(long couponId) {
+        if (!structuredConcurrency) {
+            return getCouponById(couponId);
+        }
+        try {
+            return com.aliyun.seckill.couponkillorderservice.support.StructuredFulfillSupport
+                    .loadCoupon(() -> getCouponById(couponId));
+        } catch (Throwable t) {
+            log.warn("Structured concurrency 加载券失败，回退直调: couponId={}, err={}", couponId, t.toString());
+            return getCouponById(couponId);
+        }
+    }
+
+    /**
+     * 秒杀入口复用 createOrder（旧同步路径，保留给兼容调用）。
+     * 冷却期由 Controller 在成功后统一设置。
+     */
+    @Override
+    public boolean processSeckill(Long userId, Long couponId) {
+        createOrder(userId, couponId);
+        return true;
     }
 
     /**
@@ -998,16 +1052,22 @@ public class OrderServiceImpl implements OrderService {
             return false;
         }
         
-        // 检查常见的唯一性约束违反异常信息
-        return message.contains("Duplicate entry") || 
+        // 检查常见的唯一性约束违反异常信息（兼容 PostgreSQL 23505 / duplicate key，以及历史 MySQL/SQLite 文案）
+        return isDuplicateMessage(message) ||
+               (e.getCause() != null &&
+                e.getCause().getMessage() != null &&
+                isDuplicateMessage(e.getCause().getMessage()));
+    }
+
+    private boolean isDuplicateMessage(String message) {
+        if (message == null) {
+            return false;
+        }
+        return message.contains("duplicate key value violates unique constraint") || // PostgreSQL
+               message.contains("23505") ||                                          // PostgreSQL SQLState
+               message.contains("Duplicate entry") ||                                // MySQL(历史)
                message.contains("UNIQUE constraint failed") ||
                message.contains("唯一约束违反") ||
-               message.contains("唯一性约束") ||
-               (e.getCause() != null && 
-                (e.getCause().getMessage() != null && 
-                 (e.getCause().getMessage().contains("Duplicate entry") ||
-                  e.getCause().getMessage().contains("UNIQUE constraint failed") ||
-                  e.getCause().getMessage().contains("唯一约束违反") ||
-                  e.getCause().getMessage().contains("唯一性约束"))));
+               message.contains("唯一性约束");
     }
 }

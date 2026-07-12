@@ -3,8 +3,9 @@ package com.aliyun.seckill.couponkillorderservice.feign;
 
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.config.FeignConfig;
+import com.aliyun.seckill.common.pojo.UserCouponCount;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -13,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
         configuration = FeignConfig.class
 )
 public interface UserServiceFeignClient {
-    
+
+    @GetMapping("/api/v1/user/coupon/count")
+    ApiResponse<UserCouponCount> getUserCouponCount(@RequestParam("userId") Long userId);
+
     /**
      * 更新用户秒杀优惠券数量
      * @param userId 用户ID
@@ -21,9 +25,9 @@ public interface UserServiceFeignClient {
      * @return 是否更新成功
      */
     @PostMapping("/api/v1/user/coupon/seckill/update")
-    ApiResponse<Void> updateSeckillCouponCount(@RequestParam("userId") Long userId, 
+    ApiResponse<Void> updateSeckillCouponCount(@RequestParam("userId") Long userId,
                                                @RequestParam("count") int count);
-    
+
     /**
      * 更新用户普通优惠券数量
      * @param userId 用户ID
@@ -31,6 +35,6 @@ public interface UserServiceFeignClient {
      * @return 是否更新成功
      */
     @PostMapping("/api/v1/user/coupon/normal/update")
-    ApiResponse<Void> updateNormalCouponCount(@RequestParam("userId") Long userId, 
+    ApiResponse<Void> updateNormalCouponCount(@RequestParam("userId") Long userId,
                                               @RequestParam("count") int count);
 }

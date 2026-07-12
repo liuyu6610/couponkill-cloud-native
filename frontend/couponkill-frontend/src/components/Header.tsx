@@ -1,4 +1,4 @@
-import { Layout, Menu, Input, Button, Badge, Avatar, Dropdown } from 'antd'
+import { Layout, Menu, Input, Button, Avatar, Dropdown } from 'antd'
 import {
   ShoppingCartOutlined,
   UserOutlined,
@@ -7,12 +7,13 @@ import {
   HomeOutlined,
   TagsOutlined,
   ThunderboltOutlined,
-  OrderedListOutlined
+  OrderedListOutlined,
+  ApiOutlined
 } from '@ant-design/icons'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../store'
-import { logoutUser } from '../store/slices/authSlice'
+import { logout, selectIsAdmin } from '../store/slices/authSlice'
 import type { MenuProps } from 'antd'
 
 const { Header: AntHeader } = Layout
@@ -23,9 +24,10 @@ const Header: React.FC = () => {
   const location = useLocation()
   const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
+  const isAdmin = useSelector(selectIsAdmin)
 
   const handleLogout = () => {
-    dispatch(logoutUser())
+    dispatch(logout())
     navigate('/login')
   }
 
@@ -69,9 +71,22 @@ const Header: React.FC = () => {
       icon: <ThunderboltOutlined />,
       label: <Link to="/seckill">秒杀专区</Link>,
     },
+    ...(isAdmin
+      ? [
+          {
+            key: 'admin',
+            icon: <ApiOutlined />,
+            label: <Link to="/admin/connector">Connector</Link>,
+          },
+        ]
+      : []),
   ]
 
-  const selectedKeys = [location.pathname.split('/')[1] || 'home']
+  const selectedKeys = (() => {
+    const seg = location.pathname.split('/')[1] || 'home'
+    if (seg === 'admin') return ['admin']
+    return [seg]
+  })()
 
   return (
     <AntHeader className="app-header">
@@ -103,16 +118,14 @@ const Header: React.FC = () => {
         <div className="header-right">
           {isAuthenticated ? (
             <>
-              <Badge count={0} showZero={false}>
-                <Button
-                  type="text"
-                  icon={<ShoppingCartOutlined />}
-                  style={{ color: 'white' }}
-                  onClick={() => navigate('/orders')}
-                >
-                  购物车
-                </Button>
-              </Badge>
+              <Button
+                type="text"
+                icon={<ShoppingCartOutlined />}
+                style={{ color: 'white' }}
+                onClick={() => navigate('/orders')}
+              >
+                我的订单
+              </Button>
 
               <Dropdown
                 menu={{ items: userMenuItems }}
@@ -120,7 +133,7 @@ const Header: React.FC = () => {
                 trigger={['click']}
               >
                 <div className="user-info">
-                  <Avatar icon={<UserOutlined />} src={user?.avatar} />
+                  <Avatar icon={<UserOutlined />} />
                   <span className="username">{user?.username}</span>
                 </div>
               </Dropdown>

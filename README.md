@@ -6,19 +6,23 @@ CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专
 
 ## 技术栈
 
-开发语言: Java、Go
+开发语言: Java 25、Go
 容器编排: Kubernetes
 服务网格: Istio
 CI/CD: Jenkins
 服务注册与发现: Nacos
 配置中心: Nacos
-分布式事务: Seata
+分布式事务: 本地事务 + 最终一致（Kafka 异步 / 库存回补；**未启用 Seata**）
 流量控制: Sentinel
-消息中间件: RocketMQ
-缓存: Redis (阿里云 Redis 服务)
-数据库: MySQL (阿里云 RDS 服务)
+消息中间件: Apache Kafka（已自 RocketMQ 迁移，见 `docs/MIGRATION-PostgreSQL-Kafka.md`）
+缓存: Redis
+数据库: PostgreSQL 16（分库分表，已自 MySQL 迁移）
 自动扩缩容: KEDA
 监控: 自定义 Operator
+框架: Spring Boot **3.5.16** / Spring Cloud **2025.0.3** / Spring Cloud Alibaba **2025.0.0.0**
+
+> 中间件迁移真源文档：[`docs/MIGRATION-PostgreSQL-Kafka.md`](docs/MIGRATION-PostgreSQL-Kafka.md)  
+> Schema 真源：`charts/couponkill/scripts/init-postgres.sql`（旧 MySQL `init.sql` 已废弃）
 
 ## 系统架构
 
@@ -49,7 +53,7 @@ CouponKill 采用微服务架构，将复杂的业务逻辑拆分为多个独立
 │  ├── 秒杀活动管理                            └────────────▲────────────┘  │
 │  └── 库存管理                                            │               │
 │                                                           │               │
-│  ├── 订单创建与管理                                   RocketMQ            │
+│  ├── 订单创建与管理                                   Kafka               │
 │  ├── 订单状态跟踪                              (异步消息处理)             │
 │  └── 订单查询                                          │               │
 │                                                        ▼               │
@@ -62,13 +66,13 @@ CouponKill 采用微服务架构，将复杂的业务逻辑拆分为多个独立
 ┌────────────────────────────────────▼────────────────────────────────────────┐
 │                           中间件与基础设施                                 │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌──────────────┐ │
-│  │   Nacos       │  │   Sentinel    │  │   Seata       │  │   Redis      │ │
-│  │ 服务注册发现   │  │ 流量控制      │  │ 分布式事务    │  │   缓存       │ │
-│  │ 配置管理      │  │ 熔断降级      │  │               │  │              │ │
+│  │   Nacos       │  │   Sentinel    │  │  本地事务+MQ  │  │   Redis      │ │
+│  │ 服务注册发现   │  │ 流量控制      │  │ 最终一致      │  │   缓存       │ │
+│  │ 配置管理      │  │ 熔断降级      │  │ （无 Seata）  │  │              │ │
 │  └───────────────┘  └───────────────┘  └───────────────┘  └──────────────┘ │
 │                                                                            │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌──────────────┐ │
-│  │   RocketMQ    │  │   MySQL       │  │   Prometheus  │  │   Grafana    │ │
+│  │   Kafka       │  │  PostgreSQL   │  │   Prometheus  │  │   Grafana    │ │
 │  │ 消息队列      │  │ 关系型数据库   │  │   监控        │  │   可视化     │ │
 │  │ 异步处理      │  │ 数据持久化    │  │               │  │              │ │
 │  └───────────────┘  └───────────────┘  └───────────────┘  └──────────────┘ │
@@ -311,7 +315,72 @@ kubectl apply -f k8s-istio/
 
 ## 快速开始
 
-### 环境要求
+### 本地演示（推荐先走这条）
+
+目标：在本机跑通「登录 → 看券 → 秒杀下单」演示链路。当前默认 **Java 秒杀路径**（Go 引擎开关默认关闭，待 E2E 冒烟后再开）。
+
+#### 环境要求
+
+- JDK **25**、Maven **3.9+**、Docker Desktop
+- （可选）Node.js 18+ 跑前端；Go 1.24+ 仅在开启 Go 秒杀时需要
+
+#### 1. 拉起中间件 + 种子数据
+
+```bash
+docker compose -f docker-compose.migration.yml up -d
+```
+
+会启动 PostgreSQL 16 / Redis 7 / Kafka 3.8 / Nacos，并自动：
+
+1. `01-init-postgres.sql` 建 6 库 + 分片表  
+2. `02-seed-demo.sql` 写入演示账号与优惠券  
+
+| 项 | 值 |
+|---|---|
+| 演示账号 | `demo` / `demo1234` |
+| 秒杀券 ID | `1001`（type=2，每分片秒杀库存 100） |
+| 常驻券 ID | `1002`（type=1，每分片库存 100） |
+| PG | `localhost:5432` / postgres / postgres |
+| Redis | `localhost:6379` |
+| Kafka（宿主机） | `localhost:9092` |
+| Nacos | `localhost:8848`（镜像 `nacos/nacos-server:v3.1.1`，对齐客户端 3.1.1） |
+
+> 若 PG 数据卷是旧的（没有种子），需要 `docker compose -f docker-compose.migration.yml down -v` 后重新 `up`，或手动对库执行 `charts/couponkill/scripts/02-seed-demo.sql`。
+
+#### 2. 编译 Java 服务（JDK 25）
+
+```bash
+mvn -pl couponkill-common,couponkill-gateway,couponkill-user-service,couponkill-coupon-service,couponkill-order-service -am clean package -DskipTests
+```
+
+#### 3. 启动顺序（Nacos 配置需已就绪）
+
+1. `couponkill-gateway`  
+2. `couponkill-user-service`  
+3. `couponkill-coupon-service`  
+4. `couponkill-order-service`  
+
+Nacos 中需存在各服务 `application.yml`（`spring.config.import=optional:nacos:...`）指向的配置（含 ShardingSphere YAML、数据源指向本地 PG）。仓库内参考配置在 `nacos/` 目录，可按环境导入。网关路由前缀为 `spring.cloud.gateway.server.webflux.*`。
+
+#### 4. 前端（可选）
+
+```bash
+cd frontend/couponkill-frontend
+npm install && npm run dev
+```
+
+浏览器打开前端 → 使用 `demo` / `demo1234` 登录 → 领取/秒杀券 `1001`。
+
+#### 5. 已知演示边界（请知晓）
+
+- Go 秒杀：`couponkill.seckill.go.enabled=false`（默认），演示走 Java 路径  
+- **秒杀热路径（已切换）**：`POST /order/seckill` → Redis Lua 预扣 `coupon:stock:{id}` → Kafka `seckill_order_create` → 消费者落单（仅同步 DB，不再同步 Feign 扣 Redis）。前端继续轮询 `GET /order/check/{couponId}`  
+- 启动 coupon-service 后需完成库存预热（`asyncPreheatStockToRedis` / `coupon.cache.preload=true`），否则 Lua 视无 key 为已抢完  
+- 全链路生产级 Helm 金丝雀仍属后续完善项  
+- **并发说明**：系统**未启用 Seata**；「卡在百级」常见真因是 Hikari/Go 池默认 100、JMeter `perhost=100`、以及订单后置小线程池（已改为虚拟线程）  
+- 中间件迁移细节见 [`docs/MIGRATION-PostgreSQL-Kafka.md`](docs/MIGRATION-PostgreSQL-Kafka.md)
+
+### 环境要求（K8s / 生产向）
 
 - Kubernetes 1.27+（推荐使用kubekey安装）
 - Helm 3.0+
@@ -352,12 +421,9 @@ helm repo add sentinel https://sentinelguard.io/helm-charts/
 helm install sentinel sentinel/sentinel -n middleware
 ```
 
-##### 部署 RocketMQ
+##### 部署 Kafka（替代历史 RocketMQ）
 
-```bash
-helm repo add rocketmq https://apache.github.io/rocketmq-externals/helm-charts/
-helm install rocketmq rocketmq/rocketmq -n middleware
-```
+生产环境请使用项目 Helm Chart / Operator 中的 Kafka 依赖；本地演示请用上文 `docker-compose.migration.yml`。
 
 ### 部署应用
 

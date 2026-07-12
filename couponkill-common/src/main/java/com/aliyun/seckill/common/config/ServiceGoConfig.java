@@ -8,22 +8,26 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * Go 秒杀分流配置。默认关闭：Go 引擎数据源/分片/键名未与 Java 对齐前不得在过载时切流。
+ */
 @Configuration
 @RefreshScope
 public class ServiceGoConfig {
     @Getter
-    @Value("${service协同.java.qps-threshold:500}")
+    @Value("${couponkill.seckill.java.qps-threshold:500}")
     private int javaQpsThreshold;
 
     @Getter
-    @Value("${service协同.go.url:http://couponkill-go-service:8090}")
+    @Value("${couponkill.seckill.go.url:http://seckill-go-svc:8083}")
     private String goServiceUrl;
 
+    /** 默认 false：Go 路径修好前禁止路由 */
     @Getter
-    @Value("${service协同.go.enabled:true}")
+    @Value("${couponkill.seckill.go.enabled:false}")
     private boolean goServiceEnabled;
 
-    @Value("${service协同.fallback-to-go:false}")
+    @Value("${couponkill.seckill.fallback-to-go:false}")
     private boolean fallbackToGo;
 
     @Bean
@@ -38,22 +42,14 @@ public class ServiceGoConfig {
 
     /**
      * 判断是否应该路由到Go服务
-     * 1. 如果Go服务未启用，始终返回false
-     * 2. 如果配置了强制fallback到Go服务，始终返回true
-     * 3. 否则基于Java服务的QPS阈值进行判断
      */
     public boolean shouldRouteToGo() {
-        // 如果Go服务未启用，直接返回false
         if (!goServiceEnabled) {
             return false;
         }
-        
-        // 如果配置了强制fallback到Go服务，直接返回true
         if (fallbackToGo) {
             return true;
         }
-        
-        // 否则基于Java服务的QPS阈值进行判断
         return !javaServiceRateLimiter().tryAcquire();
     }
 }

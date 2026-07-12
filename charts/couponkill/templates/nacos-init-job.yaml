@@ -102,15 +102,11 @@ spec:
             data-type: json
             group: SENTINEL_GROUP
             rule-type: flow
-rocketmq:
-  name-server: rocketmq-namesrv:9876
-  producer:
-    group: common-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 1
-    max-message-size: 4096
-    transaction-listener:
-      enabled: true
+kafka:
+  topic:
+    seckill-order-create: seckill_order_create
+    seckill-order-result: seckill_order_result
+    seckill-compensation: seckill_compensation
 thread-pool:
   async:
     core-pool-size: 50
@@ -158,23 +154,25 @@ cluster:
                 --data-urlencode "content=spring:
   cloud:
     gateway:
-      routes:
-        - id: user-service
-          uri: lb://couponkill-user-service
-          predicates:
-            - Path=/api/v1/user/**
-        - id: coupon-service
-          uri: lb://couponkill-coupon-service
-          predicates:
-            - Path=/api/v1/coupon/**
-        - id: order-service
-          uri: lb://couponkill-order-service
-          predicates:
-            - Path=/api/v1/order/**
-        - id: seckill-go-service
-          uri: lb://seckill-go-svc
-          predicates:
-            - Path=/seckill/go/**" \
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: lb://couponkill-user-service
+              predicates:
+                - Path=/api/v1/user/**
+            - id: coupon-service
+              uri: lb://couponkill-coupon-service
+              predicates:
+                - Path=/api/v1/coupon/**
+            - id: order-service
+              uri: lb://couponkill-order-service
+              predicates:
+                - Path=/api/v1/order/**
+            - id: seckill-go-service
+              uri: lb://seckill-go-svc
+              predicates:
+                - Path=/seckill/go/**" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
               # 创建MySQL集群配置
@@ -449,22 +447,15 @@ cluster:
         password: ''
         max-redirects: 3
   messaging:
-    rocketmq:
+    kafka:
       type: standalone
       standalone:
-        name-server: rocketmq-namesrv:9876
+        bootstrap-servers: kafka:9092
       cluster:
-        name-servers:
-          - rocketmq-namesrv-0:9876
-          - rocketmq-namesrv-1:9876
-          - rocketmq-namesrv-2:9876
-        broker-clusters:
-          - name: DefaultCluster
-            brokers:
-              - broker-master-0:10911
-              - broker-slave-0:10911
-              - broker-master-1:10911
-              - broker-slave-1:10911
+        bootstrap-servers:
+          - kafka-0:9092
+          - kafka-1:9092
+          - kafka-2:9092
   config:
     nacos:
       type: standalone
@@ -539,8 +530,8 @@ cluster:
       network-timeout: 30000
       holdability: HOLD_CURSORS_OVER_COMMIT
     driver:
-      class-name: com.mysql.cj.jdbc.Driver
-      url-params: useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      class-name: org.postgresql.Driver
+      url-params: reWriteBatchedInserts=true&ApplicationName=couponkill&sslmode=disable
     ssl:
       enabled: false
       keystore:

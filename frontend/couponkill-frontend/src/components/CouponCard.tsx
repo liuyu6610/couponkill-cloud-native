@@ -1,187 +1,102 @@
 import React from 'react'
-import { Card, Typography, Button, Tag, Badge, Space } from 'antd'
-import { ShoppingCartOutlined } from '@ant-design/icons'
+import { Card, Typography, Button, Tag, Space } from 'antd'
+import { ThunderboltOutlined, GiftOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
+import type { Coupon } from '../types/api'
+import { couponStockOf, couponTotalStockOf, isSeckillCoupon } from '../types/api'
 
 const { Title, Text, Paragraph } = Typography
-
-export interface Coupon {
-  id: string
-  name: string
-  description: string
-  type: 'DISCOUNT' | 'CASH' | 'PERCENTAGE'
-  value: number
-  minAmount?: number
-  maxDiscount?: number
-  availableStock: number
-  totalStock: number
-  startTime: string
-  endTime: string
-  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED'
-  tags: string[]
-  seckillPrice?: number
-  seckillStock?: number
-  seckillParticipants?: number
-  maxParticipants?: number
-  seckillStartTime?: string
-  seckillEndTime?: string
-}
 
 interface CouponCardProps {
   coupon: Coupon
   showActions?: boolean
   size?: 'default' | 'small'
+  seckillLoading?: boolean
+  onSeckill?: (coupon: Coupon) => void
 }
 
 const CouponCard: React.FC<CouponCardProps> = ({
   coupon,
   showActions = false,
-  size = 'default'
+  size = 'default',
+  seckillLoading = false,
+  onSeckill,
 }) => {
-  const isSeckill = coupon.seckillPrice && coupon.seckillStock
-  const isExpired = new Date(coupon.endTime) < new Date()
-  const isNotStarted = new Date(coupon.startTime) > new Date()
+  const seckill = isSeckillCoupon(coupon)
+  const stock = couponStockOf(coupon)
+  const totalStock = couponTotalStockOf(coupon)
+  const soldOut = stock <= 0
+  const invalid = coupon.status !== 1
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'green'
-      case 'INACTIVE':
-        return 'orange'
-      case 'EXPIRED':
-        return 'red'
-      default:
-        return 'default'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return '进行中'
-      case 'INACTIVE':
-        return '未开始'
-      case 'EXPIRED':
-        return '已过期'
-      default:
-        return status
-    }
-  }
-
-  const formatValue = (value: number, type: string) => {
-    if (type === 'PERCENTAGE') {
-      return `${value}% OFF`
-    } else {
-      return `¥${value}`
-    }
-  }
-
-  const cardContent = (
+  return (
     <Card
-      className={`coupon-card ${size === 'small' ? 'small' : ''} ${isExpired ? 'expired' : ''}`}
-      hoverable={!isExpired}
+      className={`coupon-card ${size === 'small' ? 'small' : ''} ${soldOut ? 'sold-out' : ''}`}
+      hoverable={!soldOut && !invalid}
       size={size === 'small' ? 'small' : 'default'}
     >
       <div className="coupon-header">
-        <div className="coupon-title">
-          <Title level={size === 'small' ? 5 : 4} className="coupon-name">
-            {coupon.name}
-          </Title>
-          {isSeckill && (
-            <Badge.Ribbon text="秒杀" color="red">
-              <div />
-            </Badge.Ribbon>
-          )}
-        </div>
-
-        <div className="coupon-status">
-          <Tag color={getStatusColor(coupon.status)}>
-            {getStatusText(coupon.status)}
-          </Tag>
-        </div>
+        <Title level={size === 'small' ? 5 : 4} className="coupon-name" ellipsis={{ rows: 1 }}>
+          {coupon.name}
+        </Title>
+        <Tag color={seckill ? 'red' : 'blue'} icon={seckill ? <ThunderboltOutlined /> : <GiftOutlined />}>
+          {seckill ? '秒抢' : '常驻'}
+        </Tag>
       </div>
 
       <div className="coupon-content">
-        <Paragraph
-          className="coupon-description"
-          ellipsis={{ rows: size === 'small' ? 1 : 2 }}
-        >
-          {coupon.description}
-        </Paragraph>
+        {coupon.description && (
+          <Paragraph className="coupon-description" type="secondary" ellipsis={{ rows: size === 'small' ? 1 : 2 }}>
+            {coupon.description}
+          </Paragraph>
+        )}
 
         <div className="coupon-value">
-          <div className="value-main">
-            <Text strong style={{ fontSize: size === 'small' ? '16px' : '20px', color: '#1890ff' }}>
-              {formatValue(coupon.value, coupon.type)}
-            </Text>
-            {isSeckill && coupon.seckillPrice && (
-              <div className="seckill-price">
-                <Text delete style={{ fontSize: '12px' }}>
-                  ¥{coupon.value}
-                </Text>
-                <Text strong style={{ fontSize: '14px', color: '#ff4d4f', marginLeft: 8 }}>
-                  ¥{coupon.seckillPrice}
-                </Text>
-              </div>
-            )}
-          </div>
-
-          {coupon.minAmount && (
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              满¥{coupon.minAmount}使用
+          <Text strong style={{ fontSize: size === 'small' ? 18 : 24, color: '#fa541c' }}>
+            ¥{coupon.faceValue}
+          </Text>
+          {coupon.minSpend > 0 && (
+            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
+              满¥{coupon.minSpend}可用
             </Text>
           )}
         </div>
 
-        <div className="coupon-stock">
-          <Space size="middle">
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              库存: {coupon.availableStock}/{coupon.totalStock}
+        <div className="coupon-meta">
+          <Space size="middle" wrap>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              库存: {stock}/{totalStock}
             </Text>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              有效期至: {new Date(coupon.endTime).toLocaleDateString()}
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              有效期: {coupon.validDays}天
             </Text>
           </Space>
-        </div>
-
-        {isSeckill && coupon.seckillParticipants !== undefined && (
-          <div className="seckill-info">
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              已参与: {coupon.seckillParticipants}人
-            </Text>
-          </div>
-        )}
-
-        <div className="coupon-tags">
-          {coupon.tags.slice(0, size === 'small' ? 2 : 3).map((tag, index) => (
-            <Tag key={index}>{tag}</Tag>
-          ))}
         </div>
       </div>
 
       {showActions && (
-        <div className="coupon-actions">
+        <div className="coupon-actions" style={{ marginTop: 12 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
-            <Button
-              type="primary"
-              block
-              icon={<ShoppingCartOutlined />}
-              disabled={isExpired || isNotStarted || coupon.availableStock === 0}
-            >
-              {isSeckill ? '立即秒杀' : '立即抢购'}
-            </Button>
+            {seckill ? (
+              <Button
+                type="primary"
+                danger
+                block
+                icon={<ThunderboltOutlined />}
+                loading={seckillLoading}
+                disabled={soldOut || invalid}
+                onClick={() => onSeckill?.(coupon)}
+              >
+                {soldOut ? '已抢光' : '立即秒杀'}
+              </Button>
+            ) : null}
             <Button block>
-              <Link to={`/coupons/${coupon.id}`}>
-                查看详情
-              </Link>
+              <Link to={`/coupons/${coupon.id}`}>查看详情</Link>
             </Button>
           </Space>
         </div>
       )}
     </Card>
   )
-
-  return cardContent
 }
 
 export default CouponCard

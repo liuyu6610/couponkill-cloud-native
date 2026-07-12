@@ -141,20 +141,22 @@ public interface OrderService {
     long count();
 
     /**
-     * 处理秒杀逻辑
-     * 在处理过程中会从优惠券的所有分片中选择一个有库存的分片，以提高系统QPS
-     * @param userId 用户ID
-     * @param couponId 优惠券ID
-     * @return 是否秒杀成功
+     * 处理秒杀逻辑（兼容旧同步路径；热路径请用 enterSeckillAsync）
      */
     boolean processSeckill(Long userId, Long couponId);
 
     /**
+     * 热路径：Lua 预扣 + Kafka 异步落单
+     */
+    com.aliyun.seckill.common.pojo.EnterSeckillResp enterSeckillAsync(Long userId, Long couponId);
+
+    /**
+     * Kafka 消费者：根据预扣命令落单（仅同步 DB 库存，不再扣 Redis）
+     */
+    void fulfillSeckillOrder(com.aliyun.seckill.common.pojo.SeckillOrderCommand command);
+
+    /**
      * 处理秒杀成功后的操作
-     * @param orderId 订单ID
-     * @param userId 用户ID
-     * @param couponId 优惠券ID
-     * @param virtualId 虚拟ID
      */
     void handleSeckillSuccess(String orderId, Long userId, Long couponId, String virtualId);
     

@@ -106,14 +106,9 @@ func (s *SeckillService) ProcessSeckill(ctx context.Context, userID, couponID in
 		return false, err
 	}
 
-	// 8. 更新缓存
+	// 8. 更新缓存（领取标记 + 用户计数）。库存已在 DeductStock 扣减，禁止再次 UpdateCouponStockCache(-1)
 	s.redisRepo.SetUserReceivedCache(ctx, userID, couponID)
-
-	// 更新用户优惠券数量缓存
 	s.redisRepo.UpdateUserCouponCountCache(ctx, userID, 1, 1)
-
-	// 更新优惠券库存缓存
-	s.redisRepo.UpdateCouponStockCache(ctx, couponID, -1)
 
 	return true, nil
 }

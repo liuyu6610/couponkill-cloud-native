@@ -1,10 +1,13 @@
 package com.aliyun.seckill.couponkillcouponservice.service.Impl;
 
 import com.aliyun.seckill.common.pojo.Coupon;
+import com.aliyun.seckill.common.connector.SyncStockResult;
 import com.aliyun.seckill.couponkillcouponservice.mapper.CouponMapper;
 import com.aliyun.seckill.couponkillcouponservice.service.CouponService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -13,7 +16,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -40,13 +43,21 @@ public class CouponServiceImpl implements CouponService {
     private static final String COUPON_AVAILABLE_KEY = "coupon:available";
     private static final int TOTAL_SHARDS = 64; // 4数据库 * 16表 = 64个分片
 
-    // 添加序列化器
     private final RedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
+    private final AtomicBoolean preheated = new AtomicBoolean(false);
 
-    @PostConstruct
-    public void init() {
-        // 应用启动时预热缓存
-        asyncPreheatStockToRedis();
+    /**
+     * 等应用就绪（含 ShardingSphere DataSource）后再预热，避免 PostConstruct 过早查库失败。
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void onReadyPreheat() {
+        try {
+            asyncPreheatStockToRedis();
+            preheated.set(true);
+            log.info("ApplicationReady 库存预热完成");
+        } catch (Exception e) {
+            log.error("ApplicationReady 库存预热失败，秒杀可能返回未预热", e);
+        }
     }
 
     @Override
@@ -274,6 +285,38 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    @Transactional
+    public boolean increaseSeckillStockByShardId(String virtualId) {
+        if (virtualId == null || virtualId.isBlank()) {
+            return false;
+        }
+        try {
+            int underscore = virtualId.lastIndexOf('_');
+            if (underscore <= 0 || underscore >= virtualId.length() - 1) {
+                log.warn("非法 virtualId，无法回补秒杀库存: {}", virtualId);
+                return false;
+            }
+            Long couponId = Long.parseLong(virtualId.substring(0, underscore));
+            Integer shardIndex = Integer.parseInt(virtualId.substring(underscore + 1));
+
+            int rows = couponMapper.increaseSeckillStockByShardIndex(couponId, shardIndex, 1);
+            if (rows > 0) {
+                String stockKey = COUPON_STOCK_KEY + couponId;
+                redisTemplate.opsForValue().increment(stockKey);
+                redisTemplate.delete("coupon:shards:" + couponId);
+                log.info("按分片回补秒杀库存成功: virtualId={}, couponId={}, shardIndex={}",
+                        virtualId, couponId, shardIndex);
+                return true;
+            }
+            log.warn("按分片回补秒杀库存未命中行: virtualId={}", virtualId);
+            return false;
+        } catch (Exception e) {
+            log.error("按分片回补秒杀库存失败: virtualId={}", virtualId, e);
+            return false;
+        }
+    }
+
+    @Override
     public void updateStock(Long couponId, int newStock) {
         // 这个方法在当前接口中未实现，可以留空或者抛出异常
         throw new UnsupportedOperationException("updateStock method not implemented");
@@ -285,7 +328,32 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    public String deductStockWithShardId(Long couponId) {
+        Integer shardIndex = deductStockWithShardIndex(couponId, true);
+        if (shardIndex != null) {
+            return couponId + "_" + shardIndex;
+        }
+        return null;
+    }
+
+    @Override
+    public String deductDbSeckillStockOnly(Long couponId) {
+        Integer shardIndex = deductStockWithShardIndex(couponId, false);
+        if (shardIndex != null) {
+            return couponId + "_" + shardIndex;
+        }
+        return null;
+    }
+
+    @Override
     public Integer deductStockWithShardIndex(Long couponId) {
+        return deductStockWithShardIndex(couponId, true);
+    }
+
+    /**
+     * @param updateRedis 为 false 时只写 DB（Lua 热路径已扣 Redis，禁止再 DECR）
+     */
+    private Integer deductStockWithShardIndex(Long couponId, boolean updateRedis) {
         try {
             // 使用更高效的分片选择策略，避免每次都查询所有分片
             // 先从Redis缓存中获取分片信息
@@ -347,25 +415,33 @@ public class CouponServiceImpl implements CouponService {
             );
 
             if (rows > 0) {
-                // 异步更新Redis缓存，避免阻塞主流程
-                final Long couponIdFinal = couponId;
-                CompletableFuture.runAsync(() -> {
+                if (updateRedis) {
+                    final Long couponIdFinal = couponId;
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            String stockKey = COUPON_STOCK_KEY + couponIdFinal;
+                            redisTemplate.opsForValue().decrement(stockKey);
+                            log.info("异步更新Redis库存成功: key={}", stockKey);
+
+                            String cacheKey = "coupon:shards:" + couponIdFinal;
+                            List<Coupon> updatedShards = couponMapper.selectByCouponId(couponIdFinal);
+                            redisTemplate.opsForValue().set(cacheKey, updatedShards, Duration.ofMinutes(5));
+                        } catch (Exception e) {
+                            log.warn("异步更新Redis缓存失败", e);
+                        }
+                    });
+                } else {
+                    // 仅刷新分片缓存，不 DECR Redis（热路径已扣）
                     try {
-                        String stockKey = COUPON_STOCK_KEY + couponIdFinal;
-                        redisTemplate.opsForValue().decrement(stockKey);
-                        log.info("异步更新Redis库存成功: key={}", stockKey);
-                        
-                        // 更新分片缓存
-                        String cacheKey = "coupon:shards:" + couponIdFinal;
-                        List<Coupon> updatedShards = couponMapper.selectByCouponId(couponIdFinal);
+                        String cacheKey = "coupon:shards:" + couponId;
+                        List<Coupon> updatedShards = couponMapper.selectByCouponId(couponId);
                         redisTemplate.opsForValue().set(cacheKey, updatedShards, Duration.ofMinutes(5));
                     } catch (Exception e) {
-                        log.warn("异步更新Redis缓存失败", e);
+                        log.warn("刷新分片缓存失败: couponId={}", couponId, e);
                     }
-                });
+                }
                 
-                // 返回选中的分片索引
-                log.info("成功扣减优惠券分片 {} 的库存", selectedShard.getShardIndex());
+                log.info("成功扣减优惠券分片 {} 的库存, updateRedis={}", selectedShard.getShardIndex(), updateRedis);
                 return selectedShard.getShardIndex();
             }
             
@@ -402,15 +478,6 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
-    public String deductStockWithShardId(Long couponId) {
-        Integer shardIndex = deductStockWithShardIndex(couponId);
-        if (shardIndex != null) {
-            return couponId + "_" + shardIndex;
-        }
-        return null;
-    }
-
-    @Override
     public List<Coupon> getCouponShards(Long id) {
         return couponMapper.selectByCouponId(id);
     }
@@ -443,30 +510,172 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void asyncPreheatStockToRedis() {
         try {
-            // 预热所有主分片到Redis缓存
+            // 预热：库存按全分片求和写入 coupon:stock:{id}，详情仍用主分片元数据
             List<Coupon> mainShards = couponMapper.selectMainShardsForCache();
             if (mainShards != null && !mainShards.isEmpty()) {
-                redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-                    for (Coupon coupon : mainShards) {
-                        String key = COUPON_DETAIL_KEY + coupon.getId();
-                        // 设置随机过期时间(30-40分钟)，避免缓存雪崩
-                        int expireMinutes = 30 + new Random().nextInt(11);
-                        connection.set(key.getBytes(), serializeObject(coupon));
-                        connection.expire(key.getBytes(), expireMinutes * 60);
-                        
-                        // 同时缓存库存信息
-                        String stockKey = COUPON_STOCK_KEY + coupon.getId();
-                        int stock = coupon.getType() == 2 ? coupon.getSeckillRemainingStock() : coupon.getRemainingStock();
-                        connection.set(stockKey.getBytes(), String.valueOf(stock).getBytes());
-                        connection.expire(stockKey.getBytes(), expireMinutes * 60);
+                for (Coupon coupon : mainShards) {
+                    List<Coupon> allShards = couponMapper.selectByCouponId(coupon.getId());
+                    int stockSum = 0;
+                    if (allShards != null) {
+                        for (Coupon shard : allShards) {
+                            if (coupon.getType() != null && coupon.getType() == 2) {
+                                stockSum += shard.getSeckillRemainingStock() != null ? shard.getSeckillRemainingStock() : 0;
+                            } else {
+                                stockSum += shard.getRemainingStock() != null ? shard.getRemainingStock() : 0;
+                            }
+                        }
                     }
-                    return null;
-                });
-                log.info("预热优惠券缓存完成，共预热 {} 个优惠券", mainShards.size());
+                    int expireMinutes = 30 + new Random().nextInt(11);
+                    String detailKey = COUPON_DETAIL_KEY + coupon.getId();
+                    String stockKey = COUPON_STOCK_KEY + coupon.getId();
+                    redisTemplate.opsForValue().set(detailKey, coupon, Duration.ofMinutes(expireMinutes));
+                    // 用 StringRedis 语义写库存：通过 connection 写纯数字，供 Lua GET/DECR
+                    final int stockToSet = stockSum;
+                    redisTemplate.execute((RedisCallback<Object>) connection -> {
+                        connection.stringCommands().set(stockKey.getBytes(), String.valueOf(stockToSet).getBytes());
+                        connection.keyCommands().expire(stockKey.getBytes(), (long) expireMinutes * 60);
+                        return null;
+                    });
+                }
+                log.info("预热优惠券缓存完成，共预热 {} 个优惠券（库存为全分片合计）", mainShards.size());
             }
         } catch (Exception e) {
             log.error("预热优惠券缓存失败", e);
+            throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean preheatCouponStock(Long couponId) {
+        if (couponId == null) {
+            return false;
+        }
+        try {
+            List<Coupon> allShards = couponMapper.selectByCouponId(couponId);
+            if (allShards == null || allShards.isEmpty()) {
+                log.warn("预热单券失败，无分片: couponId={}", couponId);
+                return false;
+            }
+            Coupon meta = allShards.get(0);
+            int stockSum = 0;
+            for (Coupon shard : allShards) {
+                if (meta.getType() != null && meta.getType() == 2) {
+                    stockSum += shard.getSeckillRemainingStock() != null ? shard.getSeckillRemainingStock() : 0;
+                } else {
+                    stockSum += shard.getRemainingStock() != null ? shard.getRemainingStock() : 0;
+                }
+            }
+            int expireMinutes = 30 + new Random().nextInt(11);
+            String stockKey = COUPON_STOCK_KEY + couponId;
+            final int stockToSet = stockSum;
+            redisTemplate.execute((RedisCallback<Object>) connection -> {
+                connection.stringCommands().set(stockKey.getBytes(), String.valueOf(stockToSet).getBytes());
+                connection.keyCommands().expire(stockKey.getBytes(), (long) expireMinutes * 60);
+                return null;
+            });
+            redisTemplate.opsForValue().set(COUPON_DETAIL_KEY + couponId, meta, Duration.ofMinutes(expireMinutes));
+            log.info("单券库存预热成功: couponId={}, stock={}", couponId, stockSum);
+            return true;
+        } catch (Exception e) {
+            log.error("单券库存预热失败: couponId={}", couponId, e);
+            return false;
+        }
+    }
+
+    /** Connector 同步库存上限，防止误灌入极大值 */
+    private static final long SYNC_STOCK_HARD_CAP = 10_000_000L;
+
+    @Override
+    public SyncStockResult syncRedisStock(Long couponId, Long targetStock, boolean force) {
+        if (couponId == null || targetStock == null || targetStock < 0) {
+            return SyncStockResult.builder()
+                    .success(false)
+                    .targetStock(targetStock)
+                    .message("couponId/targetStock 非法")
+                    .build();
+        }
+        if (targetStock > SYNC_STOCK_HARD_CAP) {
+            log.warn("拒绝同步：targetStock={} 超过硬上限 {}", targetStock, SYNC_STOCK_HARD_CAP);
+            return SyncStockResult.builder()
+                    .success(false)
+                    .targetStock(targetStock)
+                    .message("超过硬上限 " + SYNC_STOCK_HARD_CAP)
+                    .build();
+        }
+        Coupon coupon = couponMapper.selectById(couponId);
+        if (coupon == null) {
+            log.warn("拒绝同步：券不存在 couponId={}", couponId);
+            return SyncStockResult.builder()
+                    .success(false)
+                    .targetStock(targetStock)
+                    .message("券不存在")
+                    .build();
+        }
+        long catalogCap = Math.max(
+                Math.max(nullToZero(coupon.getTotalStock()), nullToZero(coupon.getSeckillTotalStock())),
+                1L);
+        long softCap = Math.min(SYNC_STOCK_HARD_CAP, Math.max(catalogCap * 2, catalogCap + 1000));
+        if (targetStock > softCap) {
+            log.warn("拒绝同步：targetStock={} 超过券目录软上限 {} couponId={}", targetStock, softCap, couponId);
+            return SyncStockResult.builder()
+                    .success(false)
+                    .targetStock(targetStock)
+                    .message("超过券目录软上限 " + softCap)
+                    .build();
+        }
+        try {
+            int expireMinutes = 30 + new Random().nextInt(11);
+            String stockKey = COUPON_STOCK_KEY + couponId;
+            final long stockToSet = targetStock;
+            final boolean forceSet = force;
+            long[] meta = redisTemplate.execute((RedisCallback<long[]>) connection -> {
+                byte[] keyBytes = stockKey.getBytes();
+                byte[] curBytes = connection.stringCommands().get(keyBytes);
+                long finalValue = stockToSet;
+                boolean write = forceSet || curBytes == null;
+                if (!write && curBytes != null) {
+                    try {
+                        long current = Long.parseLong(new String(curBytes));
+                        if (stockToSet < current) {
+                            write = true;
+                            finalValue = stockToSet;
+                        } else {
+                            finalValue = current; // 安全模式：不抬高
+                        }
+                    } catch (NumberFormatException e) {
+                        write = true;
+                        finalValue = stockToSet;
+                    }
+                }
+                if (write) {
+                    connection.stringCommands().set(keyBytes, String.valueOf(finalValue).getBytes());
+                }
+                connection.keyCommands().expire(keyBytes, (long) expireMinutes * 60);
+                return new long[]{finalValue, write ? 1L : 0L};
+            });
+            long applied = meta != null ? meta[0] : stockToSet;
+            boolean changed = meta != null && meta[1] == 1L;
+            log.info("Connector 同步 Redis 库存: couponId={}, target={}, force={}, applied={}, changed={}",
+                    couponId, targetStock, force, applied, changed);
+            return SyncStockResult.builder()
+                    .success(true)
+                    .targetStock(targetStock)
+                    .appliedStock(applied)
+                    .changed(changed)
+                    .message(changed ? "written" : "kept-current(safe-merge)")
+                    .build();
+        } catch (Exception e) {
+            log.error("Connector 同步 Redis 库存失败: couponId={}, stock={}", couponId, targetStock, e);
+            return SyncStockResult.builder()
+                    .success(false)
+                    .targetStock(targetStock)
+                    .message("Redis 写入失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    private static long nullToZero(Integer v) {
+        return v == null ? 0L : v.longValue();
     }
     
     /**

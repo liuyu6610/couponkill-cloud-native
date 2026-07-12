@@ -60,8 +60,8 @@ nacos:
   enabled: true
   name: nacos
   image:
-    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-    tag: nacos-server
+    repository: nacos/nacos-server
+    tag: v3.1.1
     pullPolicy: IfNotPresent
   service:
     port: 8848

@@ -16,193 +16,34 @@ spec:
         app: {{ .Values.db.init.name }}
     spec:
       containers:
-        - name: mysql-client
+        - name: postgres-client
           image: "{{ .Values.db.init.image.repository }}:{{ .Values.db.init.image.tag }}"
           imagePullPolicy: {{ .Values.db.init.image.pullPolicy }}
           env:
-            - name: MYSQL_HOST
+            - name: PGHOST
               value: "{{ .Values.db.host }}"
-            - name: MYSQL_PORT
+            - name: PGPORT
               value: "{{ .Values.db.port }}"
-            - name: MYSQL_USER
+            - name: PGUSER
               value: "{{ .Values.db.username }}"
-            - name: MYSQL_PASSWORD
+            - name: PGPASSWORD
               value: "{{ .Values.db.password }}"
-            - name: MYSQL_DATABASE
+            - name: PGDATABASE
               value: "{{ .Values.db.database }}"
-            # MySQL集群配置
-            - name: MYSQL_CLUSTER_ENABLED
-              value: "{{ .Values.mysql.cluster.enabled | default false }}"
-            - name: MYSQL_CLUSTER_TYPE
-              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
           command:
             - /bin/sh
             - -c
             - |
-              echo "Waiting for MySQL to be ready..."
-              
-              # 检查是否启用集群模式
-              if [ "$MYSQL_CLUSTER_ENABLED" = "true" ]; then
-                echo "MySQL cluster mode enabled, type: $MYSQL_CLUSTER_TYPE"
-                
-                # 根据集群类型连接到相应的MySQL实例
-                case "$MYSQL_CLUSTER_TYPE" in
-                  "master-slave")
-                    echo "Connecting to MySQL master-slave cluster"
-                    MYSQL_HOST="{{ .Values.mysql.cluster.masterSlave.master.host }}"
-                    MYSQL_PORT="{{ .Values.mysql.cluster.masterSlave.master.port }}"
-                    ;;
-                  "group-replication")
-                    echo "Connecting to MySQL group replication cluster"
-                    MYSQL_HOST="{{ (index .Values.mysql.cluster.groupReplication.nodes 0).host }}"
-                    MYSQL_PORT="{{ (index .Values.mysql.cluster.groupReplication.nodes 0).port }}"
-                    ;;
-                  "innodb-cluster")
-                    echo "Connecting to MySQL InnoDB cluster"
-                    MYSQL_HOST="{{ (index .Values.mysql.cluster.innodbCluster.nodes 0).host }}"
-                    MYSQL_PORT="{{ (index .Values.mysql.cluster.innodbCluster.nodes 0).port }}"
-                    ;;
-                  *)
-                    echo "Unknown cluster type, using default configuration"
-                    ;;
-                esac
-              else
-                echo "Using standalone MySQL configuration"
-              fi
-              
-              until mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1"; do
+              echo "Waiting for PostgreSQL to be ready..."
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do
                 sleep 2
               done
-              
-              echo "Creating database and tables..."
-              mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD <<EOF
-              CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;
-              USE $MYSQL_DATABASE;
-              
-              -- 用户表
-              CREATE TABLE IF NOT EXISTS user (
-                id BIGINT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE,
-                password VARCHAR(100) NOT NULL,
-                email VARCHAR(100),
-                phone VARCHAR(20),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-              );
-              
-              -- 优惠券表
-              CREATE TABLE IF NOT EXISTS coupon (
-                id BIGINT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                description TEXT,
-                discount_type VARCHAR(20) NOT NULL, -- FIXED, PERCENTAGE
-                discount_value DECIMAL(10,2) NOT NULL,
-                min_purchase DECIMAL(10,2) DEFAULT 0,
-                max_discount DECIMAL(10,2),
-                total_quantity INT NOT NULL,
-                available_quantity INT NOT NULL,
-                start_time TIMESTAMP NOT NULL,
-                end_time TIMESTAMP NOT NULL,
-                status VARCHAR(20) DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, EXPIRED
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-              );
-              
-              -- 用户优惠券表
-              CREATE TABLE IF NOT EXISTS user_coupon (
-                id BIGINT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                coupon_id BIGINT NOT NULL,
-                status VARCHAR(20) DEFAULT 'UNUSED', -- UNUSED, USED, EXPIRED
-                received_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                used_time TIMESTAMP NULL,
-                FOREIGN KEY (user_id) REFERENCES user(id),
-                FOREIGN KEY (coupon_id) REFERENCES coupon(id)
-              );
-              
-              -- 订单表
-              CREATE TABLE IF NOT EXISTS `order` (
-                id BIGINT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                coupon_id BIGINT,
-                total_amount DECIMAL(10,2) NOT NULL,
-                discount_amount DECIMAL(10,2) DEFAULT 0,
-                final_amount DECIMAL(10,2) NOT NULL,
-                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, PAID, CANCELLED, COMPLETED
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES user(id),
-                FOREIGN KEY (coupon_id) REFERENCES coupon(id)
-              );
-              
-              -- 秒杀商品表
-              CREATE TABLE IF NOT EXISTS seckill_item (
-                id BIGINT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                description TEXT,
-                original_price DECIMAL(10,2) NOT NULL,
-                seckill_price DECIMAL(10,2) NOT NULL,
-                total_stock INT NOT NULL,
-                available_stock INT NOT NULL,
-                start_time TIMESTAMP NOT NULL,
-                end_time TIMESTAMP NOT NULL,
-                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, ACTIVE, FINISHED, CLOSED
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-              );
-              
-              -- 秒杀订单表
-              CREATE TABLE IF NOT EXISTS seckill_order (
-                id BIGINT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                seckill_item_id BIGINT NOT NULL,
-                order_no VARCHAR(50) NOT NULL UNIQUE,
-                status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, SUCCESS, CANCELLED
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES user(id),
-                FOREIGN KEY (seckill_item_id) REFERENCES seckill_item(id)
-              );
-              
-              -- 库存日志表
-              CREATE TABLE IF NOT EXISTS stock_log (
-                id BIGINT PRIMARY KEY,
-                seckill_item_id BIGINT NOT NULL,
-                quantity INT NOT NULL,
-                operation_type VARCHAR(20) NOT NULL, -- DECREASE, INCREASE
-                order_id BIGINT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (seckill_item_id) REFERENCES seckill_item(id),
-                FOREIGN KEY (order_id) REFERENCES seckill_order(id)
-              );
-              
-              -- 系统配置表
-              CREATE TABLE IF NOT EXISTS system_config (
-                id BIGINT PRIMARY KEY,
-                config_key VARCHAR(100) NOT NULL UNIQUE,
-                config_value TEXT,
-                description VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-              );
-              
-              -- 插入默认系统配置
-              INSERT IGNORE INTO system_config (id, config_key, config_value, description) VALUES
-              (1, 'seckill.cooldown.seconds', '0', '秒杀冷却时间（秒）'),
-              (2, 'seckill.deduct.ttl.seconds', '300', '扣减库存的TTL时间（秒）');
-              
-              -- 创建索引
-              CREATE INDEX idx_user_username ON user(username);
-              CREATE INDEX idx_coupon_status_time ON coupon(status, start_time, end_time);
-              CREATE INDEX idx_user_coupon_user_status ON user_coupon(user_id, status);
-              CREATE INDEX idx_order_user_status ON `order`(user_id, status);
-              CREATE INDEX idx_seckill_item_status_time ON seckill_item(status, start_time, end_time);
-              CREATE INDEX idx_seckill_order_user_item ON seckill_order(user_id, seckill_item_id);
-              CREATE INDEX idx_stock_log_item_operation ON stock_log(seckill_item_id, operation_type);
-              
-              EOF
-              
-              echo "Database and tables created successfully."
+              echo "Applying init-postgres.sql (databases + sharded tables)..."
+              psql -v ON_ERROR_STOP=1 -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -f /scripts/init-postgres.sql
+              echo "PostgreSQL schema initialized successfully."
+          volumeMounts:
+            - name: init-sql
+              mountPath: /scripts
           resources:
             requests:
               memory: "128Mi"
@@ -210,8 +51,18 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "200m"
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
+      volumes:
+        - name: init-sql
+          configMap:
+            name: {{ .Values.db.init.name }}-sql
       restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.db.init.name }}-sql
+  namespace: {{ .Values.namespace }}
+data:
+  init-postgres.sql: |
+{{ .Files.Get "scripts/init-postgres.sql" | indent 4 }}
 {{- end }}

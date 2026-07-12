@@ -40,7 +40,7 @@
 
     <select id="selectAvailableCoupons" resultMap="CouponMap">
         SELECT * FROM coupon 
-        WHERE status = 1 AND create_time >= DATE_SUB(NOW(), INTERVAL valid_days DAY) 
+        WHERE status = 1 AND create_time >= NOW() - (valid_days * INTERVAL '1 day') 
         GROUP BY id, shard_index
         ORDER BY create_time DESC
         LIMIT 1000
@@ -87,6 +87,16 @@
             version = version + 1,
             update_time = NOW()
         WHERE id = #{couponId} AND shard_index = #{shardIndex} AND version = #{version}
+          AND seckill_remaining_stock + #{change} >= 0
+    </update>
+
+    <!-- 按分片回补秒杀库存：不依赖陈旧 version，供取消/失败补偿使用 -->
+    <update id="increaseSeckillStockByShardIndex">
+        UPDATE coupon
+        SET seckill_remaining_stock = seckill_remaining_stock + #{change},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{couponId} AND shard_index = #{shardIndex}
           AND seckill_remaining_stock + #{change} >= 0
     </update>
 

@@ -29,6 +29,11 @@ public interface CouponMapper {
                                @Param("change") int change, 
                                @Param("version") int version);
 
+    /** 按分片回补秒杀库存（不校验 version，避免缓存版本陈旧导致回补失败） */
+    int increaseSeckillStockByShardIndex(@Param("couponId") Long couponId,
+                                         @Param("shardIndex") Integer shardIndex,
+                                         @Param("change") int change);
+
     int updateStock(@Param("couponId") Long couponId, @Param("change") int change, @Param("version") int version);
 
     // 查询过期优惠券

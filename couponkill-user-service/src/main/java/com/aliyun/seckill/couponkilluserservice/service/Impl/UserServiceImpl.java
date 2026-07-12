@@ -13,17 +13,23 @@ import com.aliyun.seckill.couponkilluserservice.service.UserService;
 import com.aliyun.seckill.couponkilluserservice.util.BatchUserInserter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class UserServiceImpl implements UserService {
@@ -43,7 +49,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private BatchUserInserter batchUserInserter;
     
-    private final SnowflakeIdGenerator idGenerator=new SnowflakeIdGenerator(1, 1);
+    @Autowired
+    private SnowflakeIdGenerator idGenerator;
     // 使用Redis生成ID的键名
     private static final String USER_ID_KEY = "user:id:sequence";
 
@@ -53,6 +60,11 @@ public class UserServiceImpl implements UserService {
     private static final int ID_BATCH_SIZE = 100; // 每次从Redis获取的ID数量
 
     private static final String USER_LOGIN_KEY = "user:login:";
+
+    /** 管理员 userId 列表（逗号分隔），签发 JWT 时写入 roles=admin */
+    @Value("${connector.admin.user-ids:${auth.admin.user-ids:10000}}")
+    private String adminUserIds;
+
     /**
      * 生成用户ID
      * 使用Redis实现分布式ID生成，并确保ID能够正确分片到两个数据库
@@ -125,8 +137,9 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.PASSWORD_ERROR);
         }
 
-        // 生成令牌
-        String token = jwtUtils.generateToken(user.getId());
+        // 生成令牌（管理员写入 roles）
+        List<String> roles = resolveRoles(user.getId());
+        String token = jwtUtils.generateToken(user.getId(), roles);
 
         // 存入Redis，用于令牌黑名单
         redisTemplate.opsForValue().set(USER_LOGIN_KEY + user.getId(), token,
@@ -137,7 +150,25 @@ public class UserServiceImpl implements UserService {
         result.put("token", token);
         result.put("userId", user.getId());
         result.put("username", user.getUsername());
+        result.put("roles", roles);
         return result;
+    }
+
+    private List<String> resolveRoles(Long userId) {
+        if (userId != null && parseAdminIds().contains(String.valueOf(userId))) {
+            return List.of("admin", "user");
+        }
+        return List.of("user");
+    }
+
+    private Set<String> parseAdminIds() {
+        if (!StringUtils.hasText(adminUserIds)) {
+            return Set.of();
+        }
+        return Arrays.stream(adminUserIds.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     @Override

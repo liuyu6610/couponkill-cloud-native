@@ -1,204 +1,95 @@
-import React, { useEffect } from 'react'
-import { Card, Typography, Descriptions, Tag, Button, Row, Col, Divider } from 'antd'
+import React from 'react'
+import { Card, Typography, Descriptions, Tag, Button, Spin, App } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchOrderDetail } from '../store/slices/orderSlice'
+import { useSelector } from 'react-redux'
 import type { RootState } from '../store'
+import { useUserOrders, useCancelOrder } from '../hooks/useOrders'
+import { OrderStatus, orderStatusColor, orderStatusText } from '../types/api'
 
 const { Title, Text } = Typography
 
+const fmt = (t?: string) => (t ? new Date(t).toLocaleString() : '-')
+
+// 后端无单订单查询接口，从用户订单列表中解析
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { currentOrder, isLoading } = useSelector((state: RootState) => state.order)
+  const { message } = App.useApp()
+  const { user } = useSelector((state: RootState) => state.auth)
 
-  useEffect(() => {
-    if (id) {
-      dispatch(fetchOrderDetail(id) as any)
-    }
-  }, [dispatch, id])
+  const { data: orders = [], isLoading } = useUserOrders(user?.id)
+  const cancelOrder = useCancelOrder()
+  const order = orders.find((o) => o.id === id)
 
-  if (isLoading) {
+  if (isLoading && !order) {
     return (
-      <div className="loading-container">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div>加载中...</div>
-        </div>
+      <div className="loading-container" style={{ textAlign: 'center', padding: 50 }}>
+        <Spin size="large" />
       </div>
     )
   }
 
-  if (!currentOrder) {
+  if (!order) {
     return (
       <div className="order-detail-page">
-        <div className="container">
-          <div style={{ textAlign: 'center', padding: '50px' }}>
-            <Text type="secondary">订单不存在</Text>
-            <br />
-            <Button type="primary" onClick={() => navigate('/orders')}>
-              返回订单列表
-            </Button>
-          </div>
+        <div className="container" style={{ textAlign: 'center', padding: 50 }}>
+          <Text type="secondary">订单不存在或未加载</Text>
+          <br />
+          <Button type="primary" onClick={() => navigate('/orders')} style={{ marginTop: 16 }}>
+            返回订单列表
+          </Button>
         </div>
       </div>
     )
   }
 
-  const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-      PENDING: '待支付',
-      PAID: '已支付',
-      SHIPPED: '已发货',
-      DELIVERED: '已完成',
-      CANCELLED: '已取消',
-      REFUNDING: '退款中',
-      REFUNDED: '已退款'
-    }
-    return statusMap[status] || status
-  }
-
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      PENDING: 'orange',
-      PAID: 'blue',
-      SHIPPED: 'purple',
-      DELIVERED: 'green',
-      CANCELLED: 'red',
-      REFUNDING: 'orange',
-      REFUNDED: 'green'
-    }
-    return colorMap[status] || 'default'
+  const handleCancel = () => {
+    if (!user) return
+    cancelOrder.mutate(
+      { orderId: order.id },
+      {
+        onSuccess: () => message.success('订单已取消'),
+        onError: (err) => message.error((err as Error).message || '取消失败'),
+      }
+    )
   }
 
   return (
     <div className="order-detail-page">
       <div className="container">
-        {/* 返回按钮 */}
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/orders')}
-          style={{ marginBottom: 24 }}
-        >
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')} style={{ marginBottom: 24 }}>
           返回订单列表
         </Button>
 
-        <Row gutter={[24, 24]}>
-          {/* 订单信息 */}
-          <Col xs={24} lg={16}>
-            <Card>
-              <div className="order-header">
-                <Title level={3}>订单详情</Title>
-                <Tag color={getStatusColor(currentOrder.status)}>
-                  {getStatusText(currentOrder.status)}
-                </Tag>
-              </div>
+        <Card>
+          <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={3} style={{ margin: 0 }}>
+              订单详情
+            </Title>
+            <Tag color={orderStatusColor(order.status)}>{orderStatusText(order.status)}</Tag>
+          </div>
 
-              <Divider />
+          <Descriptions column={2} bordered style={{ marginTop: 24 }}>
+            <Descriptions.Item label="订单号" span={2}>
+              {order.id}
+            </Descriptions.Item>
+            <Descriptions.Item label="优惠券ID">{order.couponId}</Descriptions.Item>
+            <Descriptions.Item label="分片ID">{order.virtualId || '-'}</Descriptions.Item>
+            <Descriptions.Item label="领取时间">{fmt(order.getTime)}</Descriptions.Item>
+            <Descriptions.Item label="过期时间">{fmt(order.expireTime)}</Descriptions.Item>
+            <Descriptions.Item label="使用时间">{fmt(order.useTime)}</Descriptions.Item>
+            <Descriptions.Item label="取消时间">{fmt(order.cancelTime)}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">{fmt(order.createTime)}</Descriptions.Item>
+            <Descriptions.Item label="来源">{order.createdByGo ? 'Go 秒杀服务' : 'Java 服务'}</Descriptions.Item>
+          </Descriptions>
 
-              {/* 订单基本信息 */}
-              <Descriptions title="订单信息" column={2} bordered>
-                <Descriptions.Item label="订单号">
-                  {currentOrder.orderNo}
-                </Descriptions.Item>
-                <Descriptions.Item label="下单时间">
-                  {new Date(currentOrder.createdAt).toLocaleString()}
-                </Descriptions.Item>
-                <Descriptions.Item label="订单金额">
-                  ¥{currentOrder.totalAmount.toFixed(2)}
-                </Descriptions.Item>
-                <Descriptions.Item label="优惠金额">
-                  ¥{currentOrder.discountAmount.toFixed(2)}
-                </Descriptions.Item>
-                <Descriptions.Item label="实付金额">
-                  ¥{currentOrder.paymentAmount.toFixed(2)}
-                </Descriptions.Item>
-                <Descriptions.Item label="支付方式">
-                  {currentOrder.paymentMethod || '未支付'}
-                </Descriptions.Item>
-              </Descriptions>
-
-              {/* 收货地址 */}
-              {currentOrder.shippingAddress && (
-                <>
-                  <Divider />
-                  <Descriptions title="收货地址" column={1} bordered>
-                    <Descriptions.Item label="收货人">
-                      {currentOrder.shippingAddress.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="联系电话">
-                      {currentOrder.shippingAddress.phone}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="收货地址">
-                      {currentOrder.shippingAddress.province}
-                      {currentOrder.shippingAddress.city}
-                      {currentOrder.shippingAddress.district}
-                      {currentOrder.shippingAddress.address}
-                      {currentOrder.shippingAddress.postalCode && ` (${currentOrder.shippingAddress.postalCode})`}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </>
-              )}
-
-              {/* 订单备注 */}
-              {currentOrder.remark && (
-                <>
-                  <Divider />
-                  <div>
-                    <Text strong>订单备注：</Text>
-                    <Text>{currentOrder.remark}</Text>
-                  </div>
-                </>
-              )}
-            </Card>
-          </Col>
-
-          {/* 订单商品 */}
-          <Col xs={24} lg={8}>
-            <Card>
-              <Title level={4}>商品信息</Title>
-              <div className="order-items">
-                {currentOrder.orderItems.map((item, index) => (
-                  <div key={index} className="order-item">
-                    <div className="item-info">
-                      <Text strong>{item.couponName}</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {item.couponType}
-                      </Text>
-                    </div>
-                    <div className="item-price">
-                      <Text>¥{item.finalPrice}</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        ×{item.quantity}
-                      </Text>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Divider />
-
-              <div className="order-summary">
-                <div className="summary-row">
-                  <Text>商品总价：</Text>
-                  <Text>¥{currentOrder.totalAmount.toFixed(2)}</Text>
-                </div>
-                <div className="summary-row">
-                  <Text>优惠金额：</Text>
-                  <Text type="success">-¥{currentOrder.discountAmount.toFixed(2)}</Text>
-                </div>
-                <Divider style={{ margin: '12px 0' }} />
-                <div className="summary-row">
-                  <Text strong>实付金额：</Text>
-                  <Text strong style={{ color: '#1890ff', fontSize: '16px' }}>
-                    ¥{currentOrder.paymentAmount.toFixed(2)}
-                  </Text>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
+          {order.status === OrderStatus.CREATED && (
+            <Button danger style={{ marginTop: 24 }} loading={cancelOrder.isPending} onClick={handleCancel}>
+              取消订单
+            </Button>
+          )}
+        </Card>
       </div>
     </div>
   )

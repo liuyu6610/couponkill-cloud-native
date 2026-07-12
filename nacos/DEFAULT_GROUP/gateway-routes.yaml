@@ -1,0 +1,53 @@
+# 网关路由独立配置（Boot 4 / Spring Cloud Gateway 2025.1+）
+# 前缀已迁至 spring.cloud.gateway.server.webflux.*
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: lb://couponkill-user-service
+              predicates:
+                - Path=/api/v1/user/**,/api/v1/auth/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: user-service
+                    fallbackUri: forward:/fallback/user
+            - id: coupon-service
+              uri: lb://couponkill-coupon-service
+              predicates:
+                - Path=/api/v1/coupon/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: coupon-service
+                    fallbackUri: forward:/fallback/coupon
+            - id: order-service
+              uri: lb://couponkill-order-service
+              predicates:
+                - Path=/order/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: order-service
+                    fallbackUri: forward:/fallback/order
+            - id: connector-service
+              uri: lb://couponkill-connector-service
+              predicates:
+                - Path=/api/v1/connector/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: connector-service
+                    fallbackUri: forward:/fallback/connector
+            - id: seckill-go-service
+              uri: lb://seckill-go-svc
+              predicates:
+                - Path=/seckill/go/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: seckill-go-service
+                    fallbackUri: forward:/fallback/seckill

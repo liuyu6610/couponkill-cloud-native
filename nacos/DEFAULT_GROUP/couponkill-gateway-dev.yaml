@@ -1,5 +1,5 @@
 server:
-  port: 80  # 网关端口
+  port: 8088  # 本地/演示网关端口（K8s 仍可由 values 覆盖为 80）
   netty:
     connection-timeout: 5000
     response-timeout: 10000
@@ -31,61 +31,77 @@ spring:
             groupId: SENTINEL_GROUP
             rule-type: flow
     gateway:
-      httpclient:
-        connect-timeout: 5000
-        response-timeout: 10000
-        pool:
-          type: elastic
-          max-idle-time: 10000
-          max-life-time: 10000
-      routes:
-        - id: user-service
-          uri: lb://couponkill-user-service
-          predicates:
-            - Path=/api/v1/user/**
-          filters:
-            - StripPrefix=1
-            - name: Sentinel
-              args:
-                resourceName: user-service
-                fallbackUri: forward:/fallback/user
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 5000
+            response-timeout: 10000
+            pool:
+              type: elastic
+              max-idle-time: 10000
+              max-life-time: 10000
+          routes:
+            # 注意：服务 Controller 映射本身已含 /api/v1/... 或 /order/...，
+            # 不得 StripPrefix，否则会变成 /v1/... 或 /seckill 导致 404。
+            - id: user-service
+              uri: lb://couponkill-user-service
+              predicates:
+                - Path=/api/v1/user/**,/api/v1/auth/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: user-service
+                    fallbackUri: forward:/fallback/user
 
-        - id: coupon-service
-          uri: lb://couponkill-coupon-service
-          predicates:
-            - Path=/api/v1/coupon/**
-          filters:
-            - StripPrefix=1
-            - name: Sentinel
-              args:
-                resourceName: coupon-service
-                fallbackUri: forward:/fallback/coupon
+            - id: coupon-service
+              uri: lb://couponkill-coupon-service
+              predicates:
+                - Path=/api/v1/coupon/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: coupon-service
+                    fallbackUri: forward:/fallback/coupon
 
-        - id: order-service
-          uri: lb://couponkill-order-service
-          predicates:
-            - Path=/order/**,/api/v1/order/**,/seckill/**
-          filters:
-            - StripPrefix=1
-            - name: Sentinel
-              args:
-                resourceName: order-service
-                fallbackUri: forward:/fallback/order
+            - id: order-service
+              uri: lb://couponkill-order-service
+              predicates:
+                - Path=/order/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: order-service
+                    fallbackUri: forward:/fallback/order
 
-        - id: seckill-go-service
-          uri: lb://seckill-go-svc
-          predicates:
-            - Path=/seckill/go/**
-          filters:
-            - StripPrefix=1
-            - name: Sentinel
-              args:
-                resourceName: seckill-go-service
-                fallbackUri: forward:/fallback/seckill
+            - id: connector-service
+              uri: lb://couponkill-connector-service
+              predicates:
+                - Path=/api/v1/connector/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: connector-service
+                    fallbackUri: forward:/fallback/connector
+
+            - id: seckill-go-service
+              uri: lb://seckill-go-svc
+              predicates:
+                - Path=/seckill/go/**
+              filters:
+                - name: Sentinel
+                  args:
+                    resourceName: seckill-go-service
+                    fallbackUri: forward:/fallback/seckill
 
 # JWT配置
 jwt:
   secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+
+# Connector 管理鉴权（与 user-service 签发 roles 对齐）
+connector:
+  admin:
+    user-ids: ${CONNECTOR_ADMIN_USER_IDS:10000}
+    token: ${CONNECTOR_ADMIN_TOKEN:}
 
 # 网关集群配置
 gateway:
