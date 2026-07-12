@@ -1,0 +1,2045 @@
+22:59:08.738 [main] INFO com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager -- [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl success.
+22:59:08.739 [main] INFO com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager -- [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl success.
+22:59:09.197 [main] INFO com.alibaba.nacos.common.ability.AbstractAbilityControlManager -- Ready to get current node abilities...
+22:59:09.199 [main] INFO com.alibaba.nacos.common.ability.AbstractAbilityControlManager -- Ready to initialize current node abilities, support modes: [SDK_CLIENT]
+22:59:09.200 [main] INFO com.alibaba.nacos.common.ability.AbstractAbilityControlManager -- Initialize current abilities finish...
+22:59:09.201 [main] INFO com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder -- [AbilityControlManager] Successfully initialize AbilityControlManager
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+INFO: Sentinel log output type is: file
+INFO: Sentinel log charset is: utf-8
+INFO: Sentinel log base directory is: C:\Users\liuyu\logs\csp\
+INFO: Sentinel log name use pid is: false
+INFO: Sentinel log level is: INFO
+2026-07-12T22:59:09.539+08:00  INFO 44312 --- [couponkill-order-service] [           main] .a.s.c.CouponkillOrderServiceApplication : Starting CouponkillOrderServiceApplication using Java 25.0.3 with PID 44312 (D:\job-project\couponkill-cloud-native\couponkill-order-service\target\couponkill-order-service-1.0-SNAPSHOT.jar started by liuyu in D:\job-project\couponkill-cloud-native)
+2026-07-12T22:59:09.540+08:00  INFO 44312 --- [couponkill-order-service] [           main] .a.s.c.CouponkillOrderServiceApplication : The following 1 profile is active: "dev"
+2026-07-12T22:59:09.766+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.n.c.NacosConfigDataLoader          : [Nacos Config] Load config[dataId=couponkill-order-service.yaml, group=DEFAULT_GROUP] success
+2026-07-12T22:59:09.767+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.n.c.NacosConfigDataLoader          : [Nacos Config] Load config[dataId=common.yaml, group=DEFAULT_GROUP] success
+2026-07-12T22:59:11.044+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-07-12T22:59:11.052+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-12T22:59:11.098+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 23 ms. Found 0 JPA repository interfaces.
+2026-07-12T22:59:11.130+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-07-12T22:59:11.133+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-07-12T22:59:11.158+08:00  INFO 44312 --- [couponkill-order-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 2 ms. Found 0 Redis repository interfaces.
+2026-07-12T22:59:11.818+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=d8ed897f-7037-3633-b9c8-30235b97097e
+2026-07-12T22:59:13.249+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8082 (http)
+2026-07-12T22:59:13.278+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-07-12T22:59:13.279+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-07-12T22:59:13.340+08:00  INFO 44312 --- [couponkill-order-service] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3570 ms
+2026-07-12T22:59:13.449+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.NacosConfigService   : Nacos client key init properties: 
+	serverAddr=127.0.0.1:8848
+	namespace=998
+
+2026-07-12T22:59:13.452+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.EndpointServerListProvider, match result: false
+2026-07-12T22:59:13.452+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.PropertiesListProvider, match result: true
+2026-07-12T22:59:13.452+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Will use com.alibaba.nacos.client.address.PropertiesListProvider as ServerListProvider
+2026-07-12T22:59:13.454+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels.....
+2026-07-12T22:59:13.454+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : Process LabelsCollector with [name:defaultNacosLabelsCollector]
+2026-07-12T22:59:13.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties raw labels: null
+2026-07-12T22:59:13.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties labels: {}
+2026-07-12T22:59:13.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm raw labels: null
+2026-07-12T22:59:13.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm labels: {}
+2026-07-12T22:59:13.456+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env raw labels: null
+2026-07-12T22:59:13.456+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env labels: {}
+2026-07-12T22:59:13.456+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels finished,labels :{}
+2026-07-12T22:59:13.456+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl success.
+2026-07-12T22:59:13.457+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl success.
+2026-07-12T22:59:13.458+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [RpcClientFactory] create a new rpc client of 73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0
+2026-07-12T22:59:13.458+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083e9c00
+2026-07-12T22:59:13.458+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083ea400
+2026-07-12T22:59:13.459+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientFuzzyWatchNotifyRequestHandler
+2026-07-12T22:59:13.460+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Registry connection listener to current client:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$1
+2026-07-12T22:59:13.460+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] RpcClient init, ServerListFactory = com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$2
+2026-07-12T22:59:13.460+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Try to connect to server on start up, server: {serverIp = '127.0.0.1', server main port = 8848}
+2026-07-12T22:59:13.461+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.remote.client.grpc.GrpcClient    : grpc client connection server: 127.0.0.1 ip, serverPort: 9848, grpcTslConfig: {"enableTls":false,"mutualAuthEnable":false,"trustAll":true}
+2026-07-12T22:59:13.480+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Success to connect to server [127.0.0.1:8848] on start up, connectionId = 1783868353469_172.21.0.1_55854
+2026-07-12T22:59:13.481+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$ConnectResetRequestHandler
+2026-07-12T22:59:13.481+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Notify connected event to listeners.
+2026-07-12T22:59:13.481+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$$Lambda/0x0000000008631c00
+2026-07-12T22:59:13.481+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Connected,notify listen context...
+2026-07-12T22:59:13.482+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [73f3b5de-d7f7-4170-b116-13e8e490b65d_config-0] Connected,notify fuzzy listen context...
+2026-07-12T22:59:13.824+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-07-12T22:59:14.284+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:config user=SA
+2026-07-12T22:59:14.286+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-07-12T22:59:14.345+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-07-12T22:59:14.589+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@7720334e
+2026-07-12T22:59:14.590+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-07-12T22:59:15.807+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-07-12T22:59:15.817+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@4a544672
+2026-07-12T22:59:15.818+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-07-12T22:59:18.239+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : config listener notify warn timeout millis use default 60000 millis 
+2026-07-12T22:59:18.240+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : nacos.cache.data.init.snapshot = true 
+2026-07-12T22:59:18.254+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-998-127.0.0.1_8848] [subscribe] order-service-sharding.yaml+DEFAULT_GROUP+998
+2026-07-12T22:59:18.264+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-998-127.0.0.1_8848] [add-listener] ok, tenant=998, dataId=order-service-sharding.yaml, group=DEFAULT_GROUP, cnt=1
+2026-07-12T22:59:18.265+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.s.c.c.OrderShardingSphereConfig      : 已添加Nacos配置监听器，dataId: order-service-sharding.yaml
+2026-07-12T22:59:18.266+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-998-127.0.0.1_8848] [subscribe] middleware-cluster-config.yaml+DEFAULT_GROUP+998
+2026-07-12T22:59:18.266+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-998-127.0.0.1_8848] [add-listener] ok, tenant=998, dataId=middleware-cluster-config.yaml, group=DEFAULT_GROUP, cnt=1
+2026-07-12T22:59:18.266+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.s.c.c.OrderShardingSphereConfig      : 已添加中间件集群配置监听器，dataId: middleware-cluster-config.yaml
+2026-07-12T22:59:18.645+08:00  INFO 44312 --- [couponkill-order-service] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-07-12T22:59:18.817+08:00  INFO 44312 --- [couponkill-order-service] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-07-12T22:59:20.054+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-12T22:59:20.244+08:00  INFO 44312 --- [couponkill-order-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://127.0.0.1:5432/order_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill-order]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.14
+	Default catalog/schema: order_db_0/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-07-12T22:59:21.156+08:00  INFO 44312 --- [couponkill-order-service] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-12T22:59:21.179+08:00  INFO 44312 --- [couponkill-order-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-12T22:59:21.657+08:00  WARN 44312 --- [couponkill-order-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-07-12T22:59:21.742+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.c.openfeign.FeignClientFactoryBean   : For 'couponkill-coupon-service' URL not provided. Will try picking an instance via load-balancing.
+2026-07-12T22:59:23.810+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.c.openfeign.FeignClientFactoryBean   : For 'couponkill-user-service' URL not provided. Will try picking an instance via load-balancing.
+2026-07-12T22:59:23.866+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.s.common.config.SnowflakeConfig      : SnowflakeIdGenerator ready: workerId=31, datacenterId=8, instanceKey=liuyu
+2026-07-12T22:59:24.059+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.NacosConfigService   : Nacos client key init properties: 
+	serverAddr=127.0.0.1:8848
+
+2026-07-12T22:59:24.061+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.EndpointServerListProvider, match result: false
+2026-07-12T22:59:24.062+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.PropertiesListProvider, match result: true
+2026-07-12T22:59:24.062+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Will use com.alibaba.nacos.client.address.PropertiesListProvider as ServerListProvider
+2026-07-12T22:59:24.065+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels.....
+2026-07-12T22:59:24.065+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : Process LabelsCollector with [name:defaultNacosLabelsCollector]
+2026-07-12T22:59:24.065+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties raw labels: null
+2026-07-12T22:59:24.065+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties labels: {}
+2026-07-12T22:59:24.066+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm raw labels: null
+2026-07-12T22:59:24.066+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm labels: {}
+2026-07-12T22:59:24.066+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env raw labels: null
+2026-07-12T22:59:24.066+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env labels: {}
+2026-07-12T22:59:24.067+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels finished,labels :{}
+2026-07-12T22:59:24.067+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl success.
+2026-07-12T22:59:24.067+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl success.
+2026-07-12T22:59:24.069+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-public-127.0.0.1_8848] [subscribe] couponkill-order-service-sentinel-rules+SENTINEL_GROUP+public
+2026-07-12T22:59:24.069+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-public-127.0.0.1_8848] [add-listener] ok, tenant=public, dataId=couponkill-order-service-sentinel-rules, group=SENTINEL_GROUP, cnt=1
+2026-07-12T22:59:24.072+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [RpcClientFactory] create a new rpc client of 59af2102-09cf-4487-a11f-63089630e63c_config-0
+2026-07-12T22:59:24.072+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083e9c00
+2026-07-12T22:59:24.072+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083ea400
+2026-07-12T22:59:24.072+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientFuzzyWatchNotifyRequestHandler
+2026-07-12T22:59:24.072+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Registry connection listener to current client:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$1
+2026-07-12T22:59:24.073+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] RpcClient init, ServerListFactory = com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$2
+2026-07-12T22:59:24.073+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Try to connect to server on start up, server: {serverIp = '127.0.0.1', server main port = 8848}
+2026-07-12T22:59:24.074+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] c.a.n.c.remote.client.grpc.GrpcClient    : grpc client connection server: 127.0.0.1 ip, serverPort: 9848, grpcTslConfig: {"enableTls":false,"mutualAuthEnable":false,"trustAll":true}
+2026-07-12T22:59:24.093+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Success to connect to server [127.0.0.1:8848] on start up, connectionId = 1783868364082_172.21.0.1_48204
+2026-07-12T22:59:24.093+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$ConnectResetRequestHandler
+2026-07-12T22:59:24.093+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Notify connected event to listeners.
+2026-07-12T22:59:24.094+08:00  INFO 44312 --- [couponkill-order-service] [sten-executor.0] com.alibaba.nacos.common.remote.client   : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$$Lambda/0x0000000008631c00
+2026-07-12T22:59:24.094+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Connected,notify listen context...
+2026-07-12T22:59:24.094+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [59af2102-09cf-4487-a11f-63089630e63c_config-0] Connected,notify fuzzy listen context...
+2026-07-12T22:59:27.861+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.NacosConfigService   : Nacos client key init properties: 
+	serverAddr=127.0.0.1:8848
+	namespace=couponkill
+
+2026-07-12T22:59:27.865+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.EndpointServerListProvider, match result: false
+2026-07-12T22:59:27.866+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.PropertiesListProvider, match result: true
+2026-07-12T22:59:27.866+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Will use com.alibaba.nacos.client.address.PropertiesListProvider as ServerListProvider
+2026-07-12T22:59:27.867+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels.....
+2026-07-12T22:59:27.868+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : Process LabelsCollector with [name:defaultNacosLabelsCollector]
+2026-07-12T22:59:27.868+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties raw labels: null
+2026-07-12T22:59:27.868+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect properties labels: {}
+2026-07-12T22:59:27.868+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm raw labels: null
+2026-07-12T22:59:27.868+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect jvm labels: {}
+2026-07-12T22:59:27.870+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env raw labels: null
+2026-07-12T22:59:27.870+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : default nacos collect env labels: {}
+2026-07-12T22:59:27.871+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.labels          : DefaultLabelsCollectorManager get labels finished,labels :{}
+2026-07-12T22:59:27.871+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl success.
+2026-07-12T22:59:27.871+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl success.
+2026-07-12T22:59:27.873+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-couponkill-127.0.0.1_8848] [subscribe] couponkill-gateway-sentinel+DEFAULT_GROUP+couponkill
+2026-07-12T22:59:27.873+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-couponkill-127.0.0.1_8848] [add-listener] ok, tenant=couponkill, dataId=couponkill-gateway-sentinel, group=DEFAULT_GROUP, cnt=1
+2026-07-12T22:59:27.874+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [RpcClientFactory] create a new rpc client of 9272fb57-862e-4a04-8c1f-9771c925a300_config-0
+2026-07-12T22:59:27.874+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083e9c00
+2026-07-12T22:59:27.874+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$$Lambda/0x00000000083ea400
+2026-07-12T22:59:27.874+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Register server push request handler:com.alibaba.nacos.client.config.impl.ClientFuzzyWatchNotifyRequestHandler
+2026-07-12T22:59:27.874+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Registry connection listener to current client:com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$1
+2026-07-12T22:59:27.875+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] RpcClient init, ServerListFactory = com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient$2
+2026-07-12T22:59:27.877+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Try to connect to server on start up, server: {serverIp = '127.0.0.1', server main port = 8848}
+2026-07-12T22:59:27.878+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.remote.client.grpc.GrpcClient    : grpc client connection server: 127.0.0.1 ip, serverPort: 9848, grpcTslConfig: {"enableTls":false,"mutualAuthEnable":false,"trustAll":true}
+2026-07-12T22:59:27.894+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Success to connect to server [127.0.0.1:8848] on start up, connectionId = 1783868367887_172.21.0.1_48214
+2026-07-12T22:59:27.896+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Notify connected event to listeners.
+2026-07-12T22:59:27.896+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$ConnectResetRequestHandler
+2026-07-12T22:59:27.897+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.1] c.a.n.client.config.impl.ClientWorker    : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Connected,notify listen context...
+2026-07-12T22:59:27.897+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$$Lambda/0x0000000008631c00
+2026-07-12T22:59:27.898+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.1] c.a.n.client.config.impl.ClientWorker    : [9272fb57-862e-4a04-8c1f-9771c925a300_config-0] Connected,notify fuzzy listen context...
+2026-07-12T22:59:27.904+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.s.d.converter.SentinelConverter    : converter can not convert rules because source is empty
+2026-07-12T22:59:27.922+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8082 (http) with context path '/'
+2026-07-12T22:59:27.928+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : Nacos client key init properties: 
+	serverAddr=127.0.0.1:8848
+	namespace=120
+
+2026-07-12T22:59:27.929+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : initializer namespace from ans.namespace attribute : null
+2026-07-12T22:59:27.930+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :null
+2026-07-12T22:59:27.930+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : initializer namespace from namespace attribute :null
+2026-07-12T22:59:27.940+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : FailoverDataSource type is class com.alibaba.nacos.client.naming.backups.datasource.DiskFailoverDataSource
+2026-07-12T22:59:27.944+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.EndpointServerListProvider, match result: false
+2026-07-12T22:59:27.945+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Load and match ServerListProvider com.alibaba.nacos.client.address.PropertiesListProvider, match result: true
+2026-07-12T22:59:27.945+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.a.AbstractServerListManager      : Will use com.alibaba.nacos.client.address.PropertiesListProvider as ServerListProvider
+2026-07-12T22:59:27.947+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl success.
+2026-07-12T22:59:27.947+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.p.a.s.c.ClientAuthPluginManager    : [ClientAuthPluginManager] Load ClientAuthService com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl success.
+2026-07-12T22:59:27.951+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [RpcClientFactory] create a new rpc client of a3960162-636e-43f6-8a6b-3797ca529b44
+2026-07-12T22:59:27.954+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : Create naming rpc client for uuid->a3960162-636e-43f6-8a6b-3797ca529b44
+2026-07-12T22:59:27.954+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] RpcClient init, ServerListFactory = com.alibaba.nacos.client.naming.core.NamingServerListManager
+2026-07-12T22:59:27.955+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Registry connection listener to current client:com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService
+2026-07-12T22:59:27.955+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Register server push request handler:com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler
+2026-07-12T22:59:27.956+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Register server push request handler:com.alibaba.nacos.client.naming.remote.gprc.NamingFuzzyWatchNotifyRequestHandler
+2026-07-12T22:59:27.957+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Try to connect to server on start up, server: {serverIp = '127.0.0.1', server main port = 8848}
+2026-07-12T22:59:27.957+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.c.remote.client.grpc.GrpcClient    : grpc client connection server: 127.0.0.1 ip, serverPort: 9848, grpcTslConfig: {"enableTls":false,"mutualAuthEnable":false,"trustAll":true}
+2026-07-12T22:59:27.972+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Success to connect to server [127.0.0.1:8848] on start up, connectionId = 1783868367963_172.21.0.1_48228
+2026-07-12T22:59:27.973+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$ConnectResetRequestHandler
+2026-07-12T22:59:27.973+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Notify connected event to listeners.
+2026-07-12T22:59:27.973+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Register server push request handler:com.alibaba.nacos.common.remote.client.RpcClient$$Lambda/0x0000000008631c00
+2026-07-12T22:59:27.973+08:00  INFO 44312 --- [couponkill-order-service] [remote.worker.0] com.alibaba.nacos.client.naming          : Grpc connection connect
+2026-07-12T22:59:27.975+08:00  INFO 44312 --- [couponkill-order-service] [           main] com.alibaba.nacos.client.naming          : [REGISTER-SERVICE] 120 registering service couponkill-order-service with instance Instance{instanceId='null', ip='172.27.112.1', port=8082, weight=1.0, healthy=true, enabled=true, ephemeral=true, clusterName='', serviceName='null', metadata={preserved.heart.beat.timeout=30000, IPv6=[2409:8d00:105c:4c6:bc53:88ac:d9d3:fa38], preserved.register.source=SPRING_CLOUD}}
+2026-07-12T22:59:27.989+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.n.registry.NacosServiceRegistry    : nacos registry, DEFAULT_GROUP couponkill-order-service 172.27.112.1:8082 register finished
+2026-07-12T22:59:28.087+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-1
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.167+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.335+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.335+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.336+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368330
+2026-07-12T22:59:28.340+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.359+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-2
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.360+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.371+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.372+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.373+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368371
+2026-07-12T22:59:28.373+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.375+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-3
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.376+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.388+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.390+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.391+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368388
+2026-07-12T22:59:28.392+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.393+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-4
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.394+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.401+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.402+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.402+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368401
+2026-07-12T22:59:28.404+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.406+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-5
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.406+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.415+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.416+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.416+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368415
+2026-07-12T22:59:28.416+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.419+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-6
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.420+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.427+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.428+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.428+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368427
+2026-07-12T22:59:28.429+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.433+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-7
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.434+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.442+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.443+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.443+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368442
+2026-07-12T22:59:28.443+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.446+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-create-group-8
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-create-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.447+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.455+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368455
+2026-07-12T22:59:28.456+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Subscribed to topic(s): seckill_order_create
+2026-07-12T22:59:28.458+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-result-group-9
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-result-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.459+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.470+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.470+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.470+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368470
+2026-07-12T22:59:28.471+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Subscribed to topic(s): seckill_order_result
+2026-07-12T22:59:28.475+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-result-group-10
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-result-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.476+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.484+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.484+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.484+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368484
+2026-07-12T22:59:28.485+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Subscribed to topic(s): seckill_order_result
+2026-07-12T22:59:28.486+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-result-group-11
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-result-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.488+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.495+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.495+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.496+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368495
+2026-07-12T22:59:28.496+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Subscribed to topic(s): seckill_order_result
+2026-07-12T22:59:28.498+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.config.AbstractConfig   : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.offset.reset = earliest
+	bootstrap.servers = [127.0.0.1:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-seckill-order-result-group-12
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = true
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = seckill-order-result-group
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	share.acknowledgement.mode = implicit
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.springframework.kafka.support.serializer.JsonDeserializer
+
+2026-07-12T22:59:28.498+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:28.505+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:28.506+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:28.506+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868368505
+2026-07-12T22:59:28.507+08:00  INFO 44312 --- [couponkill-order-service] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Subscribed to topic(s): seckill_order_result
+2026-07-12T22:59:28.525+08:00  INFO 44312 --- [couponkill-order-service] [           main] .a.s.c.CouponkillOrderServiceApplication : Started CouponkillOrderServiceApplication in 20.338 seconds (process running for 20.834)
+2026-07-12T22:59:28.533+08:00  WARN 44312 --- [couponkill-order-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-07-12T22:59:28.533+08:00  WARN 44312 --- [couponkill-order-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2026-07-12T22:59:28.546+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-120-127.0.0.1_8848] [subscribe] couponkill-order-service.yaml+DEFAULT_GROUP+120
+2026-07-12T22:59:28.546+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-120-127.0.0.1_8848] [add-listener] ok, tenant=120, dataId=couponkill-order-service.yaml, group=DEFAULT_GROUP, cnt=1
+2026-07-12T22:59:28.546+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.n.refresh.NacosContextRefresher    : [Nacos Config] Listening config: dataId=couponkill-order-service.yaml, group=DEFAULT_GROUP
+2026-07-12T22:59:28.559+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.n.client.config.impl.ClientWorker    : [Config-fixed-120-127.0.0.1_8848] [subscribe] common.yaml+DEFAULT_GROUP+120
+2026-07-12T22:59:28.559+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.nacos.client.config.impl.CacheData   : [Config-fixed-120-127.0.0.1_8848] [add-listener] ok, tenant=120, dataId=common.yaml, group=DEFAULT_GROUP, cnt=1
+2026-07-12T22:59:28.559+08:00  INFO 44312 --- [couponkill-order-service] [           main] c.a.c.n.refresh.NacosContextRefresher    : [Nacos Config] Listening config: dataId=common.yaml, group=DEFAULT_GROUP
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.244+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.244+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.244+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.244+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.248+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.245+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.249+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.246+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.243+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.247+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:29.249+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.253+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.253+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null isFenced: false)
+2026-07-12T22:59:29.256+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.258+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.258+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.259+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.259+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.259+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.260+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.260+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.260+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.261+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.261+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.261+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.280+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-7-ed14610f-6bf4-43da-93d2-1a378b57e83a
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-5-818f8884-3c49-4aec-8c25-976fbbead11c
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-4-d8255003-2ad8-452a-bd3d-2658803b1933
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-result-group-9-d4da4b5f-d23c-4a6d-9ba9-2c6178f79839
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-3-12871434-0ce6-44cb-ba2b-bb2b31716ad2
+2026-07-12T22:59:29.281+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-1-cd68dded-1ec0-42a0-a779-d15c61cf158d
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-8-84dd3be5-274f-43fe-aca0-549ac30a0002
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-result-group-12-89473540-f97a-4d15-82b2-e28b5d805f9b
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-create-group-6-41d65ab4-bc78-4cde-b327-7b30d3a6f30f
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-result-group-11-a8fbf798-cfa9-4c6e-9215-8b628f819a0b
+2026-07-12T22:59:29.282+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Request joining group due to: need to re-join with the given member-id: consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df
+2026-07-12T22:59:29.286+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=17, memberId='consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80', protocol='range'}
+2026-07-12T22:59:29.286+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.283+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.283+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.284+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.284+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.284+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.284+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.285+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.285+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.286+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.288+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df', protocol='range'}
+2026-07-12T22:59:29.297+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Finished assignment for group at generation 17: {consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80=Assignment(partitions=[seckill_order_create-0])}
+2026-07-12T22:59:29.297+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Finished assignment for group at generation 18: {consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df=Assignment(partitions=[seckill_order_result-0, seckill_order_result-1, seckill_order_result-2, seckill_order_result-3, seckill_order_result-4, seckill_order_result-5, seckill_order_result-6, seckill_order_result-7, seckill_order_result-8, seckill_order_result-9, seckill_order_result-10, seckill_order_result-11, seckill_order_result-12, seckill_order_result-13, seckill_order_result-14, seckill_order_result-15])}
+2026-07-12T22:59:29.304+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] SyncGroup failed: The group began another rebalance. Need to re-join the group. Sent generation was Generation{generationId=18, memberId='consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df', protocol='range'}
+2026-07-12T22:59:29.304+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] SyncGroup failed: The group began another rebalance. Need to re-join the group. Sent generation was Generation{generationId=17, memberId='consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80', protocol='range'}
+2026-07-12T22:59:29.304+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Request joining group due to: rebalance failed due to 'The group is rebalancing, so a rejoin is needed.' (RebalanceInProgressException)
+2026-07-12T22:59:29.304+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Request joining group due to: rebalance failed due to 'The group is rebalancing, so a rejoin is needed.' (RebalanceInProgressException)
+2026-07-12T22:59:29.305+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] (Re-)joining group
+2026-07-12T22:59:29.305+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] (Re-)joining group
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Successfully joined group with generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-12-89473540-f97a-4d15-82b2-e28b5d805f9b', protocol='range'}
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-4-d8255003-2ad8-452a-bd3d-2658803b1933', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-1-cd68dded-1ec0-42a0-a779-d15c61cf158d', protocol='range'}
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Successfully joined group with generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-11-a8fbf798-cfa9-4c6e-9215-8b628f819a0b', protocol='range'}
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Successfully joined group with generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df', protocol='range'}
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Successfully joined group with generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-9-d4da4b5f-d23c-4a6d-9ba9-2c6178f79839', protocol='range'}
+2026-07-12T22:59:29.307+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-3-12871434-0ce6-44cb-ba2b-bb2b31716ad2', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-7-ed14610f-6bf4-43da-93d2-1a378b57e83a', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-8-84dd3be5-274f-43fe-aca0-549ac30a0002', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-5-818f8884-3c49-4aec-8c25-976fbbead11c', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-6-41d65ab4-bc78-4cde-b327-7b30d3a6f30f', protocol='range'}
+2026-07-12T22:59:29.308+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Successfully joined group with generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80', protocol='range'}
+2026-07-12T22:59:29.309+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Finished assignment for group at generation 19: {consumer-seckill-order-result-group-12-89473540-f97a-4d15-82b2-e28b5d805f9b=Assignment(partitions=[seckill_order_result-8, seckill_order_result-9, seckill_order_result-10, seckill_order_result-11]), consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df=Assignment(partitions=[seckill_order_result-0, seckill_order_result-1, seckill_order_result-2, seckill_order_result-3]), consumer-seckill-order-result-group-9-d4da4b5f-d23c-4a6d-9ba9-2c6178f79839=Assignment(partitions=[seckill_order_result-12, seckill_order_result-13, seckill_order_result-14, seckill_order_result-15]), consumer-seckill-order-result-group-11-a8fbf798-cfa9-4c6e-9215-8b628f819a0b=Assignment(partitions=[seckill_order_result-4, seckill_order_result-5, seckill_order_result-6, seckill_order_result-7])}
+2026-07-12T22:59:29.310+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Finished assignment for group at generation 18: {consumer-seckill-order-create-group-4-d8255003-2ad8-452a-bd3d-2658803b1933=Assignment(partitions=[]), consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80=Assignment(partitions=[]), consumer-seckill-order-create-group-6-41d65ab4-bc78-4cde-b327-7b30d3a6f30f=Assignment(partitions=[]), consumer-seckill-order-create-group-7-ed14610f-6bf4-43da-93d2-1a378b57e83a=Assignment(partitions=[]), consumer-seckill-order-create-group-5-818f8884-3c49-4aec-8c25-976fbbead11c=Assignment(partitions=[]), consumer-seckill-order-create-group-1-cd68dded-1ec0-42a0-a779-d15c61cf158d=Assignment(partitions=[seckill_order_create-0]), consumer-seckill-order-create-group-3-12871434-0ce6-44cb-ba2b-bb2b31716ad2=Assignment(partitions=[]), consumer-seckill-order-create-group-8-84dd3be5-274f-43fe-aca0-549ac30a0002=Assignment(partitions=[])}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Successfully synced group in generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-11-a8fbf798-cfa9-4c6e-9215-8b628f819a0b', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Successfully synced group in generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-9-d4da4b5f-d23c-4a6d-9ba9-2c6178f79839', protocol='range'}
+2026-07-12T22:59:29.313+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Notifying assignor about the new Assignment(partitions=[seckill_order_result-12, seckill_order_result-13, seckill_order_result-14, seckill_order_result-15])
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Successfully synced group in generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-10-4e57399d-ae15-4f3c-a2ba-8940a684d6df', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-4-d8255003-2ad8-452a-bd3d-2658803b1933', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-5-818f8884-3c49-4aec-8c25-976fbbead11c', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-8-84dd3be5-274f-43fe-aca0-549ac30a0002', protocol='range'}
+2026-07-12T22:59:29.314+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-7-ed14610f-6bf4-43da-93d2-1a378b57e83a', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-6-41d65ab4-bc78-4cde-b327-7b30d3a6f30f', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-3-12871434-0ce6-44cb-ba2b-bb2b31716ad2', protocol='range'}
+2026-07-12T22:59:29.315+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-2-a272a06b-0fc8-435f-813c-6d849540aa80', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Successfully synced group in generation Generation{generationId=19, memberId='consumer-seckill-order-result-group-12-89473540-f97a-4d15-82b2-e28b5d805f9b', protocol='range'}
+2026-07-12T22:59:29.312+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Successfully synced group in generation Generation{generationId=18, memberId='consumer-seckill-order-create-group-1-cd68dded-1ec0-42a0-a779-d15c61cf158d', protocol='range'}
+2026-07-12T22:59:29.317+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Notifying assignor about the new Assignment(partitions=[seckill_order_result-8, seckill_order_result-9, seckill_order_result-10, seckill_order_result-11])
+2026-07-12T22:59:29.317+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[seckill_order_create-0])
+2026-07-12T22:59:29.313+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Notifying assignor about the new Assignment(partitions=[seckill_order_result-4, seckill_order_result-5, seckill_order_result-6, seckill_order_result-7])
+2026-07-12T22:59:29.314+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Notifying assignor about the new Assignment(partitions=[seckill_order_result-0, seckill_order_result-1, seckill_order_result-2, seckill_order_result-3])
+2026-07-12T22:59:29.314+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.314+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-result-group-9, groupId=seckill-order-result-group] Adding newly assigned partitions: [seckill_order_result-12, seckill_order_result-13, seckill_order_result-14, seckill_order_result-15]
+2026-07-12T22:59:29.315+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-5, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.315+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.315+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.316+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-6, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.316+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Notifying assignor about the new Assignment(partitions=[])
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-4, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-1, groupId=seckill-order-create-group] Adding newly assigned partitions: [seckill_order_create-0]
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-result-group-10, groupId=seckill-order-result-group] Adding newly assigned partitions: [seckill_order_result-0, seckill_order_result-1, seckill_order_result-2, seckill_order_result-3]
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-result-group-12, groupId=seckill-order-result-group] Adding newly assigned partitions: [seckill_order_result-8, seckill_order_result-9, seckill_order_result-10, seckill_order_result-11]
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-result-group-11, groupId=seckill-order-result-group] Adding newly assigned partitions: [seckill_order_result-4, seckill_order_result-5, seckill_order_result-6, seckill_order_result-7]
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-8, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.322+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-7] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.318+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-7, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.319+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-3, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.322+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-2] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.319+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-4] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.319+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-5] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.319+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-seckill-order-create-group-2, groupId=seckill-order-create-group] Adding newly assigned partitions: []
+2026-07-12T22:59:29.320+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-3] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.322+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-6] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.323+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-1] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: []
+2026-07-12T22:59:29.329+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-14 to the committed offset FetchPosition{offset=0, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.329+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_create-0 to the committed offset FetchPosition{offset=45, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.329+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-10 to the committed offset FetchPosition{offset=2, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.329+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-6 to the committed offset FetchPosition{offset=4, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.329+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-2 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.331+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-15 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.332+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-11 to the committed offset FetchPosition{offset=2, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.332+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-7 to the committed offset FetchPosition{offset=2, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.333+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-3 to the committed offset FetchPosition{offset=0, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.333+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-12 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.333+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-8 to the committed offset FetchPosition{offset=2, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.334+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-4 to the committed offset FetchPosition{offset=3, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.335+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-0 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.335+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-13 to the committed offset FetchPosition{offset=0, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.335+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-9 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.335+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-5 to the committed offset FetchPosition{offset=1, offsetEpoch=Optional[0], currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.335+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition seckill_order_result-1 to the committed offset FetchPosition{offset=0, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null isFenced: false)], epoch=0}}
+2026-07-12T22:59:29.348+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-1] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-result-group: partitions assigned: [seckill_order_result-0, seckill_order_result-1, seckill_order_result-2, seckill_order_result-3]
+2026-07-12T22:59:29.348+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-create-group: partitions assigned: [seckill_order_create-0]
+2026-07-12T22:59:29.348+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-0] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-result-group: partitions assigned: [seckill_order_result-12, seckill_order_result-13, seckill_order_result-14, seckill_order_result-15]
+2026-07-12T22:59:29.348+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-2] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-result-group: partitions assigned: [seckill_order_result-4, seckill_order_result-5, seckill_order_result-6, seckill_order_result-7]
+2026-07-12T22:59:29.348+08:00  INFO 44312 --- [couponkill-order-service] [fka-result-vt-3] o.s.k.l.KafkaMessageListenerContainer    : seckill-order-result-group: partitions assigned: [seckill_order_result-8, seckill_order_result-9, seckill_order_result-10, seckill_order_result-11]
+2026-07-12T22:59:42.372+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-07-12T22:59:42.372+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-07-12T22:59:42.374+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-07-12T22:59:42.493+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=10000, couponId=1001, inFlight=1
+2026-07-12T22:59:43.071+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.kafka.common.config.AbstractConfig   : ProducerConfig values: 
+	acks = -1
+	batch.size = 32768
+	bootstrap.servers = [127.0.0.1:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = couponkill-order-service-producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 10000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 5
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 3000
+	retries = 3
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transaction.two.phase.commit.enable = false
+	transactional.id = null
+	value.serializer = class org.springframework.kafka.support.serializer.JsonSerializer
+
+2026-07-12T22:59:43.072+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-07-12T22:59:43.088+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=couponkill-order-service-producer-1] Instantiated an idempotent producer.
+2026-07-12T22:59:43.104+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-07-12T22:59:43.105+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-07-12T22:59:43.105+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-0] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1783868383104
+2026-07-12T22:59:43.109+08:00  INFO 44312 --- [couponkill-order-service] [vice-producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=couponkill-order-service-producer-1] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-07-12T22:59:43.110+08:00  INFO 44312 --- [couponkill-order-service] [vice-producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=couponkill-order-service-producer-1] ProducerId set to 4 with epoch 0
+2026-07-12T22:59:43.148+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=f3089795-da47-411c-bbd6-3eaa29956aee, userId=10000, couponId=1001
+2026-07-12T22:59:43.239+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : [SUBSCRIBE-SERVICE] service:couponkill-coupon-service, group:DEFAULT_GROUP, clusters: 
+2026-07-12T22:59:43.239+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : [GRPC-SUBSCRIBE] service:couponkill-coupon-service, group:DEFAULT_GROUP, cluster: 
+2026-07-12T22:59:43.253+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : init new ips(1) service: DEFAULT_GROUP@@couponkill-coupon-service -> [{"instanceId":"172.27.112.1#8080##DEFAULT_GROUP@@couponkill-coupon-service","ip":"172.27.112.1","port":8080,"weight":1.0,"healthy":true,"enabled":true,"ephemeral":true,"clusterName":"DEFAULT","serviceName":"DEFAULT_GROUP@@couponkill-coupon-service","metadata":{"preserved.heart.beat.timeout":"30000","preserved.register.source":"SPRING_CLOUD","IPv6":"[2409:8d00:105c:4c6:bc53:88ac:d9d3:fa38]"},"instanceHeartBeatInterval":5000,"instanceHeartBeatTimeOut":30000,"ipDeleteTimeout":30000}]
+2026-07-12T22:59:43.254+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : current ips:(1) service: DEFAULT_GROUP@@couponkill-coupon-service -> [{"instanceId":"172.27.112.1#8080##DEFAULT_GROUP@@couponkill-coupon-service","ip":"172.27.112.1","port":8080,"weight":1.0,"healthy":true,"enabled":true,"ephemeral":true,"clusterName":"DEFAULT","serviceName":"DEFAULT_GROUP@@couponkill-coupon-service","metadata":{"preserved.heart.beat.timeout":"30000","preserved.register.source":"SPRING_CLOUD","IPv6":"[2409:8d00:105c:4c6:bc53:88ac:d9d3:fa38]"},"instanceHeartBeatInterval":5000,"instanceHeartBeatTimeOut":30000,"ipDeleteTimeout":30000}]
+2026-07-12T22:59:43.804+08:00  INFO 44312 --- [couponkill-order-service] [or-127.0.0.1-19] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Receive server push request, request = NotifySubscriberRequest, requestId = 49
+2026-07-12T22:59:43.805+08:00  INFO 44312 --- [couponkill-order-service] [or-127.0.0.1-19] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Ack server push request, request = NotifySubscriberRequest, requestId = 49
+2026-07-12T22:59:44.627+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:44.644+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : [SUBSCRIBE-SERVICE] service:couponkill-user-service, group:DEFAULT_GROUP, clusters: 
+2026-07-12T22:59:44.644+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : [GRPC-SUBSCRIBE] service:couponkill-user-service, group:DEFAULT_GROUP, cluster: 
+2026-07-12T22:59:44.649+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : init new ips(1) service: DEFAULT_GROUP@@couponkill-user-service -> [{"instanceId":"172.27.112.1#8081##DEFAULT_GROUP@@couponkill-user-service","ip":"172.27.112.1","port":8081,"weight":1.0,"healthy":true,"enabled":true,"ephemeral":true,"clusterName":"DEFAULT","serviceName":"DEFAULT_GROUP@@couponkill-user-service","metadata":{"preserved.register.source":"SPRING_CLOUD","IPv6":"[2409:8d00:105c:4c6:bc53:88ac:d9d3:fa38]"},"instanceHeartBeatInterval":5000,"instanceHeartBeatTimeOut":15000,"ipDeleteTimeout":30000}]
+2026-07-12T22:59:44.649+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] com.alibaba.nacos.client.naming          : current ips:(1) service: DEFAULT_GROUP@@couponkill-user-service -> [{"instanceId":"172.27.112.1#8081##DEFAULT_GROUP@@couponkill-user-service","ip":"172.27.112.1","port":8081,"weight":1.0,"healthy":true,"enabled":true,"ephemeral":true,"clusterName":"DEFAULT","serviceName":"DEFAULT_GROUP@@couponkill-user-service","metadata":{"preserved.register.source":"SPRING_CLOUD","IPv6":"[2409:8d00:105c:4c6:bc53:88ac:d9d3:fa38]"},"instanceHeartBeatInterval":5000,"instanceHeartBeatTimeOut":15000,"ipDeleteTimeout":30000}]
+2026-07-12T22:59:45.206+08:00  INFO 44312 --- [couponkill-order-service] [or-127.0.0.1-22] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Receive server push request, request = NotifySubscriberRequest, requestId = 50
+2026-07-12T22:59:45.207+08:00  INFO 44312 --- [couponkill-order-service] [or-127.0.0.1-22] com.alibaba.nacos.common.remote.client   : [a3960162-636e-43f6-8a6b-3797ca529b44] Ack server push request, request = NotifySubscriberRequest, requestId = 50
+2026-07-12T22:59:45.367+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769501832966144, requestId=f3089795-da47-411c-bbd6-3eaa29956aee, userId=10000, couponId=1001
+2026-07-12T22:59:49.714+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-6] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=1, couponId=1001, inFlight=1
+2026-07-12T22:59:49.739+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=f56f32ef-5f56-4270-a308-83061ac2c44c, userId=1, couponId=1001
+2026-07-12T22:59:49.799+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-7] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=2, couponId=1001, inFlight=1
+2026-07-12T22:59:49.816+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:49.859+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769522963869696, requestId=f56f32ef-5f56-4270-a308-83061ac2c44c, userId=1, couponId=1001
+2026-07-12T22:59:49.860+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=42707dd3-f4ad-4f76-bc97-9ce7156a24e8, userId=2, couponId=1001
+2026-07-12T22:59:49.879+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-8] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=3, couponId=1001, inFlight=1
+2026-07-12T22:59:49.921+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:49.957+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769523379105792, requestId=42707dd3-f4ad-4f76-bc97-9ce7156a24e8, userId=2, couponId=1001
+2026-07-12T22:59:49.958+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=3c2defab-a902-4ae1-b448-4b3271dd3347, userId=3, couponId=1001
+2026-07-12T22:59:49.963+08:00  INFO 44312 --- [couponkill-order-service] [omcat-handler-9] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=4, couponId=1001, inFlight=1
+2026-07-12T22:59:50.022+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.059+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769523798536192, requestId=3c2defab-a902-4ae1-b448-4b3271dd3347, userId=3, couponId=1001
+2026-07-12T22:59:50.062+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=01a4ba4d-dafc-46b5-88c9-49806fec5377, userId=4, couponId=1001
+2026-07-12T22:59:50.068+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-10] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=5, couponId=1001, inFlight=1
+2026-07-12T22:59:50.115+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.148+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769524188606464, requestId=01a4ba4d-dafc-46b5-88c9-49806fec5377, userId=4, couponId=1001
+2026-07-12T22:59:50.149+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=7166492a-6ba1-4de8-994b-04ecdbf99818, userId=5, couponId=1001
+2026-07-12T22:59:50.188+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.214+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769524486402048, requestId=7166492a-6ba1-4de8-994b-04ecdbf99818, userId=5, couponId=1001
+2026-07-12T22:59:50.317+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-11] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=6, couponId=1001, inFlight=1
+2026-07-12T22:59:50.343+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=09fc9dac-68ff-4304-b622-223c9a71f3ed, userId=6, couponId=1001
+2026-07-12T22:59:50.390+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.422+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769525337845760, requestId=09fc9dac-68ff-4304-b622-223c9a71f3ed, userId=6, couponId=1001
+2026-07-12T22:59:50.444+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-12] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=7, couponId=1001, inFlight=1
+2026-07-12T22:59:50.466+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=404adc4e-fd1b-4e52-ac8b-776ef572a1ae, userId=7, couponId=1001
+2026-07-12T22:59:50.507+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.525+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-13] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=8, couponId=1001, inFlight=1
+2026-07-12T22:59:50.540+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769525832773632, requestId=404adc4e-fd1b-4e52-ac8b-776ef572a1ae, userId=7, couponId=1001
+2026-07-12T22:59:50.542+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=56943e85-e8b7-4606-a618-6479c0ab3528, userId=8, couponId=1001
+2026-07-12T22:59:50.591+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.608+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-14] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=9, couponId=1001, inFlight=1
+2026-07-12T22:59:50.624+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769526189289472, requestId=56943e85-e8b7-4606-a618-6479c0ab3528, userId=8, couponId=1001
+2026-07-12T22:59:50.626+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=e5f1c761-a5ff-4019-b685-c982d29cb164, userId=9, couponId=1001
+2026-07-12T22:59:50.663+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.690+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-15] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=21, couponId=1001, inFlight=1
+2026-07-12T22:59:50.696+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769526491279360, requestId=e5f1c761-a5ff-4019-b685-c982d29cb164, userId=9, couponId=1001
+2026-07-12T22:59:50.698+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=b3dad413-d158-4bcd-bda2-fa7fcd92cbbd, userId=21, couponId=1001
+2026-07-12T22:59:50.741+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.776+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769526826823680, requestId=b3dad413-d158-4bcd-bda2-fa7fcd92cbbd, userId=21, couponId=1001
+2026-07-12T22:59:50.778+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-16] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=11, couponId=1001, inFlight=1
+2026-07-12T22:59:50.787+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=60b26ede-5105-488d-ac1e-12e93f29668d, userId=11, couponId=1001
+2026-07-12T22:59:50.825+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.857+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769527166562304, requestId=60b26ede-5105-488d-ac1e-12e93f29668d, userId=11, couponId=1001
+2026-07-12T22:59:50.858+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-17] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=12, couponId=1001, inFlight=1
+2026-07-12T22:59:50.879+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=5d490b19-8313-4e51-981d-9ed76083d99f, userId=12, couponId=1001
+2026-07-12T22:59:50.916+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:50.945+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769527544049664, requestId=5d490b19-8313-4e51-981d-9ed76083d99f, userId=12, couponId=1001
+2026-07-12T22:59:51.120+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-18] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=13, couponId=1001, inFlight=1
+2026-07-12T22:59:51.120+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-19] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=14, couponId=1001, inFlight=2
+2026-07-12T22:59:51.142+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=1ea8625e-2640-4ad9-adde-31a6d3d86ea4, userId=13, couponId=1001
+2026-07-12T22:59:51.179+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.212+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769528651345920, requestId=1ea8625e-2640-4ad9-adde-31a6d3d86ea4, userId=13, couponId=1001
+2026-07-12T22:59:51.212+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=057a290c-4283-4ebb-afe2-1bf7d6961c7e, userId=14, couponId=1001
+2026-07-12T22:59:51.247+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.248+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-20] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=15, couponId=1001, inFlight=1
+2026-07-12T22:59:51.279+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769528932364288, requestId=057a290c-4283-4ebb-afe2-1bf7d6961c7e, userId=14, couponId=1001
+2026-07-12T22:59:51.280+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=c84d6fb6-dcf1-4217-8904-de98b343438e, userId=15, couponId=1001
+2026-07-12T22:59:51.317+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.334+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-21] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=16, couponId=1001, inFlight=1
+2026-07-12T22:59:51.352+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769529242742784, requestId=c84d6fb6-dcf1-4217-8904-de98b343438e, userId=15, couponId=1001
+2026-07-12T22:59:51.356+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=b6d59ed3-84ff-4a03-a347-c90ddc9dd43b, userId=16, couponId=1001
+2026-07-12T22:59:51.393+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.423+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769529548926976, requestId=b6d59ed3-84ff-4a03-a347-c90ddc9dd43b, userId=16, couponId=1001
+2026-07-12T22:59:51.428+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-22] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=17, couponId=1001, inFlight=1
+2026-07-12T22:59:51.448+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=d1e1f711-6376-4027-9977-e6a68f44fa2d, userId=17, couponId=1001
+2026-07-12T22:59:51.479+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.507+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-23] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=18, couponId=1001, inFlight=1
+2026-07-12T22:59:51.509+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769529901248512, requestId=d1e1f711-6376-4027-9977-e6a68f44fa2d, userId=17, couponId=1001
+2026-07-12T22:59:51.526+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=2cd8654f-3393-48de-b57e-66b9ddf7bb05, userId=18, couponId=1001
+2026-07-12T22:59:51.556+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.581+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769530224209920, requestId=2cd8654f-3393-48de-b57e-66b9ddf7bb05, userId=18, couponId=1001
+2026-07-12T22:59:51.712+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-24] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=19, couponId=1001, inFlight=1
+2026-07-12T22:59:51.728+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=e7840946-1a97-4441-bf4f-11fc4c9f77c9, userId=19, couponId=1001
+2026-07-12T22:59:51.761+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.789+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769531084042240, requestId=e7840946-1a97-4441-bf4f-11fc4c9f77c9, userId=19, couponId=1001
+2026-07-12T22:59:51.833+08:00  INFO 44312 --- [couponkill-order-service] [mcat-handler-25] c.a.s.c.controller.OrderController       : 收到秒杀请求: userId=20, couponId=1001, inFlight=1
+2026-07-12T22:59:51.850+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.l.SeckillOrderCreateListener     : 收到秒杀落单命令: requestId=b5f16f89-66d1-4f72-8051-37d740b1e5fa, userId=20, couponId=1001
+2026-07-12T22:59:51.883+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 从 coupon-service 获取到的优惠券对象: Coupon(id=1001, name=演示秒杀券-满100减50, description=本地演示用秒杀券，每用户限领1张, type=2, faceValue=50.00, minSpend=100.00, validDays=7, perUserLimit=1, totalStock=0, seckillTotalStock=100, remainingStock=0, seckillRemainingStock=96, status=1, createTime=2026-07-12T13:11:46, updateTime=2026-07-12T21:37:43, version=4, shardIndex=0)
+2026-07-12T22:59:51.912+08:00  INFO 44312 --- [couponkill-order-service] [ka-seckill-vt-0] c.a.s.c.service.Impl.OrderServiceImpl    : 异步秒杀落单成功: orderId=351769531595747328, requestId=b5f16f89-66d1-4f72-8051-37d740b1e5fa, userId=20, couponId=1001
