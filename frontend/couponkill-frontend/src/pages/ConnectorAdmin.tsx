@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
   App,
   Badge,
@@ -26,36 +26,50 @@ import {
 import { connectorService } from '../services/connectorService'
 import { PlatformType } from '../types/api'
 import type {
-  ConnectorPlatformInfo,
   PlatformProductSnapshot,
   PlatformSkuBinding,
   PlatformStockSnapshot,
+  PlatformTypeValue,
 } from '../types/api'
 import { ApiError } from '../lib/apiClient'
+import { getErrorMessage } from '../lib/errorMessage'
+import {
+  useConnectorBindings,
+  useConnectorPlatforms,
+  useCreateBinding,
+  useSyncAllBindings,
+  useSyncOneBinding,
+} from '../hooks/useConnector'
 
 const { Title, Text, Paragraph } = Typography
 
+/** TB/PDD 二期未实现，绑定下拉禁用并标明 */
 const PLATFORM_OPTIONS = [
   { value: PlatformType.MOCK, label: 'MOCK（本地联调）' },
   { value: PlatformType.JD, label: '京东 JD' },
-  { value: PlatformType.TB, label: '淘宝 TB（二期预留）', disabled: true },
-  { value: PlatformType.PDD, label: '拼多多 PDD（二期预留）', disabled: true },
+  { value: PlatformType.TB, label: '淘宝 TB（未实现）', disabled: true },
+  { value: PlatformType.PDD, label: '拼多多 PDD（未实现）', disabled: true },
+]
+
+const PROBE_PLATFORM_OPTIONS = [
+  { value: PlatformType.MOCK, label: 'MOCK' },
+  { value: PlatformType.JD, label: 'JD' },
+  { value: PlatformType.TB, label: 'TB（未实现）', disabled: true },
+  { value: PlatformType.PDD, label: 'PDD（未实现）', disabled: true },
 ]
 
 const statusColor = (status?: string) => {
   switch (status) {
     case 'UP':
+    case 'SUCCESS':
       return 'success'
     case 'DOWN':
+    case 'FAIL':
       return 'error'
     case 'DISABLED':
       return 'default'
     case 'CONFIGURED':
       return 'processing'
-    case 'SUCCESS':
-      return 'success'
-    case 'FAIL':
-      return 'error'
     case 'SKIP':
       return 'warning'
     default:
@@ -65,14 +79,7 @@ const statusColor = (status?: string) => {
 
 const ConnectorAdmin: React.FC = () => {
   const { message } = App.useApp()
-  const [platforms, setPlatforms] = useState<ConnectorPlatformInfo[]>([])
-  const [bindings, setBindings] = useState<PlatformSkuBinding[]>([])
-  const [loadingHealth, setLoadingHealth] = useState(false)
-  const [loadingBindings, setLoadingBindings] = useState(false)
-  const [syncingId, setSyncingId] = useState<string | null>(null)
-  const [syncingAll, setSyncingAll] = useState(false)
   const [forceSync, setForceSync] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [probing, setProbing] = useState(false)
   const [probeStock, setProbeStock] = useState<PlatformStockSnapshot | null>(null)
   const [probeProduct, setProbeProduct] = useState<PlatformProductSnapshot | null>(null)
@@ -80,55 +87,26 @@ const ConnectorAdmin: React.FC = () => {
   const [bindForm] = Form.useForm()
   const [probeForm] = Form.useForm()
 
-  const loadPlatforms = useCallback(async () => {
-    setLoadingHealth(true)
-    try {
-      // platforms 含 JD 配置态；失败则退回 health
-      try {
-        setPlatforms(await connectorService.getPlatforms())
-      } catch {
-        const health = await connectorService.getHealth()
-        setPlatforms(health)
-      }
-    } catch (e) {
-      message.error((e as Error).message || '加载平台健康失败')
-    } finally {
-      setLoadingHealth(false)
-    }
-  }, [message])
+  const platformsQuery = useConnectorPlatforms()
+  const bindingsQuery = useConnectorBindings()
+  const createBinding = useCreateBinding()
+  const syncOne = useSyncOneBinding()
+  const syncAll = useSyncAllBindings()
 
-  const loadBindings = useCallback(async () => {
-    setLoadingBindings(true)
-    try {
-      const list = await connectorService.listBindings()
-      setBindings(
-        (list || []).map((b) => ({
-          ...b,
-          id: String(b.id),
-          couponId: String(b.couponId),
-        }))
-      )
-    } catch (e) {
-      if (e instanceof ApiError && e.code === 401) {
-        message.warning('请先登录后再管理绑定')
-      } else {
-        message.error((e as Error).message || '加载绑定失败')
-      }
-    } finally {
-      setLoadingBindings(false)
-    }
-  }, [message])
+  const platforms = platformsQuery.data ?? []
+  const bindings = bindingsQuery.data ?? []
 
-  useEffect(() => {
-    void loadPlatforms()
-    void loadBindings()
-  }, [loadPlatforms, loadBindings])
+  if (bindingsQuery.isError) {
+    const e = bindingsQuery.error
+    if (e instanceof ApiError && e.code === 401) {
+      // 展示层已有空表；提示一次即可
+    }
+  }
 
   const onCreateBinding = async () => {
     try {
       const values = await bindForm.validateFields()
-      setSubmitting(true)
-      await connectorService.createOrUpdateBinding({
+      await createBinding.mutateAsync({
         platform: values.platform,
         externalSkuId: values.externalSkuId.trim(),
         couponId: values.couponId,
@@ -136,55 +114,48 @@ const ConnectorAdmin: React.FC = () => {
       })
       message.success('绑定已保存')
       bindForm.resetFields(['externalSkuId', 'couponId'])
-      await loadBindings()
     } catch (e) {
       if ((e as { errorFields?: unknown }).errorFields) return
-      message.error((e as Error).message || '保存失败')
-    } finally {
-      setSubmitting(false)
+      message.error(getErrorMessage(e, '保存失败'))
     }
   }
 
   const onSyncOne = async (id: string) => {
-    setSyncingId(id)
     try {
-      const updated = await connectorService.syncOne(id, forceSync)
+      const updated = await syncOne.mutateAsync({ id, force: forceSync })
       message.success(
         updated.lastSyncStatus === 'SUCCESS'
           ? `同步成功，Redis库存=${updated.lastStock}${forceSync ? '（强制覆盖）' : '（安全合并）'}${updated.lastError ? ' · ' + updated.lastError : ''}`
           : `同步结束：${updated.lastSyncStatus} ${updated.lastError || ''}`
       )
-      await loadBindings()
     } catch (e) {
-      message.error((e as Error).message || '同步失败')
-    } finally {
-      setSyncingId(null)
+      message.error(getErrorMessage(e, '同步失败'))
     }
   }
 
   const onSyncAll = async () => {
-    setSyncingAll(true)
     try {
-      const r = await connectorService.syncAll(forceSync)
+      const r = await syncAll.mutateAsync(forceSync)
       message.success(
         `同步完成：成功 ${r.syncedOk}，失败 ${r.failed ?? 0}，跳过 ${r.skipped ?? 0}` +
           (forceSync ? '（强制）' : '（安全合并）')
       )
-      await loadBindings()
     } catch (e) {
-      message.error((e as Error).message || '批量同步失败')
-    } finally {
-      setSyncingAll(false)
+      message.error(getErrorMessage(e, '批量同步失败'))
     }
   }
 
   const onProbe = async () => {
     try {
       const values = await probeForm.validateFields()
+      const platform = values.platform as PlatformTypeValue
+      if (platform === PlatformType.TB || platform === PlatformType.PDD) {
+        message.warning(`${platform} 平台尚未实现，请使用 MOCK / JD`)
+        return
+      }
       setProbing(true)
       setProbeStock(null)
       setProbeProduct(null)
-      const platform = values.platform as string
       const skuId = String(values.skuId).trim()
       const [stock, product] = await Promise.allSettled([
         connectorService.probeStock(platform, skuId),
@@ -205,7 +176,7 @@ const ConnectorAdmin: React.FC = () => {
       }
     } catch (e) {
       if ((e as { errorFields?: unknown }).errorFields) return
-      message.error((e as Error).message || '探测失败')
+      message.error(getErrorMessage(e, '探测失败'))
     } finally {
       setProbing(false)
     }
@@ -263,7 +234,7 @@ const ConnectorAdmin: React.FC = () => {
           type="link"
           size="small"
           icon={<CloudSyncOutlined />}
-          loading={syncingId === row.id}
+          loading={syncOne.isPending && syncOne.variables?.id === row.id}
           onClick={() => void onSyncOne(row.id)}
         >
           同步
@@ -280,6 +251,7 @@ const ConnectorAdmin: React.FC = () => {
         </Title>
         <Text type="secondary">
           旁路同步外部电商库存到本地秒杀 Redis；不进入秒杀热路径。绑定/同步需登录；健康检查可匿名。
+          TB / PDD 标注为未实现。
         </Text>
       </div>
 
@@ -288,19 +260,35 @@ const ConnectorAdmin: React.FC = () => {
           <Card
             title="平台健康"
             extra={
-              <Button icon={<ReloadOutlined />} size="small" loading={loadingHealth} onClick={() => void loadPlatforms()}>
+              <Button
+                icon={<ReloadOutlined />}
+                size="small"
+                loading={platformsQuery.isFetching}
+                onClick={() => void platformsQuery.refetch()}
+              >
                 刷新
               </Button>
             }
-            loading={loadingHealth}
+            loading={platformsQuery.isLoading}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               {platforms.map((p) => (
-                <Card key={String(p.platform)} size="small" type="inner" title={<Tag color={statusColor(p.status)}>{p.platform}</Tag>}>
+                <Card
+                  key={String(p.platform)}
+                  size="small"
+                  type="inner"
+                  title={<Tag color={statusColor(p.status)}>{p.platform}</Tag>}
+                >
                   <Paragraph style={{ marginBottom: 0 }}>
                     状态：<Tag color={statusColor(p.status)}>{p.status}</Tag>
                     <br />
                     {p.message}
+                    {(p.platform === PlatformType.TB || p.platform === PlatformType.PDD) && (
+                      <>
+                        <br />
+                        <Text type="warning">该平台尚未实现对接</Text>
+                      </>
+                    )}
                   </Paragraph>
                 </Card>
               ))}
@@ -333,7 +321,7 @@ const ConnectorAdmin: React.FC = () => {
             )}
             <Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0 }}>
               默认同步为「安全合并」：不会把 Redis 库存抬高（防秒杀扣减被虚增）。需要校准抬高时打开「强制覆盖」。
-              JD 状态 CONFIGURED 表示密钥已配但未探活，请用下方探测验证。
+              JD 无精确库存时跳过同步，禁止用默认值虚增。
             </Paragraph>
           </Card>
         </Col>
@@ -347,15 +335,7 @@ const ConnectorAdmin: React.FC = () => {
           style={{ marginBottom: 16, rowGap: 12 }}
         >
           <Form.Item name="platform" label="平台" rules={[{ required: true }]}>
-            <Select
-              style={{ width: 160 }}
-              options={[
-                { value: PlatformType.MOCK, label: 'MOCK' },
-                { value: PlatformType.JD, label: 'JD' },
-                { value: PlatformType.TB, label: 'TB（未实现）' },
-                { value: PlatformType.PDD, label: 'PDD（未实现）' },
-              ]}
-            />
+            <Select style={{ width: 180 }} options={PROBE_PLATFORM_OPTIONS} />
           </Form.Item>
           <Form.Item name="skuId" label="SKU" rules={[{ required: true, message: '填写 skuId' }]}>
             <Input placeholder="如 mock-sku:888 或京东 skuId" style={{ width: 240 }} allowClear />
@@ -412,10 +392,20 @@ const ConnectorAdmin: React.FC = () => {
                 unCheckedChildren="安全"
               />
             </span>
-            <Button icon={<ReloadOutlined />} onClick={() => void loadBindings()} loading={loadingBindings}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => void bindingsQuery.refetch()}
+              loading={bindingsQuery.isFetching}
+            >
               刷新
             </Button>
-            <Button type="primary" ghost icon={<CloudSyncOutlined />} loading={syncingAll} onClick={() => void onSyncAll()}>
+            <Button
+              type="primary"
+              ghost
+              icon={<CloudSyncOutlined />}
+              loading={syncAll.isPending}
+              onClick={() => void onSyncAll()}
+            >
               同步全部启用
             </Button>
           </Space>
@@ -444,7 +434,12 @@ const ConnectorAdmin: React.FC = () => {
             <Switch />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" icon={<PlusOutlined />} loading={submitting} onClick={() => void onCreateBinding()}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              loading={createBinding.isPending}
+              onClick={() => void onCreateBinding()}
+            >
               保存绑定
             </Button>
           </Form.Item>
@@ -453,7 +448,7 @@ const ConnectorAdmin: React.FC = () => {
         <Table
           rowKey="id"
           size="middle"
-          loading={loadingBindings}
+          loading={bindingsQuery.isLoading}
           columns={columns}
           dataSource={bindings}
           scroll={{ x: 1100 }}

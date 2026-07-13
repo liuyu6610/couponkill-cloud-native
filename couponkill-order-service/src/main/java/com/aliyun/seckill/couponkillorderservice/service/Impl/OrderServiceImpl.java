@@ -2,7 +2,9 @@
 package com.aliyun.seckill.couponkillorderservice.service.Impl;
 
 import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.enums.ResultCode;
+import com.aliyun.seckill.common.pojo.EnterSeckillResp;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.common.pojo.Order;
@@ -332,9 +334,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // 处理订单创建后的后续操作
+    /** @param awaitCritical true=同步等待用户计数/Redis；false=异步 fire-and-forget（Kafka 消费侧，避免占满 listener） */
     private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order) {
+        handlePostOrderCreation(userId, couponId, couponType, order, true);
+    }
+
+    private void handlePostOrderCreation(Long userId, Long couponId, int couponType, Order order,
+                                         boolean awaitCritical) {
         try {
-            // 并行执行互不依赖的任务
             CompletableFuture<Void> updateUserCountFuture = CompletableFuture.runAsync(() ->
                             updateUserCouponCount(userId, couponType, 1),
                     asyncExecutor
@@ -343,25 +350,31 @@ public class OrderServiceImpl implements OrderService {
                             batchUpdateRedisOnCreate(userId, couponId, couponType),
                     asyncExecutor
             );
-
-            // 异步发送消息，不阻塞主流程
             CompletableFuture<Void> sendMessageFuture = CompletableFuture.runAsync(() ->
                             sendOrderMessage(order, userId, couponId),
                     asyncExecutor
             );
 
-            // 等待关键任务完成
-            CompletableFuture.allOf(updateUserCountFuture, updateRedisFuture).join();
+            CompletableFuture<Void> critical = CompletableFuture.allOf(updateUserCountFuture, updateRedisFuture);
+            if (awaitCritical) {
+                critical.join();
+            } else {
+                critical.whenComplete((ok, ex) -> {
+                    if (ex != null) {
+                        log.error("异步订单后置关键任务失败（可观测/将重试）: orderId={}, userId={}, couponId={}",
+                                order.getId(), userId, couponId, ex);
+                        Exception asEx = ex instanceof Exception ? (Exception) ex : new Exception(ex);
+                        retryIfNecessary(userId, couponId, couponType, order, asEx);
+                    }
+                });
+            }
 
-            // 消息发送失败不应回滚主流程，所以不等待其完成
-            // 如果需要确保消息发送成功，可以在回调中处理失败重试
             sendMessageFuture.exceptionally(throwable -> {
                 log.error("异步发送订单消息失败: orderId={}", order.getId(), throwable);
                 return null;
             });
         } catch (Exception e) {
             log.error("处理订单后续操作失败", e);
-            // 增加失败重试机制
             retryIfNecessary(userId, couponId, couponType, order, e);
         }
     }
@@ -814,7 +827,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             ApiResponse<Coupon> response = couponServiceFeignClient.getCouponById(couponId);
             if (response != null && response.getData() != null) {
-                log.info("从 coupon-service 获取到的优惠券对象: {}", response.getData());
+                log.debug("从 coupon-service 获取券元数据: couponId={}", couponId);
                 return response.getData();
             } else {
                 log.warn("从 coupon-service 获取到的优惠券对象为空");
@@ -885,9 +898,30 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 秒杀热路径：Lua 预扣 Redis + Kafka 异步落单（无同步 Feign 扣库存）。
+     * 若券配置了活动时间窗，则开售前/结束后拒绝入队（不改 Lua 返回码语义）。
      */
     @Override
-    public com.aliyun.seckill.common.pojo.EnterSeckillResp enterSeckillAsync(Long userId, Long couponId) {
+    public EnterSeckillResp enterSeckillAsync(Long userId, Long couponId) {
+        Coupon coupon = getCouponById(couponId);
+        if (coupon != null
+                && coupon.getSeckillStartAt() != null
+                && coupon.getSeckillEndAt() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(coupon.getSeckillStartAt())) {
+                return EnterSeckillResp.builder()
+                        .status("REJECTED")
+                        .err(ErrorCodes.NOT_STARTED)
+                        .message("活动未开始，请预约帮抢或稍后再试")
+                        .build();
+            }
+            if (now.isAfter(coupon.getSeckillEndAt())) {
+                return EnterSeckillResp.builder()
+                        .status("REJECTED")
+                        .err(ErrorCodes.ACTIVITY_ENDED)
+                        .message("活动已结束")
+                        .build();
+            }
+        }
         return asyncSeckillEnterService.enter(userId, couponId);
     }
 
@@ -917,12 +951,12 @@ public class OrderServiceImpl implements OrderService {
         Boolean firstConsume = stringRedisTemplate.opsForValue()
                 .setIfAbsent(consumeLockKey, "1", Duration.ofMinutes(30));
         if (Boolean.FALSE.equals(firstConsume)) {
-            log.info("秒杀落单消费幂等跳过: requestId={}", requestId);
+            log.debug("秒杀落单消费幂等跳过: requestId={}", requestId);
             return;
         }
 
         if (hasUserReceivedCoupon(userId, couponId)) {
-            log.info("秒杀落单幂等跳过: userId={}, couponId={}, requestId={}", userId, couponId, requestId);
+            log.debug("秒杀落单幂等跳过: userId={}, couponId={}, requestId={}", userId, couponId, requestId);
             asyncSeckillEnterService.markSuccess(requestId, "EXISTING");
             return;
         }
@@ -976,7 +1010,7 @@ public class OrderServiceImpl implements OrderService {
             String userReceivedKey = USER_RECEIVED_KEY + userId + ":" + couponId;
             redisTemplate.opsForValue().set(userReceivedKey, true, 1, TimeUnit.HOURS);
 
-            handlePostOrderCreation(userId, couponId, coupon.getType(), order);
+            handlePostOrderCreation(userId, couponId, coupon.getType(), order, false);
             asyncSeckillEnterService.markSuccess(requestId, order.getId());
 
             try {
@@ -992,7 +1026,7 @@ public class OrderServiceImpl implements OrderService {
                 log.warn("发送 seckill_order_result 失败（订单已落库）: orderId={}", order.getId(), e);
             }
 
-            log.info("异步秒杀落单成功: orderId={}, requestId={}, userId={}, couponId={}",
+            log.debug("异步秒杀落单成功: orderId={}, requestId={}, userId={}, couponId={}",
                     order.getId(), requestId, userId, couponId);
         } catch (Exception e) {
             log.error("异步秒杀落单失败: requestId={}, userId={}, couponId={}", requestId, userId, couponId, e);

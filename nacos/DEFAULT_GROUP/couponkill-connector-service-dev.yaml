@@ -22,8 +22,10 @@ connector:
     enabled: true
     cron: "0 */1 * * * *"
     default-mock-stock: 500
+    lock-ttl-seconds: 55
   internal-token: ${CONNECTOR_INTERNAL_TOKEN:couponkill-internal}
-  internal-token-strict: false
+  # 生产 profile 或 strict=true 时拒绝默认弱口令
+  internal-token-strict: ${CONNECTOR_INTERNAL_TOKEN_STRICT:false}
   admin:
     user-ids: ${CONNECTOR_ADMIN_USER_IDS:10000}
     token: ${CONNECTOR_ADMIN_TOKEN:}

@@ -85,6 +85,13 @@ public class BindingService {
         return bindingMapper.selectAll();
     }
 
+    public PlatformSkuBinding getByCouponId(Long couponId) {
+        if (couponId == null) {
+            throw new IllegalArgumentException("couponId 不能为空");
+        }
+        return bindingMapper.selectByCouponId(couponId);
+    }
+
     public PlatformSkuBinding get(Long id) {
         return bindingMapper.selectById(id);
     }
@@ -177,12 +184,17 @@ public class BindingService {
         if (stock == null) {
             return null;
         }
+        // 有精确数量时以平台为准（含 0：无库存勿虚增）
         if (stock.getStockQty() != null && stock.getStockQty() >= 0) {
             return stock.getStockQty();
         }
-        if (platform == PlatformType.JD && Boolean.TRUE.equals(stock.getStockAvailable())) {
-            log.info("京东库存无精确数量，使用默认映射值 {}", defaultMockStock);
-            return defaultMockStock;
+        // 京东仅返回「有货/无货」布尔、无精确数量时：无货→0；有货但不精确→SKIP（禁止用默认值虚增）
+        if (platform == PlatformType.JD) {
+            if (Boolean.FALSE.equals(stock.getStockAvailable())) {
+                return 0L;
+            }
+            log.info("京东库存无精确数量，跳过同步以防虚增: available={}", stock.getStockAvailable());
+            return null;
         }
         if (platform == PlatformType.MOCK) {
             return defaultMockStock;

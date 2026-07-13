@@ -43,10 +43,16 @@ redis:
       tag: redis
       pullPolicy: IfNotPresent
 
-# Kafka??
+# Kafka（与 values.yaml / docker-compose 分区真源对齐）
 kafka:
+  enabled: true
   broker: broker:9092
-  topics: "seckill_order_create,seckill_order_cancel"
+  bootstrapServers: broker:9092
+  topics: "seckill_order_create,seckill_order_result,seckill_compensation"
+  partitions: 16
+  replicationFactor: 1
+  cluster:
+    enabled: false
   init:
     enabled: true
     name: kafka-init
@@ -55,9 +61,9 @@ kafka:
       tag: kafka
       pullPolicy: IfNotPresent
 
-# RocketMQ??
+# RocketMQ 已迁移至 Kafka，生产默认关闭（保留结构便于回滚对比）
 rocketmq:
-  enabled: true
+  enabled: false
   name: rocketmq
   image:
     repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
@@ -74,13 +80,15 @@ rocketmq:
         listenPort: 10911
         haListenPort: 10912
   init:
-    enabled: true
+    enabled: false
     name: rocketmq-init
     image:
       repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
       tag: rocketmq-namesrv
       pullPolicy: IfNotPresent
   topics: "seckill_order_create,seckill_order_cancel"
+  cluster:
+    enabled: false
 
 # Nacos??
 nacos:
@@ -507,9 +515,16 @@ services:
       minReplicas: 2  # ?????
       maxReplicas: 5  # ?????
       cpu: 70  # CPU??????�???�?
-    # JVM????
-    jvmOpts: "-Xms1g -Xmx2g -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
+    # JVM：容器感知 MaxRAMPercentage，禁止固定 Xmx 超过 memory limit
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
 
   # Go??????
   go:
@@ -542,9 +557,15 @@ services:
       minReplicas: 3  # ?????
       maxReplicas: 10  # ?????
       cpu: 60  # CPU??????�???�?
-    # JVM????
-    jvmOpts: "-Xms2g -Xmx4g -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
 
   # ??????
   order:
@@ -559,9 +580,38 @@ services:
       minReplicas: 3  # ?????
       maxReplicas: 10  # ?????
       cpu: 60  # CPU??????�???�?
-    # JVM????
-    jvmOpts: "-Xms2g -Xmx4g -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 --enable-preview"
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+
+  connector:
+    enabled: true
+    name: couponkill-connector-service
+    port: 8085
+    replicas: 1
+    image:
+      name: "connector"
+    profile: prod
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    internalTokenStrict: true
+    internalTokenSecret:
+      name: connector-secrets
+      key: internal-token
+      optional: false
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
 
   # ??????
   user:
@@ -576,9 +626,15 @@ services:
       minReplicas: 2  # ?????
       maxReplicas: 5  # ?????
       cpu: 60  # CPU??????�???�?
-    # JVM????
-    jvmOpts: "-Xms1g -Xmx2g -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
 
   # operator??
   operator:

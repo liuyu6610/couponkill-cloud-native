@@ -1,11 +1,15 @@
 import React, { useMemo, useState } from 'react'
-import { Row, Col, Typography, Input, Select, Empty, Spin, App } from 'antd'
+import { Row, Col, Typography, Input, Select, Empty, Spin, App, Button, Result } from 'antd'
+import { ReloadOutlined } from '@ant-design/icons'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import type { RootState } from '../store'
 import CouponCard from '../components/CouponCard'
 import { useAvailableCoupons } from '../hooks/useCoupons'
 import { useSeckill } from '../hooks/useSeckill'
+import { useActiveReservationMap, useCreateReservation } from '../hooks/useReservations'
+import { useSubmitGuard } from '../hooks/useSubmitGuard'
+import { getErrorMessage } from '../lib/errorMessage'
 import { CouponType } from '../types/api'
 import type { Coupon } from '../types/api'
 
@@ -17,9 +21,20 @@ const CouponList: React.FC = () => {
   const { message } = App.useApp()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
 
-  const { data: coupons = [], isLoading } = useAvailableCoupons()
+  const {
+    data: coupons = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useAvailableCoupons()
   const seckill = useSeckill()
+  const reserve = useCreateReservation()
+  const { activeByCouponId } = useActiveReservationMap(isAuthenticated)
+  const canSubmit = useSubmitGuard(1000)
   const [seckillingId, setSeckillingId] = useState<string | null>(null)
+  const [reservingId, setReservingId] = useState<string | null>(null)
 
   const [keyword, setKeyword] = useState('')
   const [typeFilter, setTypeFilter] = useState<number | ''>('')
@@ -32,22 +47,43 @@ const CouponList: React.FC = () => {
     })
   }, [coupons, keyword, typeFilter])
 
+  const requireLogin = (path = '/coupons') => {
+    message.info('请先登录后再操作')
+    navigate('/login', { state: { from: { pathname: path } } })
+  }
+
   const handleSeckill = (coupon: Coupon) => {
     if (!isAuthenticated || !user) {
-      message.info('请先登录后再参与秒杀')
-      navigate('/login', { state: { from: { pathname: '/coupons' } } })
+      requireLogin()
       return
     }
-    if (seckill.isPending) return // 防抖：进行中禁止重复提交
+    if (!canSubmit(seckill.isPending)) return
     setSeckillingId(coupon.id)
     seckill.mutate(
       { couponId: coupon.id },
       {
         onSuccess: () => message.success('秒杀成功！可在“我的订单”中查看'),
-        onError: (err) => message.error((err as Error).message || '秒杀失败，请稍后重试'),
+        onError: (err) => message.error(getErrorMessage(err, '秒杀失败，请稍后重试')),
         onSettled: () => setSeckillingId(null),
       }
     )
+  }
+
+  const handleReserve = (coupon: Coupon) => {
+    if (!isAuthenticated || !user) {
+      requireLogin()
+      return
+    }
+    if (!canSubmit(reserve.isPending)) return
+    setReservingId(coupon.id)
+    reserve.mutate(coupon.id, {
+      onSuccess: () => {
+        message.success('预约成功！开售时系统将代发本站秒杀入队')
+        navigate('/reservations')
+      },
+      onError: (err) => message.error(getErrorMessage(err, '预约失败')),
+      onSettled: () => setReservingId(null),
+    })
   }
 
   return (
@@ -91,6 +127,22 @@ const CouponList: React.FC = () => {
             <div className="loading-container" style={{ textAlign: 'center', padding: 50 }}>
               <Spin size="large" />
             </div>
+          ) : isError ? (
+            <Result
+              status="error"
+              title="优惠券列表加载失败"
+              subTitle={getErrorMessage(error, '请检查网络后重试')}
+              extra={
+                <Button
+                  type="primary"
+                  icon={<ReloadOutlined />}
+                  loading={isFetching}
+                  onClick={() => void refetch()}
+                >
+                  重新加载
+                </Button>
+              }
+            />
           ) : filtered.length > 0 ? (
             <Row gutter={[16, 16]}>
               {filtered.map((coupon) => (
@@ -99,13 +151,24 @@ const CouponList: React.FC = () => {
                     coupon={coupon}
                     showActions
                     seckillLoading={seckillingId === coupon.id}
+                    reserveLoading={reservingId === coupon.id}
+                    alreadyReserved={activeByCouponId.has(String(coupon.id))}
                     onSeckill={handleSeckill}
+                    onReserve={handleReserve}
+                    onViewReservations={() => navigate('/reservations')}
                   />
                 </Col>
               ))}
             </Row>
           ) : (
-            <Empty description="暂无优惠券数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty
+              description={keyword || typeFilter !== '' ? '没有符合筛选条件的优惠券' : '暂无优惠券数据'}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            >
+              <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => void refetch()}>
+                刷新
+              </Button>
+            </Empty>
           )}
         </div>
       </div>

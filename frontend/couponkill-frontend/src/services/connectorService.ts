@@ -58,6 +58,13 @@ export const connectorService = {
       { params: { skuId } }
     )
   },
+
+  /** C 端只读：按券查绑定（可匿名） */
+  getBindingByCoupon(couponId: string): Promise<PlatformSkuBinding | null> {
+    return http.get<PlatformSkuBinding | null>(
+      `/api/v1/connector/bindings/by-coupon/${couponId}`
+    )
+  },
 }
 
 export default connectorService

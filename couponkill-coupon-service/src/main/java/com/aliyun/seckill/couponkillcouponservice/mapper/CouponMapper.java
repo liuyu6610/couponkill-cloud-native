@@ -41,6 +41,11 @@ public interface CouponMapper {
 
     // 更新优惠券状态
     int updateCouponStatus(@Param("couponId") Long couponId, @Param("status") int status);
+
+    /** 更新秒杀活动时间窗（写所有分片） */
+    int updateSeckillWindow(@Param("couponId") Long couponId,
+                            @Param("seckillStartAt") LocalDateTime seckillStartAt,
+                            @Param("seckillEndAt") LocalDateTime seckillEndAt);
     
     // 根据ID删除优惠券
     int deleteCouponById(@Param("id") Long id);

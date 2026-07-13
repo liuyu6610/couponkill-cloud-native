@@ -1,13 +1,26 @@
 import React from 'react'
-import { Row, Col, Card, Typography, Button, Descriptions, Tag, Divider, Spin, App } from 'antd'
-import { ArrowLeftOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { Row, Col, Card, Typography, Button, Descriptions, Tag, Divider, Spin, App, Result, Space } from 'antd'
+import { ArrowLeftOutlined, ThunderboltOutlined, ReloadOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { useQuery } from '@tanstack/react-query'
 import type { RootState } from '../store'
 import { useCouponDetail } from '../hooks/useCoupons'
 import { useSeckill } from '../hooks/useSeckill'
 import { useCreateOrder } from '../hooks/useOrders'
-import { couponStockOf, couponTotalStockOf, couponTypeText, isSeckillCoupon } from '../types/api'
+import { useActiveReservationMap, useCreateReservation } from '../hooks/useReservations'
+import { useSubmitGuard } from '../hooks/useSubmitGuard'
+import { getErrorMessage } from '../lib/errorMessage'
+import { connectorService } from '../services/connectorService'
+import { queryKeys, staleTimes } from '../lib/queryClient'
+import SeckillCountdown from '../components/SeckillCountdown'
+import {
+  couponStockOf,
+  couponTotalStockOf,
+  couponTypeText,
+  isSeckillCoupon,
+  seckillWindowPhase,
+} from '../types/api'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -17,12 +30,24 @@ const CouponDetail: React.FC = () => {
   const { message } = App.useApp()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
 
-  const { data: coupon, isLoading } = useCouponDetail(id)
+  const { data: coupon, isLoading, isError, error, refetch, isFetching, isPlaceholderData } =
+    useCouponDetail(id)
   const seckill = useSeckill()
   const createOrder = useCreateOrder()
-  const acting = seckill.isPending || createOrder.isPending
+  const reserve = useCreateReservation()
+  const { activeByCouponId } = useActiveReservationMap(isAuthenticated)
+  const canSubmit = useSubmitGuard(1000)
+  const acting = seckill.isPending || createOrder.isPending || reserve.isPending
+  const alreadyReserved = !!id && activeByCouponId.has(String(id))
 
-  if (isLoading) {
+  const { data: binding } = useQuery({
+    queryKey: queryKeys.connector.bindingByCoupon(id ?? ''),
+    queryFn: () => connectorService.getBindingByCoupon(id as string),
+    enabled: !!id,
+    staleTime: staleTimes.connectorBindings,
+  })
+
+  if (isLoading && !coupon) {
     return (
       <div className="loading-container" style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
@@ -30,11 +55,35 @@ const CouponDetail: React.FC = () => {
     )
   }
 
+  if (isError && !coupon) {
+    return (
+      <Result
+        status="error"
+        title="优惠券详情加载失败"
+        subTitle={getErrorMessage(error, '请检查网络后重试')}
+        extra={[
+          <Button key="back" onClick={() => navigate('/coupons')}>
+            返回列表
+          </Button>,
+          <Button
+            key="retry"
+            type="primary"
+            icon={<ReloadOutlined />}
+            loading={isFetching}
+            onClick={() => void refetch()}
+          >
+            重试
+          </Button>,
+        ]}
+      />
+    )
+  }
+
   if (!coupon) {
     return (
       <div className="coupon-detail-page">
         <div className="container" style={{ textAlign: 'center', padding: 50 }}>
-          <Text type="secondary">优惠券不存在</Text>
+          <Text type="secondary">优惠券不存在或已下架</Text>
           <br />
           <Button type="primary" onClick={() => navigate('/coupons')} style={{ marginTop: 16 }}>
             返回优惠券列表
@@ -49,6 +98,7 @@ const CouponDetail: React.FC = () => {
   const totalStock = couponTotalStockOf(coupon)
   const soldOut = stock <= 0
   const invalid = coupon.status !== 1
+  const phase = seckillType ? seckillWindowPhase(coupon) : 'no_window'
 
   const handleClaim = () => {
     if (!isAuthenticated || !user) {
@@ -56,11 +106,11 @@ const CouponDetail: React.FC = () => {
       navigate('/login', { state: { from: { pathname: `/coupons/${coupon.id}` } } })
       return
     }
-    if (acting) return
+    if (!canSubmit(acting)) return
     const args = { couponId: coupon.id }
     const opts = {
       onSuccess: () => message.success('领取成功！可在“我的订单”中查看'),
-      onError: (err: unknown) => message.error((err as Error).message || '领取失败，请稍后重试'),
+      onError: (err: unknown) => message.error(getErrorMessage(err, '领取失败，请稍后重试')),
     }
     if (seckillType) {
       seckill.mutate(args, opts)
@@ -69,12 +119,34 @@ const CouponDetail: React.FC = () => {
     }
   }
 
+  const handleReserve = () => {
+    if (!isAuthenticated || !user) {
+      message.info('请先登录')
+      navigate('/login', { state: { from: { pathname: `/coupons/${coupon.id}` } } })
+      return
+    }
+    if (!canSubmit(acting)) return
+    reserve.mutate(coupon.id, {
+      onSuccess: () => {
+        message.success('预约成功！开售时系统将代发本站秒杀入队')
+        navigate('/reservations')
+      },
+      onError: (err) => message.error(getErrorMessage(err, '预约失败')),
+    })
+  }
+
   return (
     <div className="coupon-detail-page">
       <div className="container">
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/coupons')} style={{ marginBottom: 24 }}>
           返回列表
         </Button>
+
+        {isPlaceholderData && (
+          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+            正在同步最新库存…
+          </Text>
+        )}
 
         <Row gutter={[24, 24]}>
           <Col xs={24} lg={16}>
@@ -89,6 +161,16 @@ const CouponDetail: React.FC = () => {
 
               {coupon.description && <Paragraph>{coupon.description}</Paragraph>}
 
+              {seckillType && (
+                <div style={{ marginBottom: 16 }}>
+                  <SeckillCountdown
+                    title="活动时间窗"
+                    startTime={coupon.seckillStartAt}
+                    endTime={coupon.seckillEndAt}
+                  />
+                </div>
+              )}
+
               <Descriptions column={2} bordered>
                 <Descriptions.Item label="面值">¥{coupon.faceValue}</Descriptions.Item>
                 <Descriptions.Item label="使用门槛">
@@ -100,6 +182,13 @@ const CouponDetail: React.FC = () => {
                 <Descriptions.Item label="有效期">{coupon.validDays} 天</Descriptions.Item>
                 <Descriptions.Item label="每人限领">{coupon.perUserLimit} 张</Descriptions.Item>
                 <Descriptions.Item label="类型">{couponTypeText(coupon.type)}</Descriptions.Item>
+                {seckillType && (
+                  <Descriptions.Item label="外部绑定" span={2}>
+                    {binding
+                      ? `${binding.platform} · SKU ${binding.externalSkuId}`
+                      : '未绑定外部商品'}
+                  </Descriptions.Item>
+                )}
               </Descriptions>
             </Card>
           </Col>
@@ -126,22 +215,70 @@ const CouponDetail: React.FC = () => {
 
               <Divider />
 
-              <Button
-                type="primary"
-                danger={seckillType}
-                size="large"
-                block
-                icon={seckillType ? <ThunderboltOutlined /> : undefined}
-                loading={acting}
-                disabled={soldOut || invalid}
-                onClick={handleClaim}
-              >
-                {soldOut ? '已抢光' : seckillType ? '立即秒杀' : '立即领取'}
-              </Button>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {seckillType && phase === 'no_window' ? (
+                  <Button size="large" block disabled>
+                    未配置时间窗
+                  </Button>
+                ) : seckillType && phase === 'upcoming' && alreadyReserved ? (
+                  <Button
+                    type="default"
+                    size="large"
+                    block
+                    icon={<CheckOutlined />}
+                    onClick={() => navigate('/reservations')}
+                  >
+                    已预约 · 查看
+                  </Button>
+                ) : seckillType && phase === 'upcoming' ? (
+                  <Button
+                    type="primary"
+                    size="large"
+                    block
+                    icon={<ClockCircleOutlined />}
+                    loading={reserve.isPending}
+                    disabled={invalid}
+                    onClick={handleReserve}
+                  >
+                    预约帮抢
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    danger={seckillType}
+                    size="large"
+                    block
+                    icon={seckillType ? <ThunderboltOutlined /> : undefined}
+                    loading={acting}
+                    disabled={soldOut || invalid || phase === 'ended'}
+                    onClick={handleClaim}
+                  >
+                    {phase === 'ended'
+                      ? '已结束'
+                      : soldOut
+                        ? '已抢光'
+                        : seckillType
+                          ? '立即秒杀'
+                          : '立即领取'}
+                  </Button>
+                )}
+              </Space>
 
               <div className="tips" style={{ marginTop: 12 }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  {invalid ? '该优惠券已失效' : soldOut ? '该优惠券已售罄' : '数量有限，先到先得'}
+                  {invalid
+                    ? '该优惠券已失效'
+                    : soldOut
+                      ? '该优惠券已售罄'
+                      : seckillType && phase === 'no_window'
+                        ? '请先由运营配置 seckillStartAt / seckillEndAt'
+                        : seckillType && phase === 'upcoming' && alreadyReserved
+                          ? '已预约，开售时系统代发本站秒杀入队'
+                          : seckillType && phase === 'upcoming'
+                            ? '开售时系统代发本站秒杀入队（不是跨平台代下单）'
+                            : seckillType
+                              ? '提交中请勿连点；弱网超时后请到订单页确认'
+                              : '数量有限，先到先得'}
                 </Text>
               </div>
             </Card>

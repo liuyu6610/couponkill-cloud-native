@@ -48,11 +48,11 @@ spec:
             periodSeconds: 15
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "{{ .Values.services.gateway.resources.requests.memory | default "512Mi" }}"
+              cpu: "{{ .Values.services.gateway.resources.requests.cpu | default "250m" }}"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "{{ .Values.services.gateway.resources.limits.memory | default "2Gi" }}"
+              cpu: "{{ .Values.services.gateway.resources.limits.cpu | default "1000m" }}"
           env:
             - name: SERVER_PORT
               value: "{{ .Values.services.gateway.port }}"

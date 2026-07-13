@@ -55,13 +55,13 @@ public class RedisConfig {
     @Value("${spring.data.redis.sentinel.nodes:}")
     private String sentinelNodes;
 
-    @Value("${spring.data.redis.lettuce.pool.max-active:64}")
+    @Value("${spring.data.redis.lettuce.pool.max-active:200}")
     private int poolMaxActive;
 
-    @Value("${spring.data.redis.lettuce.pool.max-idle:32}")
+    @Value("${spring.data.redis.lettuce.pool.max-idle:64}")
     private int poolMaxIdle;
 
-    @Value("${spring.data.redis.lettuce.pool.min-idle:8}")
+    @Value("${spring.data.redis.lettuce.pool.min-idle:16}")
     private int poolMinIdle;
 
     @Value("${spring.data.redis.lettuce.pool.max-wait:2000ms}")

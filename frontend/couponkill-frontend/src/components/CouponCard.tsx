@@ -1,9 +1,10 @@
 import React from 'react'
 import { Card, Typography, Button, Tag, Space } from 'antd'
-import { ThunderboltOutlined, GiftOutlined } from '@ant-design/icons'
+import { ThunderboltOutlined, GiftOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import type { Coupon } from '../types/api'
-import { couponStockOf, couponTotalStockOf, isSeckillCoupon } from '../types/api'
+import { couponStockOf, couponTotalStockOf, isSeckillCoupon, seckillWindowPhase } from '../types/api'
+import SeckillCountdown from './SeckillCountdown'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -12,7 +13,13 @@ interface CouponCardProps {
   showActions?: boolean
   size?: 'default' | 'small'
   seckillLoading?: boolean
+  reserveLoading?: boolean
+  /** 该券已有活跃预约（PENDING/FIRING/QUEUED） */
+  alreadyReserved?: boolean
+  bindingLabel?: string | null
   onSeckill?: (coupon: Coupon) => void
+  onReserve?: (coupon: Coupon) => void
+  onViewReservations?: () => void
 }
 
 const CouponCard: React.FC<CouponCardProps> = ({
@@ -20,13 +27,68 @@ const CouponCard: React.FC<CouponCardProps> = ({
   showActions = false,
   size = 'default',
   seckillLoading = false,
+  reserveLoading = false,
+  alreadyReserved = false,
+  bindingLabel,
   onSeckill,
+  onReserve,
+  onViewReservations,
 }) => {
   const seckill = isSeckillCoupon(coupon)
   const stock = couponStockOf(coupon)
   const totalStock = couponTotalStockOf(coupon)
   const soldOut = stock <= 0
   const invalid = coupon.status !== 1
+  const phase = seckill ? seckillWindowPhase(coupon) : 'no_window'
+
+  const renderSeckillCta = () => {
+    if (phase === 'no_window') {
+      return (
+        <Button block disabled>
+          未配置时间窗
+        </Button>
+      )
+    }
+    if (phase === 'upcoming') {
+      if (alreadyReserved) {
+        return (
+          <Button
+            type="default"
+            block
+            icon={<CheckOutlined />}
+            onClick={() => onViewReservations?.()}
+          >
+            已预约 · 查看
+          </Button>
+        )
+      }
+      return (
+        <Button
+          type="primary"
+          block
+          icon={<ClockCircleOutlined />}
+          loading={reserveLoading}
+          disabled={invalid}
+          onClick={() => onReserve?.(coupon)}
+        >
+          预约帮抢
+        </Button>
+      )
+    }
+    return (
+      <Button
+        type="primary"
+        danger
+        block
+        icon={<ThunderboltOutlined />}
+        loading={seckillLoading}
+        disabled={soldOut || invalid || phase === 'ended'}
+        onClick={() => onSeckill?.(coupon)}
+      >
+        {phase === 'ended' ? '已结束' : soldOut ? '已抢光' : '立即秒杀'}
+      </Button>
+    )
+  }
 
   return (
     <Card
@@ -71,24 +133,28 @@ const CouponCard: React.FC<CouponCardProps> = ({
             </Text>
           </Space>
         </div>
+
+        {seckill && size !== 'small' && (
+          <div style={{ marginTop: 8 }}>
+            <SeckillCountdown
+              title="本场时间窗"
+              startTime={coupon.seckillStartAt}
+              endTime={coupon.seckillEndAt}
+            />
+          </div>
+        )}
+
+        {bindingLabel != null && (
+          <Text type="secondary" style={{ display: 'block', marginTop: 8, fontSize: 12 }}>
+            {bindingLabel || '未绑定外部商品'}
+          </Text>
+        )}
       </div>
 
       {showActions && (
         <div className="coupon-actions" style={{ marginTop: 12 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
-            {seckill ? (
-              <Button
-                type="primary"
-                danger
-                block
-                icon={<ThunderboltOutlined />}
-                loading={seckillLoading}
-                disabled={soldOut || invalid}
-                onClick={() => onSeckill?.(coupon)}
-              >
-                {soldOut ? '已抢光' : '立即秒杀'}
-              </Button>
-            ) : null}
+            {seckill ? renderSeckillCta() : null}
             <Button block>
               <Link to={`/coupons/${coupon.id}`}>查看详情</Link>
             </Button>

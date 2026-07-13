@@ -690,4 +690,29 @@ public class CouponServiceImpl implements CouponService {
             return new byte[0];
         }
     }
+
+    @Override
+    @Transactional
+    public Coupon updateSeckillWindow(Long couponId, LocalDateTime seckillStartAt, LocalDateTime seckillEndAt) {
+        if (couponId == null) {
+            throw new IllegalArgumentException("couponId 不能为空");
+        }
+        if (seckillStartAt == null || seckillEndAt == null) {
+            throw new IllegalArgumentException("seckillStartAt / seckillEndAt 不能为空");
+        }
+        if (!seckillStartAt.isBefore(seckillEndAt)) {
+            throw new IllegalArgumentException("seckillStartAt 必须早于 seckillEndAt");
+        }
+        Coupon existing = getCouponById(couponId);
+        if (existing == null) {
+            throw new IllegalArgumentException("优惠券不存在: " + couponId);
+        }
+        if (existing.getType() == null || existing.getType() != 2) {
+            throw new IllegalArgumentException("仅秒抢券可设置活动时间窗");
+        }
+        couponMapper.updateSeckillWindow(couponId, seckillStartAt, seckillEndAt);
+        redisTemplate.delete(COUPON_DETAIL_KEY + couponId);
+        redisTemplate.delete(COUPON_AVAILABLE_KEY);
+        return getCouponById(couponId);
+    }
 }

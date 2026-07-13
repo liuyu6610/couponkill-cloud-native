@@ -50,6 +50,12 @@ public class ConnectorController {
         return ApiResponse.success(bindingService.listAll());
     }
 
+    @Operation(summary = "按券查询绑定（C 端只读）")
+    @GetMapping("/bindings/by-coupon/{couponId}")
+    public ApiResponse<PlatformSkuBinding> bindingByCoupon(@PathVariable Long couponId) {
+        return ApiResponse.success(bindingService.getByCouponId(couponId));
+    }
+
     @Operation(summary = "手动同步单个绑定；force=true 允许抬高库存（校准）")
     @PostMapping("/sync/{id}")
     public ApiResponse<PlatformSkuBinding> syncOne(

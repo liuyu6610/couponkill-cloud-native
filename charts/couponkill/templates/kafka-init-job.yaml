@@ -21,9 +21,13 @@ spec:
           imagePullPolicy: {{ .Values.kafka.init.image.pullPolicy }}
           env:
             - name: KAFKA_BROKER
-              value: "{{ .Values.kafka.broker }}"
+              value: "{{ .Values.kafka.broker | default .Values.kafka.bootstrapServers }}"
             - name: KAFKA_TOPICS
-              value: "{{ .Values.kafka.topics }}"
+              value: "{{ if kindIs "slice" .Values.kafka.topics }}{{ join "," .Values.kafka.topics }}{{ else }}{{ .Values.kafka.topics }}{{ end }}"
+            - name: KAFKA_PARTITIONS
+              value: "{{ .Values.kafka.partitions | default 16 }}"
+            - name: KAFKA_REPLICATION_FACTOR
+              value: "{{ .Values.kafka.replicationFactor | default 1 }}"
           command:
             - /bin/sh
             - -c
@@ -32,13 +36,16 @@ spec:
               until kafka-topics --bootstrap-server $KAFKA_BROKER --list; do
                 sleep 2
               done
-              
-              echo "Creating Kafka topics..."
+
+              echo "Creating Kafka topics (partitions=$KAFKA_PARTITIONS)..."
               IFS=',' read -ra TOPICS <<< "$KAFKA_TOPICS"
               for topic in "${TOPICS[@]}"; do
-                kafka-topics --bootstrap-server $KAFKA_BROKER --create --if-not-exists --topic "$topic" --partitions 6 --replication-factor 1
+                topic=$(echo "$topic" | tr -d '[:space:]')
+                [ -z "$topic" ] && continue
+                kafka-topics --bootstrap-server $KAFKA_BROKER --create --if-not-exists \
+                  --topic "$topic" --partitions $KAFKA_PARTITIONS --replication-factor $KAFKA_REPLICATION_FACTOR
               done
-              
+
               echo "Kafka initialization completed."
       restartPolicy: OnFailure
 {{- end }}

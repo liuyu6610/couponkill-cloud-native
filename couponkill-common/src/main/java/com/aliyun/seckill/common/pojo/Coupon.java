@@ -27,6 +27,12 @@ public class Coupon implements Serializable {
     private Integer remainingStock = 0;
     private Integer seckillRemainingStock = 0;
     private Integer status = 0; // 0-无效, 1-有效
+    /** 秒杀开售时间（活动时间窗起点）；常驻券可为空 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime seckillStartAt;
+    /** 秒杀结束时间（活动时间窗终点）；常驻券可为空 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime seckillEndAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -66,6 +72,8 @@ public class Coupon implements Serializable {
         }
         
         shard.setStatus(original.getStatus());
+        shard.setSeckillStartAt(original.getSeckillStartAt());
+        shard.setSeckillEndAt(original.getSeckillEndAt());
         shard.setCreateTime(original.getCreateTime());
         shard.setUpdateTime(original.getUpdateTime());
         shard.setVersion(0);

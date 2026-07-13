@@ -1,13 +1,15 @@
-import React from 'react'
-import { Table, Typography, Button, Tag, Space, Card, Popconfirm, App } from 'antd'
-import { EyeOutlined } from '@ant-design/icons'
+import React, { useState } from 'react'
+import { Table, Typography, Button, Tag, Space, Card, Popconfirm, App, Result } from 'antd'
+import { EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import type { RootState } from '../store'
-import { useUserOrders, useCancelOrder } from '../hooks/useOrders'
+import { useUserOrders, useCancelOrder, ORDERS_DEFAULT_PAGE_SIZE } from '../hooks/useOrders'
+import { useSubmitGuard } from '../hooks/useSubmitGuard'
+import { getErrorMessage } from '../lib/errorMessage'
 import { OrderStatus, orderStatusColor, orderStatusText } from '../types/api'
 import type { Order } from '../types/api'
-import type { TableColumnsType } from 'antd'
+import type { TableColumnsType, TablePaginationConfig } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -16,16 +18,28 @@ const OrderList: React.FC = () => {
   const { message } = App.useApp()
   const { user } = useSelector((state: RootState) => state.auth)
 
-  const { data: orders = [], isLoading } = useUserOrders(user?.id)
+  const [pageNum, setPageNum] = useState(1)
+  const [pageSize, setPageSize] = useState(ORDERS_DEFAULT_PAGE_SIZE)
+
+  const {
+    data: orders = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    isPlaceholderData,
+  } = useUserOrders(user?.id, pageNum, pageSize)
   const cancelOrder = useCancelOrder()
+  const canSubmit = useSubmitGuard(800)
 
   const handleCancel = (order: Order) => {
-    if (!user) return
+    if (!user || !canSubmit(cancelOrder.isPending)) return
     cancelOrder.mutate(
       { orderId: order.id },
       {
         onSuccess: () => message.success('订单已取消'),
-        onError: (err) => message.error((err as Error).message || '取消失败'),
+        onError: (err) => message.error(getErrorMessage(err, '取消失败')),
       }
     )
   }
@@ -68,24 +82,60 @@ const OrderList: React.FC = () => {
     },
   ]
 
+  const pagination: TablePaginationConfig = {
+    current: pageNum,
+    pageSize,
+    // API 未返回 total：用「本页满页则可能还有下一页」近似，避免假总数
+    total: isPlaceholderData
+      ? pageNum * pageSize + 1
+      : orders.length < pageSize
+        ? (pageNum - 1) * pageSize + orders.length
+        : pageNum * pageSize + 1,
+    showSizeChanger: true,
+    showQuickJumper: true,
+    pageSizeOptions: [10, 20, 50],
+    onChange: (page, size) => {
+      setPageNum(page)
+      setPageSize(size)
+    },
+  }
+
   return (
     <div className="order-list-page">
       <div className="container">
-        <div className="page-header">
-          <Title level={2}>我的订单</Title>
-          <Text type="secondary">查看和管理您的订单信息</Text>
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <Title level={2}>我的订单</Title>
+            <Text type="secondary">查看和管理您的订单信息</Text>
+          </div>
+          <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => void refetch()}>
+            刷新
+          </Button>
         </div>
 
         <Card style={{ marginTop: 24 }}>
-          <Table
-            columns={columns}
-            dataSource={orders}
-            loading={isLoading}
-            rowKey="id"
-            scroll={{ x: 'max-content' }}
-            pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
-            locale={{ emptyText: '暂无订单数据' }}
-          />
+          {isError && !orders.length ? (
+            <Result
+              status="error"
+              title="订单加载失败"
+              subTitle={getErrorMessage(error, '请检查网络后重试')}
+              extra={
+                <Button type="primary" icon={<ReloadOutlined />} loading={isFetching} onClick={() => void refetch()}>
+                  重新加载
+                </Button>
+              }
+            />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={orders}
+              loading={isLoading || (isFetching && isPlaceholderData)}
+              rowKey="id"
+              scroll={{ x: 'max-content' }}
+              pagination={pagination}
+              locale={{ emptyText: '暂无订单数据' }}
+            />
+          )}
         </Card>
       </div>
     </div>

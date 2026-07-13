@@ -17,6 +17,8 @@
         <result column="remaining_stock" property="remainingStock"/>
         <result column="seckill_remaining_stock" property="seckillRemainingStock"/>
         <result column="status" property="status"/>
+        <result column="seckill_start_at" property="seckillStartAt"/>
+        <result column="seckill_end_at" property="seckillEndAt"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="version" property="version"/>
@@ -26,11 +28,13 @@
         INSERT INTO coupon (
             id, name, description, type, face_value, min_spend, valid_days,
             per_user_limit, total_stock, seckill_total_stock, remaining_stock,
-            seckill_remaining_stock, status, create_time, update_time, version, shard_index
+            seckill_remaining_stock, status, seckill_start_at, seckill_end_at,
+            create_time, update_time, version, shard_index
         ) VALUES (
                      #{id}, #{name}, #{description}, #{type}, #{faceValue}, #{minSpend}, #{validDays},
                      #{perUserLimit}, #{totalStock}, #{seckillTotalStock}, #{remainingStock},
-                     #{seckillRemainingStock}, #{status}, #{createTime}, #{updateTime}, #{version}, #{shardIndex}
+                     #{seckillRemainingStock}, #{status}, #{seckillStartAt}, #{seckillEndAt},
+                     #{createTime}, #{updateTime}, #{version}, #{shardIndex}
                  )
     </insert>
 
@@ -64,7 +68,8 @@
     <select id="selectByCouponId" resultMap="CouponMap">
         SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
                per_user_limit, total_stock, seckill_total_stock, remaining_stock,
-               seckill_remaining_stock, status, create_time, update_time, version
+               seckill_remaining_stock, status, seckill_start_at, seckill_end_at,
+               create_time, update_time, version
         FROM coupon 
         WHERE id = #{couponId} 
         ORDER BY shard_index
@@ -74,12 +79,21 @@
     <select id="selectMainShardsForCache" resultMap="CouponMap">
         SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
                per_user_limit, total_stock, seckill_total_stock, remaining_stock,
-               seckill_remaining_stock, status, create_time, update_time, version
+               seckill_remaining_stock, status, seckill_start_at, seckill_end_at,
+               create_time, update_time, version
         FROM coupon 
         WHERE shard_index = 0 AND status = 1
         ORDER BY create_time DESC
         LIMIT 1000
     </select>
+
+    <update id="updateSeckillWindow">
+        UPDATE coupon
+        SET seckill_start_at = #{seckillStartAt},
+            seckill_end_at = #{seckillEndAt},
+            update_time = NOW()
+        WHERE id = #{couponId}
+    </update>
 
     <update id="updateStockByShardIndex">
         UPDATE coupon

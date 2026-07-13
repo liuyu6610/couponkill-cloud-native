@@ -24,6 +24,16 @@ shardingsphere:
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.aliyun.seckill.common.pojo
+
+# P0 预约帮抢（可被 Nacos couponkill-order-service.yaml 覆盖）
+couponkill:
+  reservation:
+    enabled: true
+    scan-interval-ms: 1000
+    expire-interval-ms: 60000
+    max-retry: 3
+    batch-size: 50
+
 management:
   endpoints:
     web:

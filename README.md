@@ -201,12 +201,12 @@ spec:
 - 通过ShardingSphere实现分库分表的路由和管理
 - 实现全局唯一ID生成器，保证分库分表环境下的ID唯一性
 
-### RocketMQ消息队列
-- 使用RocketMQ异步处理订单创建、库存扣减等非核心流程
-- 实现消息的顺序消费，保证数据一致性
-- 通过消息队列削峰填谷，缓解瞬时高并发压力
-- 实现消息补偿机制，确保消息的可靠传递
-- 支持消息的批量发送和消费，提高处理效率
+### Kafka 消息队列
+- 使用 Apache Kafka 异步处理秒杀落单、结果通知与补偿（已自 RocketMQ 迁移）
+- 热路径入队保持同步 ack + 有界超时，不可 fire-and-forget
+- 通过分区并行消费削峰填谷；分区数由 Helm `kafka.partitions` 真源控制
+- 实现消费幂等与补偿机制，确保至少一次投递下的业务正确性
+- 详见 `docs/MIGRATION-PostgreSQL-Kafka.md` 与 `charts/couponkill/templates/kafka-init-job.yaml`
 
 ### 线程池优化
 - 配置合理的线程池参数，包括核心线程数、最大线程数、队列容量等
@@ -227,7 +227,7 @@ spec:
 - Go服务处理高并发场景下的简单逻辑，发挥Go语言高并发优势
 - 通过Nacos实现服务发现和服务配置的统一管理
 - 实现智能负载分配，当Java服务达到处理能力上限时，自动将额外请求路由到Go服务
-- 通过RocketMQ实现服务间异步通信，降低服务间耦合度
+- 通过 Kafka 实现服务间异步通信，降低服务间耦合度（Go 旁路默认关闭，不进热路径）
 
 ## 零停机集群切换
 
@@ -235,11 +235,9 @@ CouponKill 系统支持中间件的零停机集群切换功能，可以在不中
 
 ### 支持的中间件集群模式
 
-1. **MySQL**
+1. **PostgreSQL**（已自 MySQL 迁移）
    - 单节点模式 (Standalone)
    - 主从复制模式 (Master-Slave)
-   - Group Replication 模式
-   - InnoDB Cluster 模式
 
 2. **Redis**
    - 单节点模式 (Standalone)
@@ -247,7 +245,7 @@ CouponKill 系统支持中间件的零停机集群切换功能，可以在不中
    - 哨兵模式 (Sentinel)
    - Redis Cluster 模式
 
-3. **RocketMQ**
+3. **Kafka**（已自 RocketMQ 迁移，KRaft 无需 ZooKeeper）
    - 单节点模式 (Standalone)
    - 集群模式 (Cluster)
 

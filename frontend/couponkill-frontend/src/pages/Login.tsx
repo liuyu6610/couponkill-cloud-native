@@ -1,17 +1,17 @@
 import React from 'react'
-import { Form, Input, Button, Card, Typography, Divider, Space, App } from 'antd'
-import { UserOutlined, LockOutlined, GoogleOutlined, GithubOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Card, Typography, App, Alert } from 'antd'
+import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, clearError } from '../store/slices/authSlice'
 import type { RootState, AppDispatch } from '../store'
+import { getErrorMessage } from '../lib/errorMessage'
 
 const { Title, Text } = Typography
 
 interface LoginFormData {
   username: string
   password: string
-  remember?: boolean
 }
 
 const Login: React.FC = () => {
@@ -25,12 +25,10 @@ const Login: React.FC = () => {
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/'
 
   React.useEffect(() => {
-    // 清除之前的错误信息
     dispatch(clearError())
   }, [dispatch])
 
   React.useEffect(() => {
-    // 已登录则重定向到之前的页面
     if (isAuthenticated) {
       navigate(from, { replace: true })
     }
@@ -42,7 +40,7 @@ const Login: React.FC = () => {
       message.success('登录成功！')
       navigate(from, { replace: true })
     } catch (err) {
-      message.error((err as string) || '登录失败，请检查用户名和密码')
+      message.error(getErrorMessage(err, '登录失败，请检查用户名和密码'))
     }
   }
 
@@ -56,10 +54,18 @@ const Login: React.FC = () => {
               <Text type="secondary">请输入您的账户信息</Text>
             </div>
 
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message="演示账号"
+              description="用户名 demo，密码 demo1234"
+            />
+
             <Form
               name="login"
               className="login-form"
-              initialValues={{ remember: true }}
+              initialValues={{ username: 'demo', password: 'demo1234' }}
               onFinish={onFinish}
               size="large"
               layout="vertical"
@@ -68,12 +74,12 @@ const Login: React.FC = () => {
                 name="username"
                 rules={[
                   { required: true, message: '请输入用户名!' },
-                  { min: 3, message: '用户名至少3个字符!' }
+                  { min: 3, message: '用户名至少3个字符!' },
                 ]}
               >
                 <Input
                   prefix={<UserOutlined />}
-                  placeholder="用户名或邮箱"
+                  placeholder="用户名"
                   autoComplete="username"
                 />
               </Form.Item>
@@ -82,7 +88,7 @@ const Login: React.FC = () => {
                 name="password"
                 rules={[
                   { required: true, message: '请输入密码!' },
-                  { min: 6, message: '密码至少6个字符!' }
+                  { min: 6, message: '密码至少6个字符!' },
                 ]}
               >
                 <Input.Password
@@ -90,17 +96,6 @@ const Login: React.FC = () => {
                   placeholder="密码"
                   autoComplete="current-password"
                 />
-              </Form.Item>
-
-              <Form.Item>
-                <div className="form-actions">
-                  <Form.Item name="remember" valuePropName="checked" noStyle>
-                    <label>记住我</label>
-                  </Form.Item>
-                  <Link to="/forgot-password" className="forgot-password">
-                    忘记密码？
-                  </Link>
-                </div>
               </Form.Item>
 
               {error && (
@@ -121,19 +116,6 @@ const Login: React.FC = () => {
                 </Button>
               </Form.Item>
             </Form>
-
-            <Divider>其他登录方式</Divider>
-
-            <div className="social-login">
-              <Space size="middle">
-                <Button icon={<GoogleOutlined />} size="large">
-                  Google
-                </Button>
-                <Button icon={<GithubOutlined />} size="large">
-                  GitHub
-                </Button>
-              </Space>
-            </div>
 
             <div className="login-footer">
               <Text type="secondary">

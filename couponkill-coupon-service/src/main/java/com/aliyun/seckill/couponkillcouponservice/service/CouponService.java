@@ -3,6 +3,7 @@ package com.aliyun.seckill.couponkillcouponservice.service;
 import com.aliyun.seckill.common.connector.SyncStockResult;
 import com.aliyun.seckill.common.pojo.Coupon;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CouponService {
@@ -98,4 +99,9 @@ public interface CouponService {
      * @return 含 appliedStock 的同步结果（失败时 success=false）
      */
     SyncStockResult syncRedisStock(Long couponId, Long targetStock, boolean force);
+
+    /**
+     * 设置/更新秒杀活动时间窗；start 必须早于 end。
+     */
+    Coupon updateSeckillWindow(Long couponId, LocalDateTime seckillStartAt, LocalDateTime seckillEndAt);
 }

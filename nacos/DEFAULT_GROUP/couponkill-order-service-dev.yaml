@@ -83,6 +83,13 @@ couponkill:
     java:
       qps-threshold: 500
     fallback-to-go: false
+  # P0 预约帮抢调度
+  reservation:
+    enabled: true
+    scan-interval-ms: 1000
+    expire-interval-ms: 60000
+    max-retry: 3
+    batch-size: 50
 
 # 订单服务集群配置
 order:

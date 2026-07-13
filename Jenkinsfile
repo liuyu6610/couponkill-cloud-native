@@ -56,6 +56,12 @@ pipeline {
                         sh 'docker build -t ${CANARY_REGISTRY}/user:canary -f couponkill-user-service/Dockerfile .'
                     }
                 }
+                stage('Connector Service') {
+                    steps {
+                        sh 'docker build -t ${REGISTRY}/connector:${BUILD_NUMBER} -f couponkill-connector-service/Dockerfile .'
+                        sh 'docker build -t ${CANARY_REGISTRY}/connector:canary -f couponkill-connector-service/Dockerfile .'
+                    }
+                }
                 stage('Go Service') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/seckill-go:${BUILD_NUMBER} -f couponkill-go-service/Dockerfile .'
@@ -79,6 +85,7 @@ pipeline {
                     sh 'docker push ${REGISTRY}/coupon:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/order:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/user:${BUILD_NUMBER}'
+                    sh 'docker push ${REGISTRY}/connector:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/seckill-go:${BUILD_NUMBER}'
                     sh 'docker push ${REGISTRY}/operator:${BUILD_NUMBER}'
                     
@@ -87,6 +94,7 @@ pipeline {
                     sh 'docker push ${CANARY_REGISTRY}/coupon:canary'
                     sh 'docker push ${CANARY_REGISTRY}/order:canary'
                     sh 'docker push ${CANARY_REGISTRY}/user:canary'
+                    sh 'docker push ${CANARY_REGISTRY}/connector:canary'
                     sh 'docker push ${CANARY_REGISTRY}/seckill-go:canary'
                     sh 'docker push ${CANARY_REGISTRY}/operator:canary'
                 }
@@ -98,25 +106,15 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'docker-registry', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh 'echo ${DOCKER_PASSWORD} | docker login ${REGISTRY} -u ${DOCKER_USERNAME} --password-stdin'
                     
-                    // MySQL
-                    sh 'docker pull mysql:8.0'
-                    sh 'docker tag mysql:8.0 ${REGISTRY}/mysql'
-                    sh 'docker push ${REGISTRY}/mysql'
+                    // PostgreSQL（替代 MySQL）
+                    sh 'docker pull postgres:16'
+                    sh 'docker tag postgres:16 ${REGISTRY}/postgres'
+                    sh 'docker push ${REGISTRY}/postgres'
                     
                     // Redis
                     sh 'docker pull redis:7.0'
                     sh 'docker tag redis:7.0 ${REGISTRY}/redis'
                     sh 'docker push ${REGISTRY}/redis'
-                    
-                    // RocketMQ nameserver
-                    sh 'docker pull apache/rocketmq:5.3.1'
-                    sh 'docker tag apache/rocketmq:5.3.1 ${REGISTRY}/rocketmq-namesrv'
-                    sh 'docker push ${REGISTRY}/rocketmq-namesrv'
-                    
-                    // RocketMQ broker
-                    sh 'docker pull apache/rocketmq:5.3.1'
-                    sh 'docker tag apache/rocketmq:5.3.1 ${REGISTRY}/rocketmq-broker'
-                    sh 'docker push ${REGISTRY}/rocketmq-broker'
                     
                     // Nacos
                     sh 'docker pull nacos/nacos-server:v3.1.1'
@@ -128,15 +126,10 @@ pipeline {
                     sh 'docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}/sentinel-dashboard'
                     sh 'docker push ${REGISTRY}/sentinel-dashboard'
                     
-                    // Kafka
-                    sh 'docker pull bitnami/kafka:3.4.0'
-                    sh 'docker tag bitnami/kafka:3.4.0 ${REGISTRY}/kafka'
+                    // Kafka KRaft（不再拉取 RocketMQ / ZooKeeper）
+                    sh 'docker pull apache/kafka:3.8.0'
+                    sh 'docker tag apache/kafka:3.8.0 ${REGISTRY}/kafka'
                     sh 'docker push ${REGISTRY}/kafka'
-                    
-                    // Zookeeper (for Kafka)
-                    sh 'docker pull bitnami/zookeeper:3.8.1'
-                    sh 'docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}/zookeeper'
-                    sh 'docker push ${REGISTRY}/zookeeper'
                 }
             }
         }

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aliyun.seckill.couponkillorderservice.mapper.SeckillReservationMapper">
+
+    <resultMap id="ReservationMap" type="com.aliyun.seckill.couponkillorderservice.domain.SeckillReservation">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="status" property="status"/>
+        <result column="reserve_at" property="reserveAt"/>
+        <result column="trigger_at" property="triggerAt"/>
+        <result column="fired_at" property="firedAt"/>
+        <result column="request_id" property="requestId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="fail_code" property="failCode"/>
+        <result column="fail_reason" property="failReason"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="version" property="version"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO seckill_reservation (
+            user_id, coupon_id, status, reserve_at, trigger_at,
+            retry_count, version, create_time, update_time
+        ) VALUES (
+            #{userId}, #{couponId}, #{status}, #{reserveAt}, #{triggerAt},
+            #{retryCount}, #{version}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <select id="selectById" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT 100
+    </select>
+
+    <select id="selectActiveByUserAndCoupon" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+          AND status IN ('PENDING', 'FIRING', 'QUEUED')
+        LIMIT 1
+    </select>
+
+    <select id="selectDuePending" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation
+        WHERE status = 'PENDING'
+          AND (trigger_at IS NULL OR trigger_at &lt;= #{now})
+        ORDER BY trigger_at ASC NULLS FIRST, id ASC
+        LIMIT #{limit}
+    </select>
+
+    <update id="claimForFire">
+        UPDATE seckill_reservation
+        SET status = 'FIRING',
+            fired_at = NOW(),
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status = 'PENDING' AND version = #{version}
+    </update>
+
+    <update id="markQueued">
+        UPDATE seckill_reservation
+        SET status = 'QUEUED',
+            request_id = #{requestId},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status = 'FIRING' AND version = #{version}
+    </update>
+
+    <update id="markFailed">
+        UPDATE seckill_reservation
+        SET status = 'FAILED',
+            fail_code = #{failCode},
+            fail_reason = #{failReason},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status IN ('PENDING', 'FIRING', 'QUEUED') AND version = #{version}
+    </update>
+
+    <update id="markSuccess">
+        UPDATE seckill_reservation
+        SET status = 'SUCCESS',
+            order_id = #{orderId},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status IN ('FIRING', 'QUEUED') AND version = #{version}
+    </update>
+
+    <update id="markCancelled">
+        UPDATE seckill_reservation
+        SET status = 'CANCELLED',
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId} AND status = 'PENDING'
+    </update>
+
+    <update id="markExpired">
+        UPDATE seckill_reservation
+        SET status = 'EXPIRED',
+            fail_reason = '活动已结束仍未触发',
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status = 'PENDING'
+    </update>
+
+    <update id="bumpRetry">
+        UPDATE seckill_reservation
+        SET retry_count = COALESCE(retry_count, 0) + 1,
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND version = #{version}
+    </update>
+
+    <update id="revertToPending">
+        UPDATE seckill_reservation
+        SET status = 'PENDING',
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND status = 'FIRING' AND version = #{version}
+    </update>
+
+    <select id="selectQueuedForResultSync" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation
+        WHERE status = 'QUEUED' AND request_id IS NOT NULL
+        ORDER BY update_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <update id="markSuccessByUserCoupon">
+        UPDATE seckill_reservation
+        SET status = 'SUCCESS',
+            order_id = #{orderId},
+            version = version + 1,
+            update_time = NOW()
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+          AND status IN ('FIRING', 'QUEUED')
+    </update>
+
+    <update id="markFailedByUserCoupon">
+        UPDATE seckill_reservation
+        SET status = 'FAILED',
+            fail_code = COALESCE(fail_code, 50000),
+            fail_reason = #{failReason},
+            version = version + 1,
+            update_time = NOW()
+        WHERE user_id = #{userId} AND coupon_id = #{couponId}
+          AND status IN ('FIRING', 'QUEUED')
+    </update>
+
+    <select id="selectExpiredPending" resultMap="ReservationMap">
+        SELECT * FROM seckill_reservation
+        WHERE status = 'PENDING'
+          AND trigger_at IS NOT NULL
+          AND trigger_at &lt; #{now}
+        ORDER BY id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 卡住的 FIRING：超过 before 仍未入队 → 回 PENDING 由调度重试 -->
+    <update id="reclaimStuckFiring">
+        UPDATE seckill_reservation
+        SET status = 'PENDING',
+            version = version + 1,
+            update_time = NOW()
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id FROM seckill_reservation
+                WHERE status = 'FIRING'
+                  AND COALESCE(fired_at, update_time) &lt; #{before}
+                ORDER BY id ASC
+                LIMIT #{limit}
+            ) t
+        )
+    </update>
+</mapper>

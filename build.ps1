@@ -32,6 +32,7 @@ function Build-All-Images {
     docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
     docker build -t order:latest -f couponkill-order-service/Dockerfile .
     docker build -t user:latest -f couponkill-user-service/Dockerfile .
+    docker build -t connector:latest -f couponkill-connector-service/Dockerfile .
     docker build -t seckill-go:latest -f couponkill-go-service/Dockerfile .
     docker build -t operator:latest -f couponkill-operator/Dockerfile .
     
@@ -61,6 +62,7 @@ function Build-And-Push-All {
     docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
     docker build -t order:latest -f couponkill-order-service/Dockerfile .
     docker build -t user:latest -f couponkill-user-service/Dockerfile .
+    docker build -t connector:latest -f couponkill-connector-service/Dockerfile .
     docker build -t seckill-go:latest -f couponkill-go-service/Dockerfile .
     docker build -t operator:latest -f couponkill-operator/Dockerfile .
     
@@ -69,6 +71,7 @@ function Build-And-Push-All {
     docker tag coupon:latest "${REGISTRY}:coupon"
     docker tag order:latest "${REGISTRY}:order"
     docker tag user:latest "${REGISTRY}:user"
+    docker tag connector:latest "${REGISTRY}:connector"
     docker tag seckill-go:latest "${REGISTRY}:seckill-go"
     docker tag operator:latest "${REGISTRY}:operator"
     
@@ -77,6 +80,7 @@ function Build-And-Push-All {
     docker push "${REGISTRY}:coupon"
     docker push "${REGISTRY}:order"
     docker push "${REGISTRY}:user"
+    docker push "${REGISTRY}:connector"
     docker push "${REGISTRY}:seckill-go"
     docker push "${REGISTRY}:operator"
     
@@ -90,6 +94,7 @@ function Build-All-Images-Canary {
     docker build -t coupon:latest -f couponkill-coupon-service/Dockerfile .
     docker build -t order:latest -f couponkill-order-service/Dockerfile .
     docker build -t user:latest -f couponkill-user-service/Dockerfile .
+    docker build -t connector:latest -f couponkill-connector-service/Dockerfile .
     docker build -t seckill-go:latest -f couponkill-go-service/Dockerfile .
     docker build -t operator:latest -f couponkill-operator/Dockerfile .
     
@@ -98,6 +103,7 @@ function Build-All-Images-Canary {
     docker tag coupon:latest "${CANARY_REGISTRY}:coupon"
     docker tag order:latest "${CANARY_REGISTRY}:order"
     docker tag user:latest "${CANARY_REGISTRY}:user"
+    docker tag connector:latest "${CANARY_REGISTRY}:connector"
     docker tag seckill-go:latest "${CANARY_REGISTRY}:seckill-go"
     docker tag operator:latest "${CANARY_REGISTRY}:operator"
     
@@ -111,6 +117,7 @@ function Push-All-Images-Canary {
     docker push "${CANARY_REGISTRY}:coupon"
     docker push "${CANARY_REGISTRY}:order"
     docker push "${CANARY_REGISTRY}:user"
+    docker push "${CANARY_REGISTRY}:connector"
     docker push "${CANARY_REGISTRY}:seckill-go"
     docker push "${CANARY_REGISTRY}:operator"
     
@@ -125,49 +132,34 @@ function Build-And-Push-All-Canary {
 }
 
 function Pull-Dependency-Images {
-    Write-Host "Pulling all dependency images to local registry..." -ForegroundColor Green
+    Write-Host "Pulling dependency images (PostgreSQL + Kafka + Redis + Nacos + Sentinel)..." -ForegroundColor Green
     
-    # Pull and retag MySQL image
-    docker pull mysql:8.0
-    docker tag mysql:8.0 "${REGISTRY}/mysql"
-    docker push "${REGISTRY}/mysql"
+    # PostgreSQL（替代已废弃的 MySQL 镜像拉取）
+    docker pull postgres:16
+    docker tag postgres:16 "${REGISTRY}/postgres"
+    docker push "${REGISTRY}/postgres"
     
-    # Pull and retag Redis image
+    # Redis
     docker pull redis:7.0
     docker tag redis:7.0 "${REGISTRY}/redis"
     docker push "${REGISTRY}/redis"
     
-    # Pull and retag RocketMQ nameserver image
-    docker pull apache/rocketmq:5.3.1
-    docker tag apache/rocketmq:5.3.1 "${REGISTRY}/rocketmq-namesrv"
-    docker push "${REGISTRY}/rocketmq-namesrv"
-    
-    # Pull and retag RocketMQ broker image
-    docker pull apache/rocketmq:5.3.1
-    docker tag apache/rocketmq:5.3.1 "${REGISTRY}/rocketmq-broker"
-    docker push "${REGISTRY}/rocketmq-broker"
-    
-    # Pull and retag Nacos image
+    # Nacos
     docker pull nacos/nacos-server:v3.1.1
     docker tag nacos/nacos-server:v3.1.1 "${REGISTRY}/nacos-server"
     docker push "${REGISTRY}/nacos-server"
     
-    # Pull and retag Sentinel image
+    # Sentinel
     docker pull bladex/sentinel-dashboard:1.8.6
     docker tag bladex/sentinel-dashboard:1.8.6 "${REGISTRY}/sentinel-dashboard"
     docker push "${REGISTRY}/sentinel-dashboard:1.8.6"
     
-    # Pull and retag Kafka image
-    docker pull bitnami/kafka:3.4.0
-    docker tag bitnami/kafka:3.4.0 "${REGISTRY}/kafka"
+    # Kafka（KRaft，无需 ZooKeeper / RocketMQ）
+    docker pull apache/kafka:3.8.0
+    docker tag apache/kafka:3.8.0 "${REGISTRY}/kafka"
     docker push "${REGISTRY}/kafka"
     
-    # Pull and retag Zookeeper image (for Kafka)
-    docker pull bitnami/zookeeper:3.8.1
-    docker tag bitnami/zookeeper:3.8.1 "${REGISTRY}/zookeeper"
-    docker push "${REGISTRY}/zookeeper"
-    
-    Write-Host "All dependency images pulled and pushed successfully!" -ForegroundColor Green
+    Write-Host "Dependency images pulled and pushed (PG+Kafka+Redis). MySQL/RocketMQ pulls removed." -ForegroundColor Green
 }
 
 function Build-And-Push-All-Complete {

@@ -63,19 +63,17 @@ spec:
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
-            # MySQL集群配置
-            - name: MYSQL_CLUSTER_ENABLED
+            # 集群开关真源：POSTGRES_/KAFKA_/REDIS_（已去掉误导性 MYSQL_/ROCKETMQ_）
+            - name: POSTGRES_CLUSTER_ENABLED
               value: "{{ .Values.mysql.cluster.enabled | default "false" }}"
-            - name: MYSQL_CLUSTER_TYPE
+            - name: POSTGRES_CLUSTER_TYPE
               value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
-            # Redis集群配置
             - name: REDIS_CLUSTER_ENABLED
               value: "{{ .Values.redis.cluster.enabled | default "false" }}"
             - name: REDIS_CLUSTER_TYPE
               value: "{{ .Values.redis.cluster.type | default "standalone" }}"
-            # RocketMQ集群配置
-            - name: ROCKETMQ_CLUSTER_ENABLED
-              value: "{{ .Values.rocketmq.cluster.enabled | default "false" }}"
+            - name: KAFKA_CLUSTER_ENABLED
+              value: "{{ .Values.kafka.cluster.enabled | default "false" }}"
             # JVM 单真源 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders）
             - name: JAVA_TOOL_OPTIONS
               value: "{{ .Values.services.coupon.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0\" }}"
@@ -83,14 +81,14 @@ spec:
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.coupon.threadPoolOpts }}"
             {{- end }}
-          # 资源限制
+          # 资源限制：须 ≥ JVM 堆（MaxRAMPercentage / Xmx），避免 OOMKill
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "{{ .Values.services.coupon.resources.requests.memory | default "1Gi" }}"
+              cpu: "{{ .Values.services.coupon.resources.requests.cpu | default "500m" }}"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "{{ .Values.services.coupon.resources.limits.memory | default "4Gi" }}"
+              cpu: "{{ .Values.services.coupon.resources.limits.cpu | default "2000m" }}"
       volumes:
         - name: config-volume
           emptyDir: {}

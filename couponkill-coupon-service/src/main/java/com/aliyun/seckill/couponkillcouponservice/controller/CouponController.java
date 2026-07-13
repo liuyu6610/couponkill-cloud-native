@@ -49,9 +49,22 @@ public class CouponController {
             @Parameter(description = "有效期(天)") @RequestParam Integer validDays,
             @Parameter(description = "每人限领数量") @RequestParam Integer perUserLimit,
             @Parameter(description = "总库存") @RequestParam Integer totalStock,
-            @Parameter(description = "秒杀总库存(仅秒抢类型有效)") @RequestParam(required = false) Integer seckillTotalStock) {
+            @Parameter(description = "秒杀总库存(仅秒抢类型有效)") @RequestParam(required = false) Integer seckillTotalStock,
+            @Parameter(description = "秒杀开售时间 yyyy-MM-dd HH:mm:ss") @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime seckillStartAt,
+            @Parameter(description = "秒杀结束时间 yyyy-MM-dd HH:mm:ss") @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime seckillEndAt) {
 
         log.info("创建优惠券: id={}, name={}, type={}, faceValue={}", id, name, type, faceValue);
+
+        if (type != null && type == 2) {
+            if (seckillStartAt == null || seckillEndAt == null) {
+                return ApiResponse.fail(400, "秒抢券必须提供 seckillStartAt / seckillEndAt");
+            }
+            if (!seckillStartAt.isBefore(seckillEndAt)) {
+                return ApiResponse.fail(400, "seckillStartAt 必须早于 seckillEndAt");
+            }
+        }
 
         // 如果没有提供ID，则生成一个
         if (id == null) {
@@ -71,12 +84,29 @@ public class CouponController {
         coupon.setSeckillTotalStock(seckillTotalStock != null ? seckillTotalStock : 0);
         coupon.setRemainingStock(totalStock);
         coupon.setSeckillRemainingStock(seckillTotalStock != null ? seckillTotalStock : 0);
+        coupon.setSeckillStartAt(seckillStartAt);
+        coupon.setSeckillEndAt(seckillEndAt);
 
         // 确保必填字段有默认值
         coupon.setStatus(1); // 默认有效状态
 
         Coupon createdCoupon = couponService.createCoupon(coupon);
         return ApiResponse.success(createdCoupon);
+    }
+
+    @Operation(summary = "更新秒杀活动时间窗", description = "仅秒抢券；start 必须早于 end")
+    @PostMapping("/{id}/seckill-window")
+    public ApiResponse<Coupon> updateSeckillWindow(
+            @PathVariable Long id,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime seckillStartAt,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime seckillEndAt) {
+        try {
+            return ApiResponse.success(couponService.updateSeckillWindow(id, seckillStartAt, seckillEndAt));
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.fail(400, e.getMessage());
+        }
     }
 
     @Operation(summary = "根据ID查询优惠券", description = "根据优惠券ID获取优惠券详情")

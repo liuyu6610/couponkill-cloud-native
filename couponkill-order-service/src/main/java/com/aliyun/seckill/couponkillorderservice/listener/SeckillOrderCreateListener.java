@@ -32,7 +32,7 @@ public class SeckillOrderCreateListener {
             log.warn("丢弃非法/非预扣命令消息（可能是历史 OrderMessage 污染）: {}", command);
             return;
         }
-        log.info("收到秒杀落单命令: requestId={}, userId={}, couponId={}",
+        log.debug("收到秒杀落单命令: requestId={}, userId={}, couponId={}",
                 command.getRequestId(), command.getUserId(), command.getCouponId());
         orderService.fulfillSeckillOrder(command);
     }

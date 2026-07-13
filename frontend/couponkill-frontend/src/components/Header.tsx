@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Layout, Menu, Input, Button, Avatar, Dropdown } from 'antd'
 import {
   ShoppingCartOutlined,
@@ -8,13 +9,24 @@ import {
   TagsOutlined,
   ThunderboltOutlined,
   OrderedListOutlined,
-  ApiOutlined
+  ApiOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../store'
 import { logout, selectIsAdmin } from '../store/slices/authSlice'
+import { preloadRoute } from '../lib/routePreload'
 import type { MenuProps } from 'antd'
+
+/** 导航 Link：hover/focus 时预取对应懒加载 chunk */
+function NavLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link to={to} onMouseEnter={() => preloadRoute(to)} onFocus={() => preloadRoute(to)}>
+      {children}
+    </Link>
+  )
+}
 
 const { Header: AntHeader } = Layout
 const { Search } = Input
@@ -45,6 +57,12 @@ const Header: React.FC = () => {
       onClick: () => navigate('/orders'),
     },
     {
+      key: 'reservations',
+      label: '我的预约',
+      icon: <ClockCircleOutlined />,
+      onClick: () => navigate('/reservations'),
+    },
+    {
       type: 'divider',
     },
     {
@@ -59,24 +77,33 @@ const Header: React.FC = () => {
     {
       key: 'home',
       icon: <HomeOutlined />,
-      label: <Link to="/">首页</Link>,
+      label: <NavLink to="/">首页</NavLink>,
     },
     {
       key: 'coupons',
       icon: <TagsOutlined />,
-      label: <Link to="/coupons">优惠券</Link>,
+      label: <NavLink to="/coupons">优惠券</NavLink>,
     },
     {
       key: 'seckill',
       icon: <ThunderboltOutlined />,
-      label: <Link to="/seckill">秒杀专区</Link>,
+      label: <NavLink to="/seckill">秒杀专区</NavLink>,
     },
+    ...(isAuthenticated
+      ? [
+          {
+            key: 'reservations',
+            icon: <ClockCircleOutlined />,
+            label: <NavLink to="/reservations">我的预约</NavLink>,
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
             key: 'admin',
             icon: <ApiOutlined />,
-            label: <Link to="/admin/connector">Connector</Link>,
+            label: <NavLink to="/admin/connector">Connector</NavLink>,
           },
         ]
       : []),
@@ -122,6 +149,7 @@ const Header: React.FC = () => {
                 type="text"
                 icon={<ShoppingCartOutlined />}
                 style={{ color: 'white' }}
+                onMouseEnter={() => preloadRoute('/orders')}
                 onClick={() => navigate('/orders')}
               >
                 我的订单

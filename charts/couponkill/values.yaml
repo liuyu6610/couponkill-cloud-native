@@ -78,6 +78,15 @@ services:
     replicas: 1
     image:
       name: "user"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
     hpa:
       enabled: false
       minReplicas: 1
@@ -90,6 +99,15 @@ services:
     replicas: 1
     image:
       name: "coupon"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
     hpa:
       enabled: false
       minReplicas: 1
@@ -102,15 +120,56 @@ services:
     replicas: 1
     image:
       name: "order"
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 --enable-preview"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
     hpa:
       enabled: false
       minReplicas: 1
       maxReplicas: 10
       targetCPUUtilizationPercentage: 80
+  # Connector（电商库存同步；不进秒杀热路径）
+  connector:
+    enabled: true
+    name: couponkill-connector-service
+    port: 8085
+    replicas: 1
+    image:
+      name: "connector"
+    profile: prod
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    internalTokenStrict: true
+    internalTokenSecret:
+      name: connector-secrets
+      key: internal-token
+      optional: true
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   # 网关服务配置
   gateway:
     name: couponkill-gateway
     port: 8080
+    jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+    threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
     replicas: 1
     image:
       name: "gateway"
@@ -194,14 +253,25 @@ kafka:
   enabled: true
   name: broker
   port: 9092
+  broker: broker:9092
   # 单节点 KRaft；生产多副本 broker 需提供 StatefulSet 或外部托管 Kafka
   bootstrapServers: broker:9092
+  # 主题真源：与 docker-compose.migration.yml / kafka-init-job 对齐 16 分区
   topics:
     - seckill_order_create
     - seckill_order_result
     - seckill_compensation
   partitions: 16
   replicationFactor: 1
+  cluster:
+    enabled: false
+  init:
+    enabled: true
+    name: kafka-init
+    image:
+      repository: apache/kafka
+      tag: "3.8.0"
+      pullPolicy: IfNotPresent
 
 # PostgreSQL配置（数据库，替代 MySQL；key 保留为 mysql 以兼容既有模板引用，值已切换为 PG）
 mysql:

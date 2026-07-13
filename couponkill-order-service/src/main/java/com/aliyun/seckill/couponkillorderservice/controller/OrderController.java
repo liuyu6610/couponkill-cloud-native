@@ -43,9 +43,6 @@ public class OrderController {
     @Value("${couponkill.seckill.cooldown-seconds:2}")
     int cooldownSeconds;
 
-    @Value("${couponkill.seckill.deduct-ttl-seconds:300}")
-    int deductTtlSeconds;
-
     /** 仅用于可观测：当前进程内在途秒杀数 */
     private final AtomicInteger currentRequestCount = new AtomicInteger(0);
 
@@ -123,7 +120,7 @@ public class OrderController {
         Long userId = UserContext.requireCurrentUserId();
         int currentCount = currentRequestCount.incrementAndGet();
         try {
-            log.info("收到秒杀请求: userId={}, couponId={}, inFlight={}", userId, couponId, currentCount);
+            log.debug("收到秒杀请求: userId={}, couponId={}, inFlight={}", userId, couponId, currentCount);
 
             // Go 旁路仍走同步引擎（默认关闭）
             if (servicegoConfig.shouldRouteToGo()) {
@@ -155,6 +152,10 @@ public class OrderController {
             }
             if (err == com.aliyun.seckill.common.api.ErrorCodes.NOT_PREHEATED) {
                 return Result.fail(ResultCode.STOCK_NOT_PREHEATED, resp.getMessage());
+            }
+            if (err == com.aliyun.seckill.common.api.ErrorCodes.NOT_STARTED
+                    || err == com.aliyun.seckill.common.api.ErrorCodes.ACTIVITY_ENDED) {
+                return Result.fail(ResultCode.PARAM_ERROR.getCode(), resp.getMessage());
             }
             return Result.fail(err, resp.getMessage() != null ? resp.getMessage() : "秒杀失败");
         } finally {

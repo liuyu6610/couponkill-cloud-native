@@ -75,6 +75,9 @@ dataSources:
 #     minimumIdle: 4
 
 rules:
+- !SINGLE
+  tables:
+    - order-db-0.seckill_reservation
 - !SHARDING
   tables:
     order:

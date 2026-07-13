@@ -1,0 +1,82 @@
+{{- if .Values.services.connector.enabled | default true }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.connector.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.connector.name }}
+spec:
+  replicas: {{ .Values.services.connector.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.connector.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.connector.name }}
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.registry }}:{{ .Values.services.connector.image.name }}"
+          ports:
+            - containerPort: {{ .Values.services.connector.port }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.connector.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.services.connector.port }}
+            initialDelaySeconds: 45
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "{{ .Values.services.connector.resources.requests.memory | default "256Mi" }}"
+              cpu: "{{ .Values.services.connector.resources.requests.cpu | default "100m" }}"
+            limits:
+              memory: "{{ .Values.services.connector.resources.limits.memory | default "1Gi" }}"
+              cpu: "{{ .Values.services.connector.resources.limits.cpu | default "500m" }}"
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.services.connector.port }}"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "{{ .Values.services.connector.profile | default "prod" }}"
+            {{- if .Values.nacos.enabled }}
+            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- end }}
+            - name: CONNECTOR_DB_HOST
+              value: "{{ .Values.db.host | default "postgres" }}"
+            - name: JAVA_TOOL_OPTIONS
+              value: "{{ .Values.services.connector.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0\" }}"
+            {{- if .Values.services.connector.threadPoolOpts }}
+            - name: THREAD_POOL_OPTS
+              value: "{{ .Values.services.connector.threadPoolOpts }}"
+            {{- end }}
+            - name: CONNECTOR_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.services.connector.internalTokenSecret.name | default "connector-secrets" }}
+                  key: {{ .Values.services.connector.internalTokenSecret.key | default "internal-token" }}
+                  optional: {{ .Values.services.connector.internalTokenSecret.optional | default true }}
+            - name: CONNECTOR_INTERNAL_TOKEN_STRICT
+              value: "{{ .Values.services.connector.internalTokenStrict | default true }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.connector.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.services.connector.name }}
+spec:
+  selector:
+    app: {{ .Values.services.connector.name }}
+  ports:
+    - port: 80
+      targetPort: {{ .Values.services.connector.port }}
+{{- end }}

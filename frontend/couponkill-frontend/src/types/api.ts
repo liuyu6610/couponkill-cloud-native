@@ -46,6 +46,10 @@ export interface Coupon {
   remainingStock: number
   seckillRemainingStock: number
   status: number // 0-无效, 1-有效
+  /** 秒杀开售时间（活动时间窗） */
+  seckillStartAt?: string | null
+  /** 秒杀结束时间 */
+  seckillEndAt?: string | null
   createTime?: string
   updateTime?: string
   version?: number
@@ -201,3 +205,99 @@ export interface SyncAllResult {
   skipped?: number
   force?: boolean
 }
+
+// ---- 预约帮抢 ----
+
+export const ReservationStatus = {
+  PENDING: 'PENDING',
+  FIRING: 'FIRING',
+  QUEUED: 'QUEUED',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED',
+} as const
+export type ReservationStatusValue =
+  (typeof ReservationStatus)[keyof typeof ReservationStatus]
+
+export interface SeckillReservation {
+  id: string
+  userId: string
+  couponId: string
+  status: ReservationStatusValue | string
+  reserveAt?: string
+  triggerAt?: string
+  firedAt?: string
+  requestId?: string | null
+  orderId?: string | null
+  failCode?: number | null
+  failReason?: string | null
+  retryCount?: number
+  version?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const reservationStatusText = (status: string): string => {
+  switch (status) {
+    case ReservationStatus.PENDING:
+      return '待开抢'
+    case ReservationStatus.FIRING:
+      return '抢购中'
+    case ReservationStatus.QUEUED:
+      return '已入队'
+    case ReservationStatus.SUCCESS:
+      return '已抢到'
+    case ReservationStatus.FAILED:
+      return '失败'
+    case ReservationStatus.CANCELLED:
+      return '已取消'
+    case ReservationStatus.EXPIRED:
+      return '已过期'
+    default:
+      return status || '未知'
+  }
+}
+
+export const reservationStatusColor = (status: string): string => {
+  switch (status) {
+    case ReservationStatus.PENDING:
+      return 'blue'
+    case ReservationStatus.FIRING:
+    case ReservationStatus.QUEUED:
+      return 'processing'
+    case ReservationStatus.SUCCESS:
+      return 'success'
+    case ReservationStatus.FAILED:
+    case ReservationStatus.EXPIRED:
+      return 'error'
+    case ReservationStatus.CANCELLED:
+      return 'default'
+    default:
+      return 'default'
+  }
+}
+
+/** 兼容后端 JsonFormat `yyyy-MM-dd HH:mm:ss` */
+export function parseBackendDateTime(v?: string | null): number | null {
+  if (v == null || v === '') return null
+  const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(v) ? v.replace(' ', 'T') : v
+  const n = Date.parse(normalized)
+  return Number.isNaN(n) ? null : n
+}
+
+/** 开售前可预约；已开售可直接秒杀 */
+export function seckillWindowPhase(c: Pick<Coupon, 'seckillStartAt' | 'seckillEndAt'>):
+  | 'no_window'
+  | 'upcoming'
+  | 'onsale'
+  | 'ended' {
+  const start = parseBackendDateTime(c.seckillStartAt)
+  const end = parseBackendDateTime(c.seckillEndAt)
+  if (start == null || end == null) return 'no_window'
+  const now = Date.now()
+  if (now < start) return 'upcoming'
+  if (now > end) return 'ended'
+  return 'onsale'
+}
+

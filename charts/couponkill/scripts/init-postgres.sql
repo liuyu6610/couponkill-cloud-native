@@ -112,6 +112,36 @@ BEGIN
             CREATE INDEX IF NOT EXISTS idx_order_%s_create_time ON order_%s (create_time);
         $f$, i, i, i, i, i, i, i, i, i, i);
     END LOOP;
+
+    -- P0 预约帮抢表（单库，配合 ShardingSphere SINGLE → order-db-0）
+    CREATE TABLE IF NOT EXISTS seckill_reservation (
+        id            BIGSERIAL PRIMARY KEY,
+        user_id       BIGINT       NOT NULL,
+        coupon_id     BIGINT       NOT NULL,
+        status        VARCHAR(32)  NOT NULL DEFAULT 'PENDING',
+        reserve_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        trigger_at    TIMESTAMPTZ,
+        fired_at      TIMESTAMPTZ,
+        request_id    VARCHAR(64),
+        order_id      VARCHAR(64),
+        fail_code     INT,
+        fail_reason   VARCHAR(256),
+        retry_count   INT          NOT NULL DEFAULT 0,
+        version       INT          NOT NULL DEFAULT 0,
+        create_time   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        update_time   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uk_reservation_active_user_coupon
+        ON seckill_reservation (user_id, coupon_id)
+        WHERE status IN ('PENDING', 'FIRING', 'QUEUED');
+    CREATE INDEX IF NOT EXISTS idx_reservation_pending_trigger
+        ON seckill_reservation (status, trigger_at)
+        WHERE status = 'PENDING';
+    CREATE INDEX IF NOT EXISTS idx_reservation_user
+        ON seckill_reservation (user_id, create_time DESC);
+    CREATE INDEX IF NOT EXISTS idx_reservation_request
+        ON seckill_reservation (request_id)
+        WHERE request_id IS NOT NULL;
 END $$;
 
 \c order_db_1
@@ -174,6 +204,8 @@ BEGIN
                 remaining_stock        INT           NOT NULL DEFAULT 0,
                 seckill_remaining_stock INT          NOT NULL DEFAULT 0,
                 status                 INT           NOT NULL DEFAULT 1,
+                seckill_start_at       TIMESTAMPTZ,
+                seckill_end_at         TIMESTAMPTZ,
                 create_time            TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
                 update_time            TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
                 version                INT           NOT NULL DEFAULT 0,
@@ -220,6 +252,8 @@ BEGIN
                 remaining_stock        INT           NOT NULL DEFAULT 0,
                 seckill_remaining_stock INT          NOT NULL DEFAULT 0,
                 status                 INT           NOT NULL DEFAULT 1,
+                seckill_start_at       TIMESTAMPTZ,
+                seckill_end_at         TIMESTAMPTZ,
                 create_time            TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
                 update_time            TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
                 version                INT           NOT NULL DEFAULT 0,

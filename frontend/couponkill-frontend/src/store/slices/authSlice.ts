@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { authService } from '../../services/authService'
 import { STORAGE_KEYS } from '../../lib/apiClient'
+import { getErrorMessage } from '../../lib/errorMessage'
 import type { LoginResult } from '../../types/api'
 
 export interface AuthUser {
@@ -59,7 +60,7 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem(STORAGE_KEYS.roles, JSON.stringify(roles))
       return { ...result, userId, roles } as LoginResult
     } catch (error) {
-      return rejectWithValue((error as Error).message || '登录失败')
+      return rejectWithValue(getErrorMessage(error, '登录失败'))
     }
   }
 )
@@ -74,7 +75,7 @@ export const registerUser = createAsyncThunk(
       await authService.register(username, password, phone)
       return true
     } catch (error) {
-      return rejectWithValue((error as Error).message || '注册失败')
+      return rejectWithValue(getErrorMessage(error, '注册失败'))
     }
   }
 )
