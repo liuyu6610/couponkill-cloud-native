@@ -27,7 +27,8 @@ spring:
             - id: order-service
               uri: lb://couponkill-order-service
               predicates:
-                - Path=/order/**
+                # Phase1 双挂：新 /api/v1/order/** + 旧 /order/**（过渡期兼容）
+                - Path=/api/v1/order/**,/order/**
               filters:
                 - name: Sentinel
                   args:
@@ -42,12 +43,8 @@ spring:
                   args:
                     resourceName: connector-service
                     fallbackUri: forward:/fallback/connector
-            - id: seckill-go-service
-              uri: lb://seckill-go-svc
-              predicates:
-                - Path=/seckill/go/**
-              filters:
-                - name: Sentinel
-                  args:
-                    resourceName: seckill-go-service
-                    fallbackUri: forward:/fallback/seckill
+            # Go 热路径已冻结：默认不经网关暴露；沙箱联调请集群内直连 seckill-go-svc
+            # - id: seckill-go-service
+            #   uri: lb://seckill-go-svc
+            #   predicates:
+            #     - Path=/seckill/go/**

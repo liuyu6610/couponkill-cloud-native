@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * Go 秒杀 Feign。url 与 ServiceGoConfig / nacos couponkill.seckill.go.url 对齐。
+ * Go 秒杀 Feign（沙箱专用）。
+ * 热路径已冻结：仅当 couponkill.seckill.go.enabled 与 fallback-to-go 同时为 true 才会被调用。
+ * url 与 ServiceGoConfig / nacos couponkill.seckill.go.url 对齐。
  */
 @FeignClient(
         name = "seckill-go-svc",

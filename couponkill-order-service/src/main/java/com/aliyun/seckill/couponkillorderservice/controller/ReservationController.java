@@ -1,7 +1,8 @@
 package com.aliyun.seckill.couponkillorderservice.controller;
 
+import com.aliyun.seckill.common.api.ApiResponse;
+import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.context.UserContext;
-import com.aliyun.seckill.common.result.Result;
 import com.aliyun.seckill.couponkillorderservice.domain.SeckillReservation;
 import com.aliyun.seckill.couponkillorderservice.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +21,7 @@ import java.util.Map;
 
 @Tag(name = "秒杀预约帮抢")
 @RestController
-@RequestMapping("/order/reservations")
+@RequestMapping({"/order/reservations", "/api/v1/order/reservations"})
 @RequiredArgsConstructor
 public class ReservationController {
 
@@ -28,34 +29,34 @@ public class ReservationController {
 
     @Operation(summary = "创建预约帮抢", description = "开售前预约；到点由调度器代发本站秒杀入队")
     @PostMapping
-    public Result<SeckillReservation> create(@RequestBody Map<String, Object> body) {
+    public ApiResponse<SeckillReservation> create(@RequestBody Map<String, Object> body) {
         Long userId = UserContext.requireCurrentUserId();
         Object raw = body == null ? null : body.get("couponId");
         if (raw == null) {
-            return Result.fail(400, "couponId 不能为空");
+            return ApiResponse.fail(ErrorCodes.INVALID_REQ, "couponId 不能为空");
         }
         Long couponId = Long.valueOf(String.valueOf(raw));
-        return Result.success(reservationService.create(userId, couponId));
+        return ApiResponse.success(reservationService.create(userId, couponId));
     }
 
     @Operation(summary = "取消预约", description = "仅 PENDING 可取消")
     @DeleteMapping("/{id}")
-    public Result<Boolean> cancel(@PathVariable Long id) {
+    public ApiResponse<Boolean> cancel(@PathVariable Long id) {
         Long userId = UserContext.requireCurrentUserId();
-        return Result.success(reservationService.cancel(userId, id));
+        return ApiResponse.success(reservationService.cancel(userId, id));
     }
 
     @Operation(summary = "我的预约列表")
     @GetMapping("/mine")
-    public Result<List<SeckillReservation>> mine() {
+    public ApiResponse<List<SeckillReservation>> mine() {
         Long userId = UserContext.requireCurrentUserId();
-        return Result.success(reservationService.listMine(userId));
+        return ApiResponse.success(reservationService.listMine(userId));
     }
 
     @Operation(summary = "预约详情")
     @GetMapping("/{id}")
-    public Result<SeckillReservation> detail(@PathVariable Long id) {
+    public ApiResponse<SeckillReservation> detail(@PathVariable Long id) {
         Long userId = UserContext.requireCurrentUserId();
-        return Result.success(reservationService.getById(userId, id));
+        return ApiResponse.success(reservationService.getById(userId, id));
     }
 }

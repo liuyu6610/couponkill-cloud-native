@@ -9,6 +9,8 @@ public class BusinessException extends RuntimeException {
     private final int code;
     private final String message;
 
+    /** @deprecated 使用 {@link #BusinessException(int, String)} + {@link com.aliyun.seckill.common.api.ErrorCodes} */
+    @Deprecated
     public BusinessException(ResultCode resultCode) {
         this.code = resultCode.getCode();
         this.message = resultCode.getMessage();

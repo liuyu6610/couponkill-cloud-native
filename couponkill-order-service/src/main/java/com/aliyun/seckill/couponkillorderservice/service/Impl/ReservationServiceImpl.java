@@ -1,7 +1,7 @@
 package com.aliyun.seckill.couponkillorderservice.service.Impl;
 
 import com.aliyun.seckill.common.api.ApiResponse;
-import com.aliyun.seckill.common.enums.ResultCode;
+import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
 import com.aliyun.seckill.couponkillorderservice.domain.ReservationStatuses;
@@ -30,7 +30,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public SeckillReservation create(Long userId, Long couponId) {
         if (userId == null || couponId == null) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "userId/couponId 不能为空");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "userId/couponId 不能为空");
         }
 
         SeckillReservation existing = reservationMapper.selectActiveByUserAndCoupon(userId, couponId);
@@ -40,22 +40,22 @@ public class ReservationServiceImpl implements ReservationService {
 
         Coupon coupon = loadCoupon(couponId);
         if (coupon.getType() == null || coupon.getType() != 2) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "仅秒抢券支持预约帮抢");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "仅秒抢券支持预约帮抢");
         }
         if (coupon.getStatus() == null || coupon.getStatus() != 1) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "优惠券已失效");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "优惠券已失效");
         }
         if (coupon.getSeckillStartAt() == null || coupon.getSeckillEndAt() == null) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(),
+            throw new BusinessException(ErrorCodes.INVALID_REQ,
                     "该秒杀券尚未配置活动时间窗，暂不可预约");
         }
         LocalDateTime now = LocalDateTime.now();
         if (!now.isBefore(coupon.getSeckillStartAt())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(),
+            throw new BusinessException(ErrorCodes.INVALID_REQ,
                     "活动已开售，请直接秒杀，不可再预约");
         }
         if (!now.isBefore(coupon.getSeckillEndAt())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "活动已结束");
+            throw new BusinessException(ErrorCodes.ACTIVITY_ENDED, "活动已结束");
         }
 
         SeckillReservation r = new SeckillReservation();
@@ -76,7 +76,7 @@ public class ReservationServiceImpl implements ReservationService {
             if (raced != null) {
                 return raced;
             }
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "已存在活跃预约");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "已存在活跃预约");
         }
         log.info("创建预约帮抢: id={}, userId={}, couponId={}, triggerAt={}",
                 r.getId(), userId, couponId, r.getTriggerAt());
@@ -88,10 +88,10 @@ public class ReservationServiceImpl implements ReservationService {
     public boolean cancel(Long userId, Long reservationId) {
         SeckillReservation r = reservationMapper.selectById(reservationId);
         if (r == null || !userId.equals(r.getUserId())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "预约不存在");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "预约不存在");
         }
         if (!ReservationStatuses.PENDING.equals(r.getStatus())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(),
+            throw new BusinessException(ErrorCodes.INVALID_REQ,
                     "仅待开抢(PENDING)状态可取消，当前=" + r.getStatus());
         }
         int n = reservationMapper.markCancelled(reservationId, userId);
@@ -107,7 +107,7 @@ public class ReservationServiceImpl implements ReservationService {
     public SeckillReservation getById(Long userId, Long reservationId) {
         SeckillReservation r = reservationMapper.selectById(reservationId);
         if (r == null || !userId.equals(r.getUserId())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "预约不存在");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "预约不存在");
         }
         return r;
     }
@@ -134,14 +134,14 @@ public class ReservationServiceImpl implements ReservationService {
         try {
             ApiResponse<Coupon> resp = couponServiceFeignClient.getCouponById(couponId);
             if (resp == null || resp.getData() == null) {
-                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
+                throw new BusinessException(ErrorCodes.COUPON_NOT_FOUND, "优惠券不存在");
             }
             return resp.getData();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.warn("查询优惠券失败: couponId={}", couponId, e);
-            throw new BusinessException(ResultCode.COUPON_SERVICE_UNAVAILABLE);
+            throw new BusinessException(ErrorCodes.COUPON_SERVICE_UNAVAILABLE, "优惠券服务不可用");
         }
     }
 }

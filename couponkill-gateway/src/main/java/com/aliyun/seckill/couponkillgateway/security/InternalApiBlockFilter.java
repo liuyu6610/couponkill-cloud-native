@@ -26,7 +26,8 @@ public class InternalApiBlockFilter implements GlobalFilter, Ordered {
             "/api/v1/user/batch/",
             "/api/v1/coupon/stock/",
             "/api/v1/coupon/create",
-            "/order/admin"
+            "/order/admin",
+            "/api/v1/order/admin"
     );
 
     private static final List<String> BLOCKED_CONTAINS = List.of(

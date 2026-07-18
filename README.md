@@ -19,7 +19,7 @@ CI/CD: Jenkins
 数据库: PostgreSQL 16（分库分表，已自 MySQL 迁移）
 自动扩缩容: KEDA
 监控: 自定义 Operator
-框架: Spring Boot **3.5.16** / Spring Cloud **2025.0.3** / Spring Cloud Alibaba **2025.0.0.0**
+框架: Spring Boot **4.0.5** / Spring Cloud **2025.1.0** / Spring Cloud Alibaba **2025.1.0.0**（与根 `pom.xml` 属性真源对齐）
 
 > 中间件迁移真源文档：[`docs/MIGRATION-PostgreSQL-Kafka.md`](docs/MIGRATION-PostgreSQL-Kafka.md)  
 > Schema 真源：`charts/couponkill/scripts/init-postgres.sql`（旧 MySQL `init.sql` 已废弃）
@@ -371,8 +371,8 @@ npm install && npm run dev
 
 #### 5. 已知演示边界（请知晓）
 
-- Go 秒杀：`couponkill.seckill.go.enabled=false`（默认），演示走 Java 路径  
-- **秒杀热路径（已切换）**：`POST /order/seckill` → Redis Lua 预扣 `coupon:stock:{id}` → Kafka `seckill_order_create` → 消费者落单（仅同步 DB，不再同步 Feign 扣 Redis）。前端继续轮询 `GET /order/check/{couponId}`  
+- Go 秒杀：**热路径已冻结**——`go.enabled=false` 且废除「Java QPS 打满自动切 Go」；仅显式双开 `enabled+fallback-to-go` 才进沙箱（默认均 false）
+- **秒杀热路径（Java）**：`POST /api/v1/order/seckill`（旧 `POST /order/seckill` 仍兼容）→ Redis Lua 预扣 `coupon:stock:{id}` → Kafka `seckill_order_create` → 消费者落单。前端轮询 `GET /api/v1/order/check/{couponId}`
 - 启动 coupon-service 后需完成库存预热（`asyncPreheatStockToRedis` / `coupon.cache.preload=true`），否则 Lua 视无 key 为已抢完  
 - 全链路生产级 Helm 金丝雀仍属后续完善项  
 - **并发说明**：系统**未启用 Seata**；「卡在百级」常见真因是 Hikari/Go 池默认 100、JMeter `perhost=100`、以及订单后置小线程池（已改为虚拟线程）  

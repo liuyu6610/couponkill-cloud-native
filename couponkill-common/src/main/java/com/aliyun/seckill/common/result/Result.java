@@ -6,6 +6,11 @@ import lombok.Data;
 
 import java.util.Map;
 
+/**
+ * @deprecated Phase2 起对外 HTTP 统一使用 {@link com.aliyun.seckill.common.api.ApiResponse}（成功码 0）。
+ * 本类仅保留给 Go Feign 等历史边界，新接口禁止再返回 Result。
+ */
+@Deprecated
 @Data
 public class Result<T> {
     private int code;

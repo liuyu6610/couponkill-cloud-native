@@ -76,13 +76,14 @@ couponkill:
     result-listener-concurrency: 4
     # JDK25 Structured Concurrency（preview，需 --enable-preview）；默认关
     structured-concurrency: false
-    # Go 引擎已对齐分片/键名/多 DS 后可按需开启
+    # Go 热路径已冻结：禁止过载切流；仅沙箱联调可双开 enabled+fallback-to-go（默认均 false）
     go:
       enabled: false
       url: http://seckill-go-svc:8083
     java:
       qps-threshold: 500
     fallback-to-go: false
+
   # P0 预约帮抢调度
   reservation:
     enabled: true

@@ -364,8 +364,9 @@ nacos:
           java-service-url: "http://couponkill-service:8080"
           go-service-url: "http://seckill-go-svc:8083"
           java-qps-threshold: 1000
-          go-enabled: true
-          fallback-to-go: true
+          # Go 热路径冻结：禁止生产开启 / 过载切流
+          go-enabled: false
+          fallback-to-go: false
     middleware:
       dataId: middleware-cluster-config.yaml
       group: DEFAULT_GROUP
@@ -417,21 +418,20 @@ nacos:
                     - id: order-service
                       uri: http://couponkill-service:8082
                       predicates:
-                        - Path=/api/v1/order/**
-                      filters:
-                        - StripPrefix=3
+                        # Phase1 双挂；注意：Controller 自带完整前缀时不应 StripPrefix
+                        - Path=/api/v1/order/**,/order/**
                     - id: coupon-service
                       uri: http://couponkill-service:8081
                       predicates:
                         - Path=/api/v1/coupon/**
                       filters:
                         - StripPrefix=3
-                    - id: go-service
-                      uri: http://seckill-go-svc:8083
-                      predicates:
-                        - Path=/seckill/**
-                      filters:
-                        - StripPrefix=1
+                    # Go 热路径已冻结：默认不经网关暴露
+                    # - id: go-service
+                    #   uri: http://seckill-go-svc:8083
+                    #   predicates:
+                    #     - Path=/seckill/**
+
     go:
       dataId: go-service-dev.yaml
       group: DEFAULT_GROUP

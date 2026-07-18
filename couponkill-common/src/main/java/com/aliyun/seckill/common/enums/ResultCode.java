@@ -4,6 +4,11 @@ package com.aliyun.seckill.common.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * @deprecated Phase3 起对外错误码统一为 {@link com.aliyun.seckill.common.api.ErrorCodes}。
+ * 本枚举仅兼容历史 {@code Result}/旧调用，禁止新代码使用。
+ */
+@Deprecated
 @Getter
 @AllArgsConstructor
 public enum ResultCode {
@@ -24,7 +29,7 @@ public enum ResultCode {
     COOLING_DOWN(9001, "用户冷却中" ),
     MQ_SEND_FAILED(9002,"消息发送失败" ),
     STOCK_NOT_PREHEATED(9003, "秒杀库存未预热，请稍后重试"),
-    SECKILL_USE_DEDICATED_API(9004, "秒杀券请使用 /order/seckill 接口"),
+    SECKILL_USE_DEDICATED_API(9004, "秒杀券请使用 /api/v1/order/seckill 接口"),
     SERVICE_UNAVAILABLE(503, "服务不可用"),
     SYSTEM_ERROR(9081, "系统错误" ), COUPON_SERVICE_UNAVAILABLE(886, "优惠券服务不可用");
     private final int code;

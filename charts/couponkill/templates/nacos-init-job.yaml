@@ -168,11 +168,13 @@ cluster:
             - id: order-service
               uri: lb://couponkill-order-service
               predicates:
-                - Path=/api/v1/order/**
-            - id: seckill-go-service
-              uri: lb://seckill-go-svc
-              predicates:
-                - Path=/seckill/go/**" \
+                - Path=/api/v1/order/**,/order/**
+            # Go 热路径已冻结，默认不注册网关路由
+            # - id: seckill-go-service
+            #   uri: lb://seckill-go-svc
+            #   predicates:
+            #     - Path=/seckill/go/**
+            " \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
               # 创建MySQL集群配置

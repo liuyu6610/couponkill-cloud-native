@@ -9,7 +9,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Go 秒杀分流配置。默认关闭：Go 引擎数据源/分片/键名未与 Java 对齐前不得在过载时切流。
+ * Go 秒杀分流配置（热路径已冻结）。
+ * <p>
+ * 决策：保留 Go 模块作沙箱，禁止过载自动切流。
+ * 仅当 {@code go.enabled=true} 且 {@code fallback-to-go=true} 时才允许显式走 Go（联调沙箱），
+ * 默认两者均为 false，生产热路径 100% 走 Java Lua→Kafka。
  */
 @Configuration
 @RefreshScope
@@ -22,14 +26,22 @@ public class ServiceGoConfig {
     @Value("${couponkill.seckill.go.url:http://seckill-go-svc:8083}")
     private String goServiceUrl;
 
-    /** 默认 false：Go 路径修好前禁止路由 */
+    /** 默认 false：Go 热路径冻结，禁止生产开启 */
     @Getter
     @Value("${couponkill.seckill.go.enabled:false}")
     private boolean goServiceEnabled;
 
+    /**
+     * 显式沙箱开关。与 {@link #goServiceEnabled} 同时为 true 时才路由到 Go。
+     * 已废除「Java QPS 打满自动切 Go」。
+     */
+    @Getter
     @Value("${couponkill.seckill.fallback-to-go:false}")
     private boolean fallbackToGo;
 
+    /**
+     * 保留限流器 Bean 供观测/扩展；不再用于 Go 分流决策。
+     */
     @Bean
     public RateLimiter javaServiceRateLimiter() {
         return RateLimiter.create(javaQpsThreshold);
@@ -41,15 +53,9 @@ public class ServiceGoConfig {
     }
 
     /**
-     * 判断是否应该路由到Go服务
+     * 是否路由到 Go：仅显式双开（enabled + fallback-to-go），禁止过载隐式切流。
      */
     public boolean shouldRouteToGo() {
-        if (!goServiceEnabled) {
-            return false;
-        }
-        if (fallbackToGo) {
-            return true;
-        }
-        return !javaServiceRateLimiter().tryAcquire();
+        return goServiceEnabled && fallbackToGo;
     }
 }

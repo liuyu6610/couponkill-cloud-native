@@ -172,7 +172,7 @@ docker compose -f docker-compose.migration.yml down -v
 | Helm `deploy-user` 转义 bug | ⚠️ 仍存，阻断部分 `helm template` |
 | 运行时 JDK | ✅ 工程统一 **JDK 25**（`pom` / Dockerfile Temurin 25；本地 `D:\dev-lanuage\java\jdk-25`） |
 
-Go 秒杀默认仍 `couponkill.seckill.go.enabled=false`；联调通过后可在 Nacos 打开。
+Go 秒杀热路径已冻结：默认 `couponkill.seckill.go.enabled=false` 且禁止过载自动切流；沙箱联调须显式双开 `enabled`+`fallback-to-go`，不得作为生产降级。
 
 ---
 

@@ -1,6 +1,6 @@
 package com.aliyun.seckill.common.context;
 
-import com.aliyun.seckill.common.enums.ResultCode;
+import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -57,12 +57,12 @@ public final class UserContext {
     public static Long requireCurrentUserId() {
         String userId = getCurrentUserId();
         if (userId == null || userId.isBlank()) {
-            throw new BusinessException(ResultCode.TOKEN_INVALID.getCode(), "未登录或身份无效");
+            throw new BusinessException(ErrorCodes.TOKEN_INVALID, "未登录或身份无效");
         }
         try {
             return Long.parseLong(userId.trim());
         } catch (NumberFormatException e) {
-            throw new BusinessException(ResultCode.AUTH_FAIL.getCode(), "用户身份格式错误");
+            throw new BusinessException(ErrorCodes.AUTH_FAIL, "用户身份格式错误");
         }
     }
 

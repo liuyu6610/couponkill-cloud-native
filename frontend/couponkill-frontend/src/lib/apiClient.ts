@@ -20,7 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-// 后端两套成功码：ApiResponse=0（user/coupon），Result=200（order）
+// Phase2：order 已统一 ApiResponse(code=0)；过渡期仍兼容历史 Result(code=200)
 const SUCCESS_CODES = new Set<number>([0, 200])
 
 const instance = axios.create({

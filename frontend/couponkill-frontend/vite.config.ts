@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:8088'
 
-  // 后端路径前缀：user/coupon 走 /api/v1，order/seckill 走各自根路径
+  // Phase1：order 已迁 /api/v1/order（走 /api 代理）；保留 /order 兼容旧调用
   const proxyRule = {
     target: proxyTarget,
     changeOrigin: true,
@@ -18,7 +18,6 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': proxyRule,
         '/order': proxyRule,
-        '/seckill': proxyRule,
       },
     },
     build: {

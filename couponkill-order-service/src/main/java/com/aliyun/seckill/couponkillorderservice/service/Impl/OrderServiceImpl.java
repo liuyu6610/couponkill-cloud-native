@@ -3,7 +3,6 @@ package com.aliyun.seckill.couponkillorderservice.service.Impl;
 
 import com.aliyun.seckill.common.api.ApiResponse;
 import com.aliyun.seckill.common.api.ErrorCodes;
-import com.aliyun.seckill.common.enums.ResultCode;
 import com.aliyun.seckill.common.pojo.EnterSeckillResp;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.Coupon;
@@ -200,7 +199,7 @@ public class OrderServiceImpl implements OrderService {
             // 1. Redis 原子占位（防重复领取）
             if (!tryMarkUserReceived(userReceivedKey)) {
                 log.warn("用户 {} 重复领取优惠券 {}", userId, couponId);
-                throw new BusinessException(ResultCode.REPEAT_SECKILL);
+                throw new BusinessException(ErrorCodes.REPEAT_SECKILL, "不可重复秒杀");
             }
             redisMarked = true;
 
@@ -208,21 +207,21 @@ public class OrderServiceImpl implements OrderService {
             Coupon coupon = getCouponById(couponId);
             if (coupon == null) {
                 log.warn("未找到优惠券: couponId={}", couponId);
-                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
+                throw new BusinessException(ErrorCodes.COUPON_NOT_FOUND, "优惠券不存在");
             }
             // 秒杀券禁止走同步 /order/create，避免与热路径双重扣库存语义混用
             if (coupon.getType() != null && coupon.getType() == 2) {
-                throw new BusinessException(ResultCode.SECKILL_USE_DEDICATED_API);
+                throw new BusinessException(ErrorCodes.SECKILL_USE_DEDICATED_API, "秒杀券请使用 /api/v1/order/seckill 接口");
             }
             if (!checkCouponCountLimit(userId, coupon.getType())) {
                 log.warn("用户 {} 达到优惠券领取限制，优惠券类型: {}", userId, coupon.getType());
-                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
+                throw new BusinessException(ErrorCodes.COUPON_LIMIT_EXCEEDED, "优惠券数量已达上限");
             }
 
             // 3. 普通券：扣 remaining_stock（非秒杀分片路径）
             if (!deductNormalStockWithRetry(couponId)) {
                 log.warn("扣减普通优惠券库存失败: couponId={}", couponId);
-                throw new BusinessException(ResultCode.COUPON_OUT_OF_STOCK);
+                throw new BusinessException(ErrorCodes.OUT_OF_STOCK, "优惠券已抢完");
             }
             stockDeducted = true;
             selectedVirtualId = String.valueOf(couponId);
@@ -234,7 +233,7 @@ public class OrderServiceImpl implements OrderService {
             } catch (Exception e) {
                 if (isDuplicateEntryException(e)) {
                     log.warn("用户 {} 重复领取优惠券 {}，数据库唯一性约束违反", userId, couponId);
-                    throw new BusinessException(ResultCode.REPEAT_SECKILL);
+                    throw new BusinessException(ErrorCodes.REPEAT_SECKILL, "不可重复秒杀");
                 }
                 throw e;
             }
@@ -256,7 +255,7 @@ public class OrderServiceImpl implements OrderService {
             if (e instanceof BusinessException) {
                 throw (BusinessException) e;
             }
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "系统错误");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "系统错误");
         }
     }
 
@@ -424,7 +423,7 @@ public class OrderServiceImpl implements OrderService {
         // 1. 查询订单
         Order order = orderMapper.selectById(orderId);
         if (order == null || !order.getUserId().equals(userId)) {
-            throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
+            throw new BusinessException(ErrorCodes.ORDER_NOT_FOUND, "订单不存在");
         }
 
         // 2. 检查订单状态
@@ -633,14 +632,14 @@ public class OrderServiceImpl implements OrderService {
                 
                 if (response == null || !response.success()) {
                     log.warn("更新用户优惠券计数失败: userId={}, couponType={}, change={}", userId, couponType, change);
-                    throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券计数失败");
+                    throw new BusinessException(ErrorCodes.SYS_ERROR, "更新用户优惠券计数失败");
                 }
                 
                 log.debug("成功更新用户优惠券计数: userId={}, couponType={}, change={}", userId, couponType, change);
             }
         } catch (Exception e) {
             log.error("更新用户优惠券计数异常: userId={}, couponType={}, change={}", userId, couponType, change, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券计数异常");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "更新用户优惠券计数异常");
         }
         
         // 同时更新Redis中的计数
@@ -768,14 +767,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order getOrderById(Long id) {
         if (id == null) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "订单ID不能为空");
         }
         try {
             // 使用现有的selectById方法替代已删除的selectOrderById方法
             return orderMapper.selectById(String.valueOf(id));
         } catch (Exception e) {
             log.error("查询订单失败，订单ID: {}", id, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "查询订单失败");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "查询订单失败");
         }
     }
 
@@ -783,7 +782,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public boolean payOrder(Long orderId) {
         if (orderId == null) {
-            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "订单ID不能为空");
+            throw new BusinessException(ErrorCodes.INVALID_REQ, "订单ID不能为空");
         }
 
         try {
@@ -791,7 +790,7 @@ public class OrderServiceImpl implements OrderService {
             // 使用现有的selectById方法替代已删除的selectOrderById方法
             Order order = orderMapper.selectById(String.valueOf(orderId));
             if (order == null) {
-                throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
+                throw new BusinessException(ErrorCodes.ORDER_NOT_FOUND, "订单不存在");
             }
 
             // 2. 检查订单状态，只有已创建的订单才能支付
@@ -813,7 +812,7 @@ public class OrderServiceImpl implements OrderService {
             throw e;
         } catch (Exception e) {
             log.error("支付订单失败，订单ID: {}", orderId, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "支付订单失败");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "支付订单失败");
         }
     }
 
@@ -835,7 +834,7 @@ public class OrderServiceImpl implements OrderService {
             }
         } catch (Exception e) {
             log.error("调用 coupon-service 获取优惠券信息失败", e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "获取优惠券信息失败");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "获取优惠券信息失败");
         }
     }
 
@@ -986,10 +985,10 @@ public class OrderServiceImpl implements OrderService {
 
             Coupon coupon = loadCouponForFulfill(couponId);
             if (coupon == null) {
-                throw new BusinessException(ResultCode.COUPON_NOT_FOUND);
+                throw new BusinessException(ErrorCodes.COUPON_NOT_FOUND, "优惠券不存在");
             }
             if (!checkCouponCountLimit(userId, coupon.getType())) {
-                throw new BusinessException(ResultCode.COUPON_LIMIT_EXCEEDED);
+                throw new BusinessException(ErrorCodes.COUPON_LIMIT_EXCEEDED, "优惠券数量已达上限");
             }
 
             Order order = buildNewOrder(userId, couponId, virtualId, coupon);
