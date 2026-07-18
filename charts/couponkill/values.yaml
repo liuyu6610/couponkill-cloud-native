@@ -438,6 +438,17 @@ monitoring:
   prometheus:
     enabled: false
 
+# 金丝雀流量权重（VirtualService 引用；默认 100% stable）
+canary:
+  coupon:
+    weightStable: 100
+    weightCanary: 0
+  order:
+    weightStable: 100
+    weightCanary: 0
+  go:
+    weightStable: 100
+
 # Istio配置
 istio:
   enabled: false

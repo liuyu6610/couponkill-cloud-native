@@ -642,6 +642,17 @@ services:
       maxProcs: 4
 
 # Istio ??????
+# 金丝雀流量权重（未开金丝雀时 100% stable；开金丝雀见 values.canary-keda.yaml）
+canary:
+  coupon:
+    weightStable: 100
+    weightCanary: 0
+  order:
+    weightStable: 100
+    weightCanary: 0
+  go:
+    weightStable: 100
+
 istio:
   enabled: true
   gateway:
