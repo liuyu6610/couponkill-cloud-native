@@ -291,6 +291,17 @@ export interface SeckillReservation {
   updateTime?: string
 }
 
+export interface UserNotification {
+  id: string
+  userId: string
+  type: string
+  title: string
+  content?: string | null
+  refId?: string | null
+  readFlag?: boolean
+  createTime?: string
+}
+
 export const reservationStatusText = (status: string): string => {
   switch (status) {
     case ReservationStatus.PENDING:

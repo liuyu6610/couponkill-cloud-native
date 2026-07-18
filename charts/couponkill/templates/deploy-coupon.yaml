@@ -57,11 +57,11 @@ spec:
           # 配置环境变量，用于连接中间件
           env:
             # Nacos配置
-            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+            - name: SPRING_CLOUD_NACOS_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
-            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
-            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             # 集群开关真源：POSTGRES_/KAFKA_/REDIS_（已去掉误导性 MYSQL_/ROCKETMQ_）
             - name: POSTGRES_CLUSTER_ENABLED

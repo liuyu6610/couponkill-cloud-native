@@ -45,6 +45,7 @@ rules:
 - !SINGLE
   tables:
     - order-db-0.seckill_reservation
+    - order-db-0.user_notification
 - !SHARDING
   tables:
     order:

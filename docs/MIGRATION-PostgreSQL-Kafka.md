@@ -169,7 +169,7 @@ docker compose -f docker-compose.migration.yml down -v
 |----|------|
 | OrderMapper XML 漂移 | ✅ 已补齐（2026-07） |
 | Go `stock_count` / 分片 `%4` / 缺多 DS / Redis 计数键序 / Feign 8090 | ✅ 已对齐 Java（分片 `%2`、多 DS、`seckill_remaining_stock`、键序、`seckill-go-svc:8083`、`X-User-Id`） |
-| Helm `deploy-user` 转义 bug | ⚠️ 仍存，阻断部分 `helm template` |
+| Helm `SPRING_CLOUD_NACOS_SERVER-ADDR` 非法环境变量名 | ✅ 已改为 `SPRING_CLOUD_NACOS_SERVER_ADDR`（user/order/coupon/connector） |
 | 运行时 JDK | ✅ 工程统一 **JDK 25**（`pom` / Dockerfile Temurin 25；本地 `D:\dev-lanuage\java\jdk-25`） |
 
 Go 秒杀热路径已冻结：默认 `couponkill.seckill.go.enabled=false` 且禁止过载自动切流；沙箱联调须显式双开 `enabled`+`fallback-to-go`，不得作为生产降级。

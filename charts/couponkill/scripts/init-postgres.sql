@@ -142,6 +142,23 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_reservation_request
         ON seckill_reservation (request_id)
         WHERE request_id IS NOT NULL;
+
+    -- 站内通知（预约结果等；单库 order-db-0）
+    CREATE TABLE IF NOT EXISTS user_notification (
+        id            BIGSERIAL PRIMARY KEY,
+        user_id       BIGINT       NOT NULL,
+        type          VARCHAR(64)  NOT NULL,
+        title         VARCHAR(128) NOT NULL,
+        content       VARCHAR(512),
+        ref_id        BIGINT,
+        read_flag     BOOLEAN      NOT NULL DEFAULT FALSE,
+        create_time   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_notification_user
+        ON user_notification (user_id, create_time DESC);
+    CREATE INDEX IF NOT EXISTS idx_notification_unread
+        ON user_notification (user_id)
+        WHERE read_flag = FALSE;
 END $$;
 
 \c order_db_1

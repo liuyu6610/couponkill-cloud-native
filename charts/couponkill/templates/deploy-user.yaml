@@ -81,7 +81,8 @@ spec:
             - name: SPRING_REDIS_PORT
               value: "6379"
             {{- if .Values.nacos.enabled }}
-            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+            # spring.cloud.nacos.server-addr → SPRING_CLOUD_NACOS_SERVER_ADDR（禁止 SERVER-ADDR 连字符）
+            - name: SPRING_CLOUD_NACOS_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             {{- end }}
             {{- if .Values.sentinel.enabled }}

@@ -22,3 +22,14 @@ func TestMergeDBAliasMysqlFallback(t *testing.T) {
 		t.Fatalf("expected postgres filled from mysql alias")
 	}
 }
+
+func TestMergeMiddlewarePostgresWins(t *testing.T) {
+	c := &Config{}
+	c.Middleware.Postgres.Cluster.Enabled = true
+	c.Middleware.Postgres.Cluster.Nodes = []string{"pg:5432"}
+	c.Middleware.Mysql.Cluster.Nodes = []string{"legacy:3306"}
+	mergeDBAlias(c)
+	if len(c.Middleware.Mysql.Cluster.Nodes) != 1 || c.Middleware.Mysql.Cluster.Nodes[0] != "pg:5432" {
+		t.Fatalf("expected middleware.mysql mirrored from postgres")
+	}
+}

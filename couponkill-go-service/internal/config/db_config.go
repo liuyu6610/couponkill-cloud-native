@@ -8,44 +8,30 @@ import (
 	"couponkill-go-service/pkg/sharding"
 )
 
-// MySQLConfig MySQL配置
-type MySQLConfig struct {
-	// 单数据源配置（用于向后兼容）
-	DSN      string `yaml:"dsn"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Database string `yaml:"database"`
-	// 多数据源配置
-	DataSources map[string]DataSourceConfig `yaml:"dataSources"`
-	// 主从复制配置
-	Replication struct {
-		Enabled bool               `yaml:"enabled"`
-		Master  DataSourceConfig   `yaml:"master"`
-		Slaves  []DataSourceConfig `yaml:"slaves"`
-	} `yaml:"replication"`
-}
-
-// initializeMySQLStandalone 初始化MySQL单节点连接
-func initializeMySQLStandalone(cfg *Config) (*sharding.MultiDataSource, error) {
+// initializePostgresStandalone 初始化 PostgreSQL 单节点连接
+func initializePostgresStandalone(cfg *Config) (*sharding.MultiDataSource, error) {
 	multiDS := sharding.NewMultiDataSource()
 
-	// 添加默认数据源
-	if err := multiDS.AddDataSource("default", cfg.Mysql.DSN); err != nil {
+	dsn := cfg.Postgres.DSN
+	if dsn == "" {
+		dsn = cfg.Mysql.DSN
+	}
+	if err := multiDS.AddDataSource("default", dsn); err != nil {
 		return nil, fmt.Errorf("添加默认数据源失败: %v", err)
 	}
 
 	return multiDS, nil
 }
 
-// initializeMySQLCluster 初始化MySQL集群连接
-func initializeMySQLCluster(cfg *Config) (*sharding.MultiDataSource, error) {
+// initializePostgresCluster 初始化 PG 集群连接（读 middleware.postgres；兼容旧 middleware.mysql）
+func initializePostgresCluster(cfg *Config) (*sharding.MultiDataSource, error) {
 	multiDS := sharding.NewMultiDataSource()
+	mw := cfg.Middleware.Postgres
+	if mw.empty() {
+		mw = cfg.Middleware.Mysql
+	}
 
-	// 为每个集群节点创建数据源
-	for i, node := range cfg.Middleware.Mysql.Cluster.Nodes {
-		// 解析节点信息 host:port
+	for i, node := range mw.Cluster.Nodes {
 		parts := strings.Split(node, ":")
 		if len(parts) != 2 {
 			continue
@@ -54,15 +40,20 @@ func initializeMySQLCluster(cfg *Config) (*sharding.MultiDataSource, error) {
 		host := parts[0]
 		port := parts[1]
 
-		// 构建 PostgreSQL DSN
-		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-			host, port,
-			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Username,
-			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Password,
-			cfg.Mysql.DataSources[fmt.Sprintf("mysql-db-%d", i)].Database)
+		dsKey := fmt.Sprintf("postgres-db-%d", i)
+		legacyKey := fmt.Sprintf("mysql-db-%d", i)
+		ds := cfg.Postgres.DataSources[dsKey]
+		if ds.Username == "" {
+			ds = cfg.Postgres.DataSources[legacyKey]
+		}
+		if ds.Username == "" {
+			ds = cfg.Mysql.DataSources[legacyKey]
+		}
 
-		// 添加数据源
-		if err := multiDS.AddDataSource(fmt.Sprintf("mysql-cluster-node-%d", i), dsn); err != nil {
+		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			host, port, ds.Username, ds.Password, ds.Database)
+
+		if err := multiDS.AddDataSource(fmt.Sprintf("pg-cluster-node-%d", i), dsn); err != nil {
 			log.Printf("添加集群节点%d失败: %v", i, err)
 			continue
 		}
@@ -71,32 +62,45 @@ func initializeMySQLCluster(cfg *Config) (*sharding.MultiDataSource, error) {
 	return multiDS, nil
 }
 
-// initializeMySQLReplication 初始化MySQL主从复制连接
-func initializeMySQLReplication(cfg *Config) (*sharding.MultiDataSource, error) {
+// initializePostgresReplication 初始化 PG 主从连接
+func initializePostgresReplication(cfg *Config) (*sharding.MultiDataSource, error) {
 	multiDS := sharding.NewMultiDataSource()
+	mw := cfg.Middleware.Postgres
+	if mw.empty() {
+		mw = cfg.Middleware.Mysql
+	}
 
-	// 添加主节点
+	masterCred := cfg.Postgres.Replication.Master
+	if masterCred.Username == "" {
+		masterCred = cfg.Mysql.Replication.Master
+	}
+
 	masterDSN := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Middleware.Mysql.Replication.Master.Host,
-		cfg.Middleware.Mysql.Replication.Master.Port,
-		cfg.Mysql.Replication.Master.Username,
-		cfg.Mysql.Replication.Master.Password,
-		cfg.Mysql.Replication.Master.Database)
+		mw.Replication.Master.Host,
+		mw.Replication.Master.Port,
+		masterCred.Username,
+		masterCred.Password,
+		masterCred.Database)
 
-	if err := multiDS.AddDataSource("mysql-master", masterDSN); err != nil {
+	if err := multiDS.AddDataSource("pg-master", masterDSN); err != nil {
 		log.Printf("添加主节点失败: %v", err)
 	}
 
-	// 添加从节点
-	for i, slave := range cfg.Middleware.Mysql.Replication.Slaves {
+	for i, slave := range mw.Replication.Slaves {
+		slaveCred := DataSourceConfig{}
+		if i < len(cfg.Postgres.Replication.Slaves) {
+			slaveCred = cfg.Postgres.Replication.Slaves[i]
+		} else if i < len(cfg.Mysql.Replication.Slaves) {
+			slaveCred = cfg.Mysql.Replication.Slaves[i]
+		}
 		slaveDSN := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			slave.Host,
 			slave.Port,
-			cfg.Mysql.Replication.Slaves[i].Username,
-			cfg.Mysql.Replication.Slaves[i].Password,
-			cfg.Mysql.Replication.Slaves[i].Database)
+			slaveCred.Username,
+			slaveCred.Password,
+			slaveCred.Database)
 
-		if err := multiDS.AddDataSource(fmt.Sprintf("mysql-slave-%d", i), slaveDSN); err != nil {
+		if err := multiDS.AddDataSource(fmt.Sprintf("pg-slave-%d", i), slaveDSN); err != nil {
 			log.Printf("添加从节点%d失败: %v", i, err)
 			continue
 		}
@@ -104,3 +108,10 @@ func initializeMySQLReplication(cfg *Config) (*sharding.MultiDataSource, error) 
 
 	return multiDS, nil
 }
+
+// 历史名保留，避免外部引用编译失败
+var (
+	initializeMySQLStandalone  = initializePostgresStandalone
+	initializeMySQLCluster     = initializePostgresCluster
+	initializeMySQLReplication = initializePostgresReplication
+)

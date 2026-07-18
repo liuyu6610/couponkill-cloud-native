@@ -33,6 +33,7 @@ public class ReservationTriggerService {
     private final CouponServiceFeignClient couponServiceFeignClient;
     private final AsyncSeckillEnterService asyncSeckillEnterService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final NotificationService notificationService;
 
     @Value("${couponkill.reservation.max-retry:3}")
     private int maxRetry;
@@ -72,10 +73,18 @@ public class ReservationTriggerService {
             if (result.startsWith("SUCCESS")) {
                 String orderId = result.contains(":") ? result.substring(result.indexOf(':') + 1) : null;
                 reservationMapper.markSuccess(r.getId(), orderId, r.getVersion());
+                notificationService.notifyReservation(
+                        r.getUserId(), r.getId(), "RESERVATION_SUCCESS",
+                        "预约帮抢成功",
+                        "券 " + r.getCouponId() + " 已入队成功" + (orderId != null ? "，订单 " + orderId : ""));
                 log.info("预约结果同步 SUCCESS: id={}, requestId={}, orderId={}",
                         r.getId(), r.getRequestId(), orderId);
             } else if (result.startsWith("FAIL")) {
                 reservationMapper.markFailed(r.getId(), ErrorCodes.SYS_ERROR, "秒杀履约失败", r.getVersion());
+                notificationService.notifyReservation(
+                        r.getUserId(), r.getId(), "RESERVATION_FAILED",
+                        "预约帮抢失败",
+                        "券 " + r.getCouponId() + " 履约失败，请查看「我的预约」");
                 log.info("预约结果同步 FAIL: id={}, requestId={}", r.getId(), r.getRequestId());
             }
         }
@@ -88,6 +97,10 @@ public class ReservationTriggerService {
             Coupon coupon = safeLoadCoupon(r.getCouponId());
             if (coupon != null && coupon.getSeckillEndAt() != null && now.isAfter(coupon.getSeckillEndAt())) {
                 reservationMapper.markExpired(r.getId());
+                notificationService.notifyReservation(
+                        r.getUserId(), r.getId(), "RESERVATION_EXPIRED",
+                        "预约已过期",
+                        "券 " + r.getCouponId() + " 活动已结束，预约失效");
                 log.info("预约过期: id={}, couponId={}", r.getId(), r.getCouponId());
             }
         }
@@ -115,6 +128,10 @@ public class ReservationTriggerService {
             LocalDateTime now = LocalDateTime.now();
             if (coupon != null && coupon.getSeckillEndAt() != null && !now.isBefore(coupon.getSeckillEndAt())) {
                 reservationMapper.markExpired(r.getId());
+                notificationService.notifyReservation(
+                        r.getUserId(), r.getId(), "RESERVATION_EXPIRED",
+                        "预约已过期",
+                        "券 " + r.getCouponId() + " 活动已结束，预约失效");
                 return;
             }
 
@@ -130,7 +147,7 @@ public class ReservationTriggerService {
                 resp = orderService.enterSeckillAsync(r.getUserId(), r.getCouponId());
             } catch (Exception e) {
                 log.warn("预约帮抢调用热路径异常: id={}, err={}", r.getId(), e.getMessage());
-                handleTransientOrFail(r.getId(), currentVersion, r.getRetryCount(),
+                handleTransientOrFail(r, currentVersion,
                         ErrorCodes.SYS_ERROR, "系统繁忙，请稍后由调度重试");
                 return;
             }
@@ -147,11 +164,15 @@ public class ReservationTriggerService {
 
             // 冷却 / 未预热：有限重试
             if (err == ErrorCodes.COOLING_DOWN || err == ErrorCodes.NOT_PREHEATED) {
-                handleTransientOrFail(r.getId(), currentVersion, r.getRetryCount(), err, msg);
+                handleTransientOrFail(r, currentVersion, err, msg);
                 return;
             }
 
             reservationMapper.markFailed(r.getId(), err, msg, currentVersion);
+            notificationService.notifyReservation(
+                    r.getUserId(), r.getId(), "RESERVATION_FAILED",
+                    "预约帮抢失败",
+                    "券 " + r.getCouponId() + "：" + msg);
             log.info("预约帮抢失败: id={}, err={}, msg={}", r.getId(), err, msg);
         } finally {
             try {
@@ -162,16 +183,20 @@ public class ReservationTriggerService {
         }
     }
 
-    private void handleTransientOrFail(Long id, int version, Integer retryCount, int err, String msg) {
-        int retries = retryCount == null ? 0 : retryCount;
+    private void handleTransientOrFail(SeckillReservation r, int version, int err, String msg) {
+        int retries = r.getRetryCount() == null ? 0 : r.getRetryCount();
         if (retries + 1 >= maxRetry) {
-            reservationMapper.markFailed(id, err, msg + "（已达重试上限）", version);
+            String finalMsg = msg + "（已达重试上限）";
+            reservationMapper.markFailed(r.getId(), err, finalMsg, version);
+            notificationService.notifyReservation(
+                    r.getUserId(), r.getId(), "RESERVATION_FAILED",
+                    "预约帮抢失败",
+                    "券 " + r.getCouponId() + "：" + finalMsg);
             return;
         }
-        reservationMapper.bumpRetry(id, version);
-        // bump 后 version+1，再 revert
-        reservationMapper.revertToPending(id, version + 1);
-        log.info("预约帮抢瞬态失败，回 PENDING 待重试: id={}, retry={}, err={}", id, retries + 1, err);
+        reservationMapper.bumpRetry(r.getId(), version);
+        reservationMapper.revertToPending(r.getId(), version + 1);
+        log.info("预约帮抢瞬态失败，回 PENDING 待重试: id={}, retry={}, err={}", r.getId(), retries + 1, err);
     }
 
     private Coupon safeLoadCoupon(Long couponId) {

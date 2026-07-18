@@ -46,7 +46,7 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: "{{ .Values.services.connector.profile | default "prod" }}"
             {{- if .Values.nacos.enabled }}
-            - name: SPRING_CLOUD_NACOS_SERVER-ADDR
+            - name: SPRING_CLOUD_NACOS_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             {{- end }}
             - name: CONNECTOR_DB_HOST

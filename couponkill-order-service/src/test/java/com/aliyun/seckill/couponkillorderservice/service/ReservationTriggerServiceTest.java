@@ -44,6 +44,8 @@ class ReservationTriggerServiceTest {
     private StringRedisTemplate stringRedisTemplate;
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private ReservationTriggerService triggerService;

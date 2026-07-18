@@ -84,10 +84,10 @@ func main() {
 
 	log.Printf("配置加载成功: 端口=%d, Redis地址=%s", cfg.Server.Port, cfg.Redis.Addr)
 
-	// 3. 初始化客户端
-	multiDS, err := initializeMySQLClient(cfg)
+	// 3. 初始化客户端（PG 多数据源；函数名历史兼容）
+	multiDS, err := initializePostgresClient(cfg)
 	if err != nil {
-		log.Fatalf("初始化MySQL客户端失败: %v", err)
+		log.Fatalf("初始化 PostgreSQL 客户端失败: %v", err)
 	}
 	defer multiDS.Close()
 
@@ -141,65 +141,56 @@ func main() {
 	log.Println("服务器已退出")
 }
 
-// initializeMySQLClient 初始化MySQL客户端
-func initializeMySQLClient(cfg *config.Config) (*sharding.MultiDataSource, error) {
-	// 转换数据源配置格式
+// initializePostgresClient 初始化 PostgreSQL 多数据源（读取顶层 postgres，兼容 mysql 别名）
+func initializePostgresClient(cfg *config.Config) (*sharding.MultiDataSource, error) {
+	block := cfg.Postgres
+	if block.DSN == "" && len(block.DataSources) == 0 {
+		block = cfg.Mysql
+	}
 	convertedDataSources := make(map[string]struct{ DSN string })
-	for name, dsConfig := range cfg.Mysql.DataSources {
+	for name, dsConfig := range block.DataSources {
 		convertedDataSources[name] = struct{ DSN string }{DSN: dsConfig.DSN}
 	}
 
-	// 初始化MySQL客户端
 	multiDS, err := mysqlclient.NewMultiMysqlClient(
-		cfg.Mysql.DSN,
+		block.DSN,
 		convertedDataSources,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("初始化MySQL客户端失败: %v", err)
+		return nil, fmt.Errorf("初始化 PostgreSQL 客户端失败: %v", err)
 	}
 
-	// 将全局MySQL客户端变量设置为新创建的客户端
+	config.PostgresClient = multiDS
 	config.MySQLClient = multiDS
 	return multiDS, nil
 }
 
-// monitorMySQLClient 监控MySQL客户端状态并在需要时重新初始化
-func monitorMySQLClient(cfg *config.Config, currentDS *sharding.MultiDataSource) {
-	// 定期检查MySQL客户端是否需要重新初始化
+// initializeMySQLClient 历史别名
+func initializeMySQLClient(cfg *config.Config) (*sharding.MultiDataSource, error) {
+	return initializePostgresClient(cfg)
+}
+
+// monitorPostgresClient 监控 PG 客户端并在需要时重新初始化
+func monitorPostgresClient(cfg *config.Config, currentDS *sharding.MultiDataSource) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		// 检查全局MySQL客户端是否为nil，表示需要重新初始化
-		if config.MySQLClient == nil {
-			log.Println("检测到MySQL客户端需要重新初始化")
-
-			// 转换数据源配置格式
-			convertedDataSources := make(map[string]struct{ DSN string })
-			for name, dsConfig := range cfg.Mysql.DataSources {
-				convertedDataSources[name] = struct{ DSN string }{DSN: dsConfig.DSN}
-			}
-
-			// 重新初始化MySQL客户端
-			newDS, err := mysqlclient.NewMultiMysqlClient(
-				cfg.Mysql.DSN,
-				convertedDataSources,
-			)
+		if config.PostgresClient == nil && config.MySQLClient == nil {
+			log.Println("检测到 PostgreSQL 客户端需要重新初始化")
+			newDS, err := initializePostgresClient(cfg)
 			if err != nil {
-				log.Printf("重新初始化MySQL客户端失败: %v", err)
+				log.Printf("重新初始化 PostgreSQL 客户端失败: %v", err)
 				continue
 			}
-
-			// 更新全局变量
-			config.MySQLClient = newDS
-
-			// 关闭旧的连接
 			currentDS.Close()
-
-			// 更新当前连接引用
 			currentDS = newDS
-
-			log.Println("MySQL客户端重新初始化完成")
+			log.Println("PostgreSQL 客户端重新初始化完成")
 		}
 	}
+}
+
+// monitorMySQLClient 历史别名
+func monitorMySQLClient(cfg *config.Config, currentDS *sharding.MultiDataSource) {
+	monitorPostgresClient(cfg, currentDS)
 }

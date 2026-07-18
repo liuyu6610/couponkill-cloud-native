@@ -13,11 +13,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// 全局中间件客户端
+	// 全局中间件客户端
 var (
 	RedisClient        *redis.Client
 	RedisClusterClient *redis.ClusterClient
-	MySQLClient        *sharding.MultiDataSource
+	// PostgresClient 为 PG 多数据源句柄（历史名 MySQLClient 已弃用别名见下方）
+	PostgresClient *sharding.MultiDataSource
+	// MySQLClient 兼容旧调用方，与 PostgresClient 指向同一实例
+	MySQLClient *sharding.MultiDataSource
 )
 
 // Config 应用配置
@@ -68,23 +71,10 @@ type Config struct {
 		FallbackToGo     bool   `yaml:"fallback-to-go"`
 	} `yaml:"collaboration"`
 	Middleware struct {
-		Mysql struct {
-			Cluster struct {
-				Enabled bool     `yaml:"enabled"`
-				Nodes   []string `yaml:"nodes"`
-			} `yaml:"cluster"`
-			Replication struct {
-				Enabled bool `yaml:"enabled"`
-				Master  struct {
-					Host string `yaml:"host"`
-					Port int    `yaml:"port"`
-				} `yaml:"master"`
-				Slaves []struct {
-					Host string `yaml:"host"`
-					Port int    `yaml:"port"`
-				} `yaml:"slaves"`
-			} `yaml:"replication"`
-		} `yaml:"mysql"`
+		// Postgres 为 middleware 段 DB 集群真源（yaml: middleware.postgres）
+		Postgres middlewareDBBlock `yaml:"postgres"`
+		// Mysql 为历史别名（yaml: middleware.mysql）；Load 后 merge 进 Postgres
+		Mysql middlewareDBBlock `yaml:"mysql"`
 		Redis struct {
 			Cluster struct {
 				Enabled bool     `yaml:"enabled"`
@@ -116,6 +106,29 @@ type DataSourceConfig struct {
 	Database string `yaml:"database"`
 }
 
+// middlewareDBBlock 对应 middleware.postgres / middleware.mysql（集群监听节点，DSN 仍为 PG）
+type middlewareDBBlock struct {
+	Cluster struct {
+		Enabled bool     `yaml:"enabled"`
+		Nodes   []string `yaml:"nodes"`
+	} `yaml:"cluster"`
+	Replication struct {
+		Enabled bool `yaml:"enabled"`
+		Master  struct {
+			Host string `yaml:"host"`
+			Port int    `yaml:"port"`
+		} `yaml:"master"`
+		Slaves []struct {
+			Host string `yaml:"host"`
+			Port int    `yaml:"port"`
+		} `yaml:"slaves"`
+	} `yaml:"replication"`
+}
+
+func (b middlewareDBBlock) empty() bool {
+	return !b.Cluster.Enabled && len(b.Cluster.Nodes) == 0 && !b.Replication.Enabled
+}
+
 // dbBlock 对应 yaml 顶层 postgres / mysql（值为 PostgreSQL DSN）
 type dbBlock struct {
 	DSN         string                      `yaml:"dsn"`
@@ -140,10 +153,14 @@ func (b dbBlock) empty() bool {
 func mergeDBAlias(c *Config) {
 	if !c.Postgres.empty() {
 		c.Mysql = c.Postgres
-		return
-	}
-	if !c.Mysql.empty() {
+	} else if !c.Mysql.empty() {
 		c.Postgres = c.Mysql
+	}
+	// middleware.postgres 优先；仅有 middleware.mysql 时回填
+	if !c.Middleware.Postgres.empty() {
+		c.Middleware.Mysql = c.Middleware.Postgres
+	} else if !c.Middleware.Mysql.empty() {
+		c.Middleware.Postgres = c.Middleware.Mysql
 	}
 }
 
@@ -204,24 +221,9 @@ func Load() (*Config, error) {
 			log.Printf("中间件集群配置发生变化: namespace=%s, group=%s, dataId=%s", namespace, group, dataId)
 			var middlewareConfig struct {
 				Middleware struct {
-					Mysql struct {
-						Cluster struct {
-							Enabled bool     `yaml:"enabled"`
-							Nodes   []string `yaml:"nodes"`
-						} `yaml:"cluster"`
-						Replication struct {
-							Enabled bool `yaml:"enabled"`
-							Master  struct {
-								Host string `yaml:"host"`
-								Port int    `yaml:"port"`
-							} `yaml:"master"`
-							Slaves []struct {
-								Host string `yaml:"host"`
-								Port int    `yaml:"port"`
-							} `yaml:"slaves"`
-						} `yaml:"replication"`
-					} `yaml:"mysql"`
-					Redis struct {
+					Postgres middlewareDBBlock `yaml:"postgres"`
+					Mysql    middlewareDBBlock `yaml:"mysql"`
+					Redis    struct {
 						Cluster struct {
 							Enabled bool     `yaml:"enabled"`
 							Nodes   []string `yaml:"nodes"`
@@ -245,11 +247,12 @@ func Load() (*Config, error) {
 			if err := yaml.Unmarshal([]byte(data), &middlewareConfig); err != nil {
 				log.Printf("解析中间件集群配置失败: %v", err)
 			} else {
-				// 更新中间件配置
-				cfg.Middleware = middlewareConfig.Middleware
+				cfg.Middleware.Postgres = middlewareConfig.Middleware.Postgres
+				cfg.Middleware.Mysql = middlewareConfig.Middleware.Mysql
+				cfg.Middleware.Redis = middlewareConfig.Middleware.Redis
+				cfg.Middleware.Kafka = middlewareConfig.Middleware.Kafka
+				mergeDBAlias(&cfg)
 				log.Println("中间件集群配置已更新")
-
-				// 根据配置变化重新初始化中间件连接
 				initializeMiddlewareConnections(&cfg)
 			}
 		})
@@ -411,13 +414,13 @@ func initializeMiddlewareConnections(cfg *Config) {
 		RedisClient = redisclient.NewRedisClient(cfg.Redis.Addr, cfg.Redis.UserName, cfg.Redis.Password, cfg.Redis.DB)
 	}
 
-	// 重新初始化MySQL连接
-	log.Println("重新初始化MySQL连接")
-	if MySQLClient != nil {
+	// 重新初始化 PG 连接（兼容旧 MySQLClient 名）
+	log.Println("重新初始化 PostgreSQL 连接")
+	if PostgresClient != nil {
+		PostgresClient.Close()
+	} else if MySQLClient != nil {
 		MySQLClient.Close()
 	}
-
-	// 发送通知信号，让main.go重新初始化MySQL客户端
-	// 这里我们简单地将MySQLClient设置为nil，表示需要重新初始化
+	PostgresClient = nil
 	MySQLClient = nil
 }
