@@ -1,4 +1,5 @@
-// Jenkinsfile
+// Jenkinsfile — 生产/演示集群 CD 真源（见 docs/CICD-SOURCE-OF-TRUTH.md）
+// 部署制品以 charts/couponkill 为准（见 docs/DEPLOYMENT-SOURCE-OF-TRUTH.md）
 pipeline {
     agent any
     

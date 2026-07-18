@@ -1,6 +1,7 @@
 #-------------------------------------------------------------------------------#
 #            Discover all capabilities of Qodana in our documentation           #
 #             https://www.jetbrains.com/help/qodana/about-qodana.html           #
+# 角色：可选质量扫描（非 CD）。CI/CD 真源见 docs/CICD-SOURCE-OF-TRUTH.md
 #-------------------------------------------------------------------------------#
 
 name: Qodana

@@ -1,5 +1,8 @@
 # CouponKill Istio 配置
 
+> **非独立部署入口（补充样例）**  
+> 生产部署真源是 [`charts/couponkill`](../charts/couponkill)。本目录仅在 Helm 开启 `istio.enabled` 之后叠加高级 Istio 清单，禁止单独 `kubectl apply` 当作整套系统部署。详见 [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](../docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)。
+
 CouponKill 系统提供了完整的 Istio 服务网格配置，用于实现高级的流量管理、安全控制和可观察性功能。这些配置位于 [k8s-istio](.) 目录中，作为 Helm Chart 中基础 Istio 功能的补充。
 
 ## 目录结构

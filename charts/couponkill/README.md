@@ -1,5 +1,8 @@
 # CouponKill Helm Chart
 
+> **生产 / 演示集群部署真源**  
+> 本 Chart 是仓库唯一推荐的 K8s 部署入口。`k8s-nothing/`、`ansible/` 等为 DEPRECATED；`k8s-istio/` 仅为叠加样例。详见 [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](../../docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)。
+
 CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专为秋招展示而设计。该系统具备高可用性、可扩展性和弹性伸缩能力，能够应对秒杀场景下的流量峰值。
 
 ## 功能特性

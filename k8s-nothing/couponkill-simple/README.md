@@ -1,5 +1,8 @@
 # CouponKill 简易版部署说明
 
+> **DEPRECATED（禁止用于新环境）**  
+> 本目录为历史简易一体包，叙事仍含旧中间件假设。生产 / 演示请改用 Helm 真源 [`charts/couponkill`](../../charts/couponkill)。详见 [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](../../docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)。
+
 ## 概述
 
 CouponKill 简易版是一个简化部署版本，将整个系统分为三个主要部分：

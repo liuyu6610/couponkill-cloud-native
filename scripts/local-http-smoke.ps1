@@ -1,4 +1,4 @@
-# 本地 HTTP JWT 冒烟：启动 user/gateway/order → login → 新旧 order 路径 → 清理进程
+# 本地 HTTP JWT 冒烟：启动 user/gateway/order/coupon → login → order 双路径 + coupon available → 清理
 # 前置：docker compose -f docker-compose.migration.yml up -d；powershell -File scripts/import-nacos-local.ps1
 # 用法：powershell -NoProfile -File scripts/local-http-smoke.ps1
 
@@ -56,7 +56,7 @@ function Stop-SmokeProcs($items) {
         }
     }
     Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -match 'couponkill-(user|gateway|order)-service' } |
+        Where-Object { $_.CommandLine -match 'couponkill-(user|gateway|order|coupon)-service' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
 
@@ -70,6 +70,7 @@ try {
     $started += Start-Module 'couponkill-user-service' 'user' 8081
     $started += Start-Module 'couponkill-gateway' 'gateway' 8088
     $started += Start-Module 'couponkill-order-service' 'order' 8082
+    $started += Start-Module 'couponkill-coupon-service' 'coupon' 8080
 
     $ready = @{}
     foreach ($it in $started) {
@@ -87,6 +88,9 @@ try {
     if (-not ($ready['user'] -and $ready['gateway'])) {
         throw "user/gateway 未就绪，中止冒烟"
     }
+    if (-not $ready['coupon']) {
+        throw "coupon 未就绪，中止冒烟"
+    }
 
     Write-Host "== login =="
     $loginRaw = & curl.exe -s -w "`nHTTP:%{http_code}" -X POST `
@@ -103,7 +107,7 @@ try {
     Write-Host ("TOKEN_LEN={0}" -f $token.Length)
 
     if (-not $ready['order']) {
-        throw "order 未就绪，跳过路径冒烟"
+        throw "order 未就绪，中止冒烟"
     }
 
     Write-Host "== dual order paths =="
@@ -116,10 +120,17 @@ try {
     Write-Host "OLD=>$old"
     Write-Host "NEW=>$new"
 
+    Write-Host "== coupon available =="
+    $coupon = & curl.exe -s -w "`nHTTP:%{http_code}" `
+        -H "Authorization: Bearer $token" `
+        "http://127.0.0.1:8088/api/v1/coupon/available"
+    Write-Host "COUPON=>$coupon"
+
     $oldOk = ($old -match 'HTTP:200') -and ($old -match '"code"\s*:\s*0')
     $newOk = ($new -match 'HTTP:200') -and ($new -match '"code"\s*:\s*0')
-    if (-not ($oldOk -and $newOk)) {
-        throw "双路径冒烟未同时通过 oldOk=$oldOk newOk=$newOk"
+    $couponOk = ($coupon -match 'HTTP:200') -and ($coupon -match '"code"\s*:\s*0')
+    if (-not ($oldOk -and $newOk -and $couponOk)) {
+        throw "冒烟未同时通过 oldOk=$oldOk newOk=$newOk couponOk=$couponOk"
     }
     Write-Host "== SMOKE PASS =="
 }

@@ -9,7 +9,7 @@ CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专
 开发语言: Java 25、Go
 容器编排: Kubernetes
 服务网格: Istio
-CI/CD: Jenkins
+CI/CD: Jenkins（CD 真源）+ GitHub Actions（PR 校验）；说明见 `docs/CICD-SOURCE-OF-TRUTH.md`
 服务注册与发现: Nacos
 配置中心: Nacos
 分布式事务: 本地事务 + 最终一致（Kafka 异步 / 库存回补；**未启用 Seata**）
@@ -310,6 +310,17 @@ kubectl apply -f k8s-istio/
 ```
 
 这将应用所有高级 Istio 配置，包括细粒度的流量管理、安全策略和可观察性配置。
+
+## 部署真源（必读）
+
+| 用途 | 真源 |
+|------|------|
+| K8s 生产 / 演示部署 | **[`charts/couponkill`](charts/couponkill)**（唯一入口） |
+| 本地中间件 | [`docker-compose.migration.yml`](docker-compose.migration.yml)（PG 宿主机 **5433**） |
+| 部署路径说明 | [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](docs/DEPLOYMENT-SOURCE-OF-TRUTH.md) |
+| CI/CD 路径说明 | [`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md) |
+
+`k8s-nothing/`、`ansible/`、`cross-namespace-monitoring/` 为 **DEPRECATED**；`k8s-istio/` 仅为 Helm Istio 之上的补充样例，不是独立部署入口。
 
 ## 快速开始
 
@@ -681,12 +692,19 @@ helm upgrade couponkill-canary ./charts/couponkill --namespace couponkill -f ./c
 
 ## CI/CD 流程
 
-项目使用 Jenkins 进行持续集成和持续部署。Jenkinsfile 定义了完整的构建、测试、打包和部署流程。
+> **真源文档**：[`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md)
 
-主要步骤包括：
-1. 并行构建所有服务
-2. 构建并推送 Docker 镜像到私有仓库（包括稳定版本和金丝雀版本）
-3. 使用 Helm 部署到 Kubernetes 集群
-4. 部署金丝雀版本以支持渐进式交付
+| 环节 | 入口 | 职责 |
+|------|------|------|
+| **CD（集群发布）** | [`Jenkinsfile`](Jenkinsfile) | 构建 → 推镜像 → `helm upgrade` [`charts/couponkill`](charts/couponkill)（含金丝雀） |
+| **CI（PR/推送校验）** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | 各 Java 模块与 Go 服务测试；**不**推镜像、**不**部署 |
+| 可选质量门禁 | Qodana workflow | 需 `QODANA_TOKEN` |
+| 本地镜像构建 | `Makefile` / `build.ps1` | 开发机构建，不替代 Jenkins |
 
-通过金丝雀发布功能，可以实现更安全、更可控的服务更新，降低新版本上线带来的风险。
+Jenkins CD 主要步骤：
+1. 并行构建 Java / Go / Operator
+2. 构建并推送 Docker 镜像（稳定 tag + 金丝雀）
+3. Helm 部署到 Kubernetes（制品真源为 Chart，见部署真源文档）
+4. 金丝雀 release（`values.canary-keda.yaml`）
+
+仓库内**没有** Argo CD Application；勿将「push main → Argo 同步」当作现行流程。

@@ -1,5 +1,8 @@
 # 跨命名空间监控配置示例
 
+> **DEPRECATED（非生产基线）**  
+> 实验性跨命名空间监控样例。生产部署真源为 [`charts/couponkill`](../charts/couponkill)。详见 [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](../docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)。
+
 这个示例展示了如何配置Prometheus Operator在`monitoring`命名空间中监控`couponkill`命名空间中的服务。
 
 ## 目录结构

@@ -1,41 +1,42 @@
-name: CouponKill CI/CD
+# CI 真源说明见 docs/CICD-SOURCE-OF-TRUTH.md
+# 本 workflow 仅做 PR/推送校验，不推镜像、不部署集群（CD 以根目录 Jenkinsfile 为准）。
+name: CouponKill CI
+
 on:
   push:
-    branches: [ develop, main ]
+    branches: [develop, main]
   pull_request:
-    branches: [ develop ]
+    branches: [develop, main]
 
 jobs:
-  test:
+  java-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Test Java services
-        run: ./mvnw test -f couponkill-coupon-service/pom.xml
-      - name: Test Go service
-        run: cd couponkill-go-service && go test -v ./...
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Test coupon service
+        run: mvn -B -f couponkill-coupon-service/pom.xml test
+      - name: Test order service
+        run: mvn -B -f couponkill-order-service/pom.xml test
+      - name: Test user service
+        run: mvn -B -f couponkill-user-service/pom.xml test
+      - name: Test gateway
+        run: mvn -B -f couponkill-gateway/pom.xml test
 
-  build:
-    needs: test
+  go-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Login to ACR
-        run: |
-          echo ${{ secrets.ACR_PASSWORD }} | docker login -u ${{ secrets.ACR_USERNAME }} --password-stdin ${{ secrets.ACR_REPOSITORY }}
-      - name: Build Docker images
-        run:
-         make build-all-images-registry
-         make push-all-images
-
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'  # 仅main分支触发生产部署
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Update Helm Chart version
-        run: ./scripts/bump-chart-version.sh  # 自动更新Chart版本
-      - name: Push changes
-        run: git push origin main  # 触发Argo CD同步
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache-dependency-path: couponkill-go-service/go.sum
+      - name: Test Go seckill service
+        working-directory: couponkill-go-service
+        run: go test ./...
