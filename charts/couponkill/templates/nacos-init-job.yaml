@@ -122,28 +122,28 @@ thread-pool:
     keep-alive-seconds: 60
     rejected-policy: CALLER_RUNS
 database:
-  mysql:
+  postgresql:
     master:
-      host: mysql-master
-      port: 3306
-      username: root
-      password: root
+      host: postgres-master
+      port: 5432
+      username: postgres
+      password: postgres
     slaves:
-      - host: mysql-slave-0
-        port: 3306
-        username: root
-        password: root
-      - host: mysql-slave-1
-        port: 3306
-        username: root
-        password: root
+      - host: postgres-slave-0
+        port: 5432
+        username: postgres
+        password: postgres
+      - host: postgres-slave-1
+        port: 5432
+        username: postgres
+        password: postgres
 cluster:
   config:
     middleware: middleware-cluster.yaml
     database: database-connection.yaml
     cache: cache-connection.yaml
     messaging: messaging-connection.yaml
-    mysql: mysql-cluster.yaml
+    postgresql: postgresql-cluster.yaml
     redis: redis-cluster.yaml" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
@@ -177,76 +177,61 @@ cluster:
             " \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 创建MySQL集群配置
+              # 创建 PostgreSQL 集群配置（对齐 nacos/DEFAULT_GROUP/postgresql-cluster.yaml）
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
-                -d "dataId=mysql-cluster.yaml" \
+                -d "dataId=postgresql-cluster.yaml" \
                 -d "group=DEFAULT_GROUP" \
-                --data-urlencode "content=mysql:
+                --data-urlencode "content=postgresql:
   cluster:
     enabled: false
     master-slave:
       enabled: false
       master:
-        host: mysql-master
-        port: 3306
-        username: root
-        password: root
+        host: postgres-master
+        port: 5432
+        username: postgres
+        password: postgres
       slaves:
-        - host: mysql-slave-0
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-slave-1
-          port: 3306
-          username: root
-          password: root
-    group-replication:
+        - host: postgres-slave-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-slave-1
+          port: 5432
+          username: postgres
+          password: postgres
+    patroni-cluster:
       enabled: false
       nodes:
-        - host: mysql-gr-0
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-gr-1
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-gr-2
-          port: 3306
-          username: root
-          password: root
-    innodb-cluster:
-      enabled: false
-      nodes:
-        - host: mysql-innodb-0
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-innodb-1
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-innodb-2
-          port: 3306
-          username: root
-          password: root
+        - host: postgres-node-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-node-1
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-node-2
+          port: 5432
+          username: postgres
+          password: postgres
     read-write-splitting:
       enabled: false
       strategy: ROUND_ROBIN
       master:
-        host: mysql-master
-        port: 3306
-        username: root
-        password: root
+        host: postgres-master
+        port: 5432
+        username: postgres
+        password: postgres
       slaves:
-        - host: mysql-slave-0
-          port: 3306
-          username: root
-          password: root
-        - host: mysql-slave-1
-          port: 3306
-          username: root
-          password: root
+        - host: postgres-slave-0
+          port: 5432
+          username: postgres
+          password: postgres
+        - host: postgres-slave-1
+          port: 5432
+          username: postgres
+          password: postgres
     pool:
       max-active: 100
       max-idle: 20
@@ -351,56 +336,42 @@ cluster:
     enabled: false
     mode: auto
   database:
-    mysql:
+    postgresql:
       type: standalone
       standalone:
-        host: mysql
-        port: 3306
-        username: root
-        password: root
+        host: postgres
+        port: 5432
+        username: postgres
+        password: postgres
       master-slave:
         master:
-          host: mysql-master
-          port: 3306
-          username: root
-          password: root
+          host: postgres-master
+          port: 5432
+          username: postgres
+          password: postgres
         slaves:
-          - host: mysql-slave-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-slave-1
-            port: 3306
-            username: root
-            password: root
-      group-replication:
+          - host: postgres-slave-0
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-slave-1
+            port: 5432
+            username: postgres
+            password: postgres
+      patroni-cluster:
         nodes:
-          - host: mysql-gr-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-gr-1
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-gr-2
-            port: 3306
-            username: root
-            password: root
-      innodb-cluster:
-        nodes:
-          - host: mysql-innodb-0
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-innodb-1
-            port: 3306
-            username: root
-            password: root
-          - host: mysql-innodb-2
-            port: 3306
-            username: root
-            password: root
+          - host: postgres-node-0
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-node-1
+            port: 5432
+            username: postgres
+            password: postgres
+          - host: postgres-node-2
+            port: 5432
+            username: postgres
+            password: postgres
   cache:
     redis:
       type: standalone
@@ -605,56 +576,44 @@ cluster:
       log-slow-operations: true" \
                 -H "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
               
-              # 创建消息队列连接配置
+              # 创建消息队列连接配置（Kafka，对齐 nacos/DEFAULT_GROUP/messaging-connection.yaml）
               curl -X POST "http://{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}/nacos/v1/cs/configs" \
                 -d "dataId=messaging-connection.yaml" \
                 -d "group=DEFAULT_GROUP" \
                 --data-urlencode "content=messaging:
   connection:
-    rocketmq:
+    kafka:
+      bootstrap-servers: kafka:9092
+      client-id: couponkill
       producer:
-        group: default-producer-group
-        send-message-timeout: 3000
-        retry-times-when-send-failed: 2
-        retry-times-when-send-async-failed: 2
-        max-message-size: 4096
-        compress-msg-body-over-howmuch: 4096
-        retry-another-broker-when-not-store-ok: true
-        send-latency-fault-enable: true
+        acks: all
+        retries: 3
+        enable-idempotence: true
+        batch-size: 32768
+        linger-ms: 5
+        buffer-memory: 33554432
+        compression-type: lz4
+        request-timeout-ms: 3000
+        delivery-timeout-ms: 10000
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        max-message-size: 1048576
       consumer:
-        group: default-consumer-group
-        consume-thread-min: 20
-        consume-thread-max: 64
-        consume-message-batch-max-size: 1
-        pull-batch-size: 32
-        pull-interval: 0
-        consume-timeout: 15
-        consume-from-where: CONSUME_FROM_FIRST_OFFSET
-        consume-timestamp: 
-        adjust-thread-pool-nums-threshold: 100000
-        max-reconsume-times: 3
-      client:
-        client-ip: 
-        instance-name: DEFAULT
-        unit-name: 
-        vip-channel-enabled: false
-        use-tls: false
-        access-key: 
-        secret-key: 
-        enable-msg-trace: true
-        customize-trace-topic: 
-        tls-enable: false
-      namesrv:
-        addr: rocketmq-namesrv:9876
+        group-id: default-consumer-group
+        auto-offset-reset: latest
+        enable-auto-commit: true
+        max-poll-records: 500
+        fetch-min-bytes: 1
+        session-timeout-ms: 15000
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+        properties:
+          spring.json.trusted.packages: com.aliyun.seckill.common.pojo
       topic:
-        default: default-topic
-        retry: %RETRY%default-consumer-group
-        dlq: %DLQ%default-consumer-group
-      loadbalance:
-        allocate-message-queue-strategy: AVG
-        message-model: CLUSTERING
-        consume-type: CONSUME_PASSIVELY
-        consume-from-where: CONSUME_FROM_FIRST_OFFSET
+        seckill-order-create: seckill_order_create
+        seckill-order-result: seckill_order_result
+        seckill-compensation: seckill_compensation
+        dlq-suffix: .DLT
       failover:
         enabled: true
         retry-count: 3
