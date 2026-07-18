@@ -55,7 +55,7 @@ spec:
             {{- end }}
             # JVM 单真源：仅 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders；禁止与 JAVA_OPTS 双源打架）
             - name: JAVA_TOOL_OPTIONS
-              value: "{{ .Values.services.order.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 --enable-preview\" }}"
+              value: {{ .Values.services.order.jvmOpts | default "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 --enable-preview" | quote }}
             {{- if .Values.services.order.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.order.threadPoolOpts }}"

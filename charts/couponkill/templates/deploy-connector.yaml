@@ -52,7 +52,7 @@ spec:
             - name: CONNECTOR_DB_HOST
               value: "{{ .Values.db.host | default "postgres" }}"
             - name: JAVA_TOOL_OPTIONS
-              value: "{{ .Values.services.connector.jvmOpts | default \"-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0\" }}"
+              value: {{ .Values.services.connector.jvmOpts | default "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0" | quote }}
             {{- if .Values.services.connector.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.connector.threadPoolOpts }}"

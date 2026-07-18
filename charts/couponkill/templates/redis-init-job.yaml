@@ -1,4 +1,4 @@
-{{- if .Values.redis.init.enabled }}
+{{- if and .Values.redis.init .Values.redis.init.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
