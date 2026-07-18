@@ -61,7 +61,7 @@ class OrderControllerPathContractTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data[0].userId").value(10000));
+                .andExpect(jsonPath("$.data[0].userId").value("10000"));
     }
 
     @Test
@@ -71,6 +71,6 @@ class OrderControllerPathContractTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data[0].userId").value(10000));
+                .andExpect(jsonPath("$.data[0].userId").value("10000"));
     }
 }

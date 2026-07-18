@@ -2,8 +2,8 @@
 // 注意：所有 ID（userId/couponId/orderId）在前端统一按 string 处理，
 // 避免后端 Long/雪花 ID 超过 JS Number.MAX_SAFE_INTEGER 时精度丢失。
 
-// 统一响应包装：user/coupon 服务用 ApiResponse(code=0 成功)，
-// order 服务用 Result(code=200 成功)。apiClient 会同时兼容两者。
+// 统一响应包装：各服务对外均为 ApiResponse(code=0 成功)。
+// apiClient 过渡期仍兼容历史 Result(code=200)。
 export interface ApiEnvelope<T> {
   code: number
   message: string

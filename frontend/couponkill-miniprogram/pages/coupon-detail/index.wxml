@@ -1,120 +1,13 @@
-<!--pages/coupon-detail/index.wxml-->
-<view class="page-container">
-  <!-- 导航栏 -->
-  <view class="navbar">
-    <view class="nav-back" bindtap="goBack">‹ 返回</view>
-    <view class="nav-title">{{coupon.name}}</view>
-    <view class="nav-share" bindtap="shareCoupon">分享</view>
-  </view>
+<view class="page" wx:if="{{coupon}}">
+  <view class="name">{{coupon.name}}</view>
+  <view class="desc">{{coupon.description || '暂无描述'}}</view>
+  <view class="row">面值：¥{{coupon.faceValue}}</view>
+  <view class="row">门槛：满 ¥{{coupon.minSpend}}</view>
+  <view class="row" wx:if="{{isSeckill}}">秒杀库存：{{coupon.seckillRemainingStock}}</view>
+  <view class="row" wx:else>库存：{{coupon.remainingStock}}</view>
+  <view class="row" wx:if="{{isSeckill}}">{{countdown}}</view>
 
-  <!-- 加载状态 -->
-  <view class="loading-container" wx:if="{{isLoading}}">
-    <view class="loading-spinner"></view>
-    <view>加载中...</view>
-  </view>
-
-  <!-- 优惠券详情内容 -->
-  <view class="coupon-detail" wx:if="{{!isLoading && coupon}}">
-    <!-- 优惠券头部信息 -->
-    <view class="coupon-header">
-      <view class="coupon-main">
-        <view class="coupon-badge {{isSeckill ? 'seckill' : 'normal'}}">
-          {{isSeckill ? '秒杀专区' : '优惠券'}}
-        </view>
-        <view class="coupon-title">{{coupon.name}}</view>
-        <view class="coupon-desc">{{coupon.description}}</view>
-      </view>
-
-      <view class="coupon-image">
-        <image src="{{coupon.image || '/assets/images/coupon-default.png'}}" mode="aspectFill" />
-      </view>
-    </view>
-
-    <!-- 价格信息 -->
-    <view class="price-section">
-      <view class="price-main">
-        <view class="current-price">
-          <text class="price-symbol">¥</text>
-          <text class="price-value">{{isSeckill ? coupon.seckillPrice : coupon.value}}</text>
-        </view>
-        <view wx:if="{{isSeckill}}" class="original-price">
-          原价: ¥{{coupon.value}}
-        </view>
-      </view>
-
-      <view class="price-tips">
-        <view wx:if="{{coupon.minAmount}}" class="tip-item">
-          满{{coupon.minAmount}}元可用
-        </view>
-        <view wx:if="{{coupon.maxDiscount}}" class="tip-item">
-          最高减免{{coupon.maxDiscount}}元
-        </view>
-      </view>
-    </view>
-
-    <!-- 秒杀倒计时 -->
-    <view class="seckill-info" wx:if="{{isSeckill}}">
-      <view class="countdown-section">
-        <view class="countdown-label">秒杀倒计时</view>
-        <view class="countdown">{{countdown}}</view>
-      </view>
-
-      <view class="seckill-stats">
-        <view class="stat-item">
-          <view class="stat-label">库存</view>
-          <view class="stat-value">{{coupon.seckillStock}}</view>
-        </view>
-        <view class="stat-item">
-          <view class="stat-label">已参与</view>
-          <view class="stat-value">{{coupon.seckillParticipants || 0}}</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 使用说明 -->
-    <view class="usage-section">
-      <view class="section-title">使用说明</view>
-      <view class="usage-content">
-        <view class="usage-item">
-          <view class="usage-label">有效期</view>
-          <view class="usage-value">{{coupon.startTime}} 至 {{coupon.endTime}}</view>
-        </view>
-        <view class="usage-item">
-          <view class="usage-label">使用条件</view>
-          <view class="usage-value">{{coupon.terms || '无使用门槛'}}</view>
-        </view>
-        <view class="usage-item">
-          <view class="usage-label">适用范围</view>
-          <view class="usage-value">{{coupon.scope || '全平台通用'}}</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 购买按钮区域 -->
-    <view class="buy-section">
-      <view class="buy-tips" wx:if="{{!canBuy}}">
-        {{isSeckill && countdown.includes('结束') ? '秒杀已结束' : '暂不可购买'}}
-      </view>
-
-      <view class="buy-actions">
-        <button
-          wx:if="{{isSeckill}}"
-          class="btn-seckill {{canBuy ? 'active' : 'disabled'}}"
-          bindtap="seckillNow"
-          disabled="{{!canBuy}}"
-        >
-          {{canBuy ? '立即秒杀' : '秒杀结束'}}
-        </button>
-
-        <button
-          wx:if="{{!isSeckill}}"
-          class="btn-buy {{canBuy ? 'active' : 'disabled'}}"
-          bindtap="buyNow"
-          disabled="{{!canBuy}}"
-        >
-          {{canBuy ? '立即购买' : '暂不可购买'}}
-        </button>
-      </view>
-    </view>
-  </view>
+  <button wx:if="{{isSeckill}}" type="warn" bindtap="seckillNow" disabled="{{!canBuy}}">立即秒杀</button>
+  <button wx:else type="primary" bindtap="buyNow" disabled="{{!canBuy}}">立即领取</button>
 </view>
+<view wx:if="{{isLoading}}" class="hint">加载中...</view>

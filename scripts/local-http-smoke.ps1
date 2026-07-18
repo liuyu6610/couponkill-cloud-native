@@ -62,9 +62,14 @@ function Stop-SmokeProcs($items) {
 
 $started = @()
 try {
-    Write-Host "== install common =="
-    & mvn.cmd -pl couponkill-common -am install -DskipTests -q
+    Write-Host "== install common (clean) =="
+    & mvn.cmd -pl couponkill-common -am clean install -DskipTests -q
     if ($LASTEXITCODE -ne 0) { throw "common install failed" }
+
+    function Strip-HttpTrailer([string]$Raw) {
+        # curl -w 追加的 "HTTP:200" 可能与 JSON 同一行
+        return (($Raw -replace '\s*HTTP:\d+\s*$', '') -replace '[\r\n]+$', '').Trim()
+    }
 
     Write-Host "== start modules =="
     $started += Start-Module 'couponkill-user-service' 'user' 8081
@@ -106,6 +111,15 @@ try {
     if (-not $token) { throw "未能从登录响应解析 token" }
     Write-Host ("TOKEN_LEN={0}" -f $token.Length)
 
+    # Long ID 契约：userId 必须以 JSON 字符串写出（非 number）
+    $loginObj = (Strip-HttpTrailer $loginRaw) | ConvertFrom-Json
+    $loginUserId = $loginObj.data.userId
+    if ($null -eq $loginUserId) { throw "登录响应缺少 data.userId" }
+    if ($loginUserId -isnot [string]) {
+        throw ("登录响应 userId 类型={0}，期望 string（ToString 未生效）" -f $loginUserId.GetType().Name)
+    }
+    Write-Host ("LOGIN_USER_ID(string)={0}" -f $loginUserId)
+
     if (-not $ready['order']) {
         throw "order 未就绪，中止冒烟"
     }
@@ -132,6 +146,53 @@ try {
     if (-not ($oldOk -and $newOk -and $couponOk)) {
         throw "冒烟未同时通过 oldOk=$oldOk newOk=$newOk couponOk=$couponOk"
     }
+
+    # 订单/券 ID：用正则校验（避免控制台编码损坏中文后 ConvertFrom-Json 失败）
+    function Assert-IdStrings([string]$Raw, [string]$Label) {
+        $json = Strip-HttpTrailer $Raw
+        if ($Label -eq 'ORDER') {
+            if ($json -match '"data"\s*:\s*\[\s*\]') {
+                Write-Host 'ORDER ID_STRING_CHECK=SKIP (empty list)'
+                return
+            }
+            if ([regex]::IsMatch($json, '"userId"\s*:\s*\d')) {
+                throw 'ORDER userId still JSON number'
+            }
+            if ([regex]::IsMatch($json, '"couponId"\s*:\s*\d')) {
+                throw 'ORDER couponId still JSON number'
+            }
+            if (-not [regex]::IsMatch($json, '"userId"\s*:\s*"')) {
+                throw 'ORDER missing string userId'
+            }
+        }
+        if ($Label -eq 'COUPON') {
+            if ([regex]::IsMatch($json, '"id"\s*:\s*\d')) {
+                throw 'COUPON id still JSON number'
+            }
+            if (-not [regex]::IsMatch($json, '"id"\s*:\s*"')) {
+                throw 'COUPON missing string id'
+            }
+        }
+        Write-Host ("{0} ID_STRING_CHECK=PASS" -f $Label)
+    }
+
+    # 空订单列表时创建一笔常驻券订单，便于校验 userId/couponId 字符串
+    $newJson = Strip-HttpTrailer $new
+    if ($newJson -match '"data"\s*:\s*\[\s*\]') {
+        Write-Host '== create order for ID check =='
+        $created = & curl.exe -s -w "`nHTTP:%{http_code}" -X POST `
+            "http://127.0.0.1:8088/api/v1/order/create?couponId=1002" `
+            -H "Authorization: Bearer $token"
+        Write-Host "CREATE=>$created"
+        $new = & curl.exe -s -w "`nHTTP:%{http_code}" `
+            -H "Authorization: Bearer $token" `
+            "http://127.0.0.1:8088/api/v1/order/user/me?pageNum=1&pageSize=5"
+        Write-Host "NEW_AFTER_CREATE=>$new"
+    }
+
+    Assert-IdStrings $new 'ORDER'
+    Assert-IdStrings $coupon 'COUPON'
+
     Write-Host "== SMOKE PASS =="
 }
 finally {

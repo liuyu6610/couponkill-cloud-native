@@ -14,6 +14,8 @@ public class Coupon implements Serializable {
     // ID生成器，用于生成唯一的优惠券ID
     private static final AtomicLong ID_GENERATOR = new AtomicLong(System.currentTimeMillis());
 
+    /** 跨 JS 边界以字符串传输，避免大整数精度丢失 */
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
     private String name;
     private String description;

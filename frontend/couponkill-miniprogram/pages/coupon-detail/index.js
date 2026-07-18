@@ -1,258 +1,126 @@
-// pages/coupon-detail/index.js
-const app = getApp()
+const api = require('../../utils/api')
 
 Page({
   data: {
     couponId: '',
     coupon: null,
     isLoading: true,
-    countdown: '',
+    isSeckill: false,
     canBuy: false,
-    isSeckill: false
+    countdown: '',
   },
 
-  onLoad: function (options) {
-    const couponId = options.id
-    if (couponId) {
-      this.setData({ couponId })
-      this.loadCouponDetail(couponId)
-    }
+  onLoad(options) {
+    const couponId = options.id ? String(options.id) : ''
+    if (!couponId) return
+    this.setData({ couponId })
+    this.loadCouponDetail(couponId)
   },
 
-  onUnload: function () {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer)
-    }
+  onUnload() {
+    if (this.countdownTimer) clearInterval(this.countdownTimer)
   },
 
-  // 加载优惠券详情
-  loadCouponDetail: function (couponId) {
+  async loadCouponDetail(couponId) {
     this.setData({ isLoading: true })
-
-    wx.request({
-      url: app.globalData.apiBase + `/coupons/${couponId}`,
-      method: 'GET',
-      success: (res) => {
-        if (res.data.code === 200) {
-          const coupon = res.data.data
-          this.setData({
-            coupon: coupon,
-            isSeckill: !!coupon.seckillStartTime,
-            isLoading: false
-          })
-
-          // 如果是秒杀，开始倒计时
-          if (coupon.seckillStartTime) {
-            this.startCountdown()
-          } else {
-            this.checkCanBuy(coupon)
-          }
-        } else {
-          this.setData({ isLoading: false })
-          wx.showToast({
-            title: res.data.message || '加载失败',
-            icon: 'none'
-          })
-        }
-      },
-      fail: () => {
-        this.setData({ isLoading: false })
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        })
+    try {
+      const coupon = await api.getCoupon(couponId)
+      const isSeckill = Number(coupon.type) === api.CouponType.SECKILL
+      this.setData({ coupon, isSeckill, isLoading: false })
+      if (isSeckill) {
+        this.startCountdown()
+      } else {
+        const stock = Number(coupon.remainingStock || 0)
+        this.setData({ canBuy: stock > 0 && Number(coupon.status) === 1 })
       }
-    })
+    } catch (e) {
+      this.setData({ isLoading: false })
+      wx.showToast({ title: (e && e.message) || '加载失败', icon: 'none' })
+    }
   },
 
-  // 开始倒计时
-  startCountdown: function () {
+  parseTime(v) {
+    if (!v) return null
+    const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(v) ? v.replace(' ', 'T') : v
+    const n = Date.parse(normalized)
+    return Number.isNaN(n) ? null : n
+  },
+
+  startCountdown() {
+    if (this.countdownTimer) clearInterval(this.countdownTimer)
     this.countdownTimer = setInterval(() => {
       const coupon = this.data.coupon
       if (!coupon) return
-
-      const now = new Date().getTime()
-      const startTime = new Date(coupon.seckillStartTime).getTime()
-      const endTime = new Date(coupon.seckillEndTime).getTime()
-
-      if (now < startTime) {
-        // 未开始
-        const diff = startTime - now
-        this.formatCountdown(diff, '即将开始')
-      } else if (now < endTime) {
-        // 进行中
-        const diff = endTime - now
-        this.formatCountdown(diff, '秒杀中')
-      } else {
-        // 已结束
+      const now = Date.now()
+      const start = this.parseTime(coupon.seckillStartAt)
+      const end = this.parseTime(coupon.seckillEndAt)
+      if (start == null || end == null) {
         this.setData({
-          countdown: '秒杀已结束',
-          canBuy: false
+          countdown: '请先配置秒杀时间窗',
+          canBuy: false,
         })
+        return
+      }
+      if (now < start) {
+        this.formatCountdown(start - now, '即将开始')
+        this.setData({ canBuy: false })
+      } else if (now <= end) {
+        this.formatCountdown(end - now, '秒杀中')
+        const stock = Number(coupon.seckillRemainingStock || 0)
+        this.setData({ canBuy: stock > 0 })
+      } else {
+        this.setData({ countdown: '秒杀已结束', canBuy: false })
       }
     }, 1000)
   },
 
-  // 格式化倒计时
-  formatCountdown: function (diff, status) {
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-    const countdown = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-
+  formatCountdown(diff, status) {
+    const hours = Math.floor(diff / 3600000)
+    const minutes = Math.floor((diff % 3600000) / 60000)
+    const seconds = Math.floor((diff % 60000) / 1000)
+    const pad = (n) => String(n).padStart(2, '0')
     this.setData({
-      countdown: `${status}: ${countdown}`,
-      canBuy: status === '秒杀中' && diff > 0
+      countdown: `${status}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
     })
   },
 
-  // 检查是否可以购买
-  checkCanBuy: function (coupon) {
-    const now = new Date().getTime()
-    const startTime = new Date(coupon.startTime).getTime()
-    const endTime = new Date(coupon.endTime).getTime()
-
-    const canBuy = now >= startTime && now <= endTime && coupon.availableStock > 0
-    this.setData({ canBuy })
-  },
-
-  // 立即购买
-  buyNow: function () {
-    if (!app.isLoggedIn()) {
-      wx.showModal({
-        title: '提示',
-        content: '请先登录后再进行购买',
-        showCancel: true,
-        confirmText: '去登录',
-        success: (res) => {
-          if (res.confirm) {
-            wx.navigateTo({
-              url: '/pages/login/index'
-            })
-          }
-        }
-      })
-      return
-    }
-
-    if (!this.data.canBuy) {
-      wx.showToast({
-        title: '暂无可购买',
-        icon: 'none'
-      })
-      return
-    }
-
-    const coupon = this.data.coupon
-    wx.request({
-      url: app.globalData.apiBase + '/orders',
-      method: 'POST',
-      header: {
-        'Authorization': 'Bearer ' + wx.getStorageSync('token')
-      },
-      data: {
-        couponId: coupon.id,
-        quantity: 1
-      },
+  ensureLogin() {
+    if (api.isLoggedIn()) return true
+    wx.showModal({
+      title: '提示',
+      content: '请先登录',
+      confirmText: '去登录',
       success: (res) => {
-        if (res.data.code === 200) {
-          wx.showToast({
-            title: '购买成功',
-            icon: 'success'
-          })
-
-          // 跳转到订单详情
-          wx.navigateTo({
-            url: `/pages/order-detail/index?id=${res.data.data.id}`
-          })
-        } else {
-          wx.showToast({
-            title: res.data.message || '购买失败',
-            icon: 'none'
-          })
-        }
+        if (res.confirm) wx.navigateTo({ url: '/pages/login/index' })
       },
-      fail: () => {
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        })
-      }
     })
+    return false
   },
 
-  // 秒杀购买
-  seckillNow: function () {
-    if (!app.isLoggedIn()) {
-      wx.showModal({
-        title: '提示',
-        content: '请先登录后再进行秒杀',
-        showCancel: true,
-        confirmText: '去登录',
-        success: (res) => {
-          if (res.confirm) {
-            wx.navigateTo({
-              url: '/pages/login/index'
-            })
-          }
-        }
-      })
-      return
+  async buyNow() {
+    if (!this.ensureLogin() || !this.data.canBuy) return
+    try {
+      wx.showLoading({ title: '领取中' })
+      const order = await api.createOrder(this.data.couponId)
+      wx.hideLoading()
+      wx.navigateTo({ url: `/pages/order-detail/index?id=${order.id}` })
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: (e && e.message) || '领取失败', icon: 'none' })
     }
-
-    if (!this.data.canBuy) {
-      wx.showToast({
-        title: '秒杀已结束',
-        icon: 'none'
-      })
-      return
-    }
-
-    const coupon = this.data.coupon
-    wx.request({
-      url: app.globalData.apiBase + '/orders/seckill',
-      method: 'POST',
-      header: {
-        'Authorization': 'Bearer ' + wx.getStorageSync('token')
-      },
-      data: {
-        couponId: coupon.id
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          wx.showToast({
-            title: '秒杀成功',
-            icon: 'success'
-          })
-
-          // 跳转到订单详情
-          wx.navigateTo({
-            url: `/pages/order-detail/index?id=${res.data.data.id}`
-          })
-        } else {
-          wx.showToast({
-            title: res.data.message || '秒杀失败',
-            icon: 'none'
-          })
-        }
-      },
-      fail: () => {
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        })
-      }
-    })
   },
 
-  // 分享优惠券
-  onShareAppMessage: function () {
-    const coupon = this.data.coupon
-    return {
-      title: `${coupon.name} - ${coupon.description}`,
-      path: `/pages/coupon-detail/index?id=${coupon.id}`,
-      imageUrl: coupon.image || ''
+  async seckillNow() {
+    if (!this.ensureLogin() || !this.data.canBuy) return
+    try {
+      wx.showLoading({ title: '抢购中' })
+      await api.seckillUntilReceived(this.data.couponId)
+      wx.hideLoading()
+      wx.showToast({ title: '抢购成功', icon: 'success' })
+      wx.switchTab({ url: '/pages/orders/index' })
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: (e && e.message) || '秒杀失败', icon: 'none' })
     }
-  }
+  },
 })

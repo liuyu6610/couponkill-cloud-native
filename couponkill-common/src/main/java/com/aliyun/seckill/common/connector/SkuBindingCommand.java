@@ -1,5 +1,6 @@
 package com.aliyun.seckill.common.connector;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class SkuBindingCommand {
     private PlatformType platform;
     private String externalSkuId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long couponId;
     /** 默认 true */
     private Boolean syncEnabled;

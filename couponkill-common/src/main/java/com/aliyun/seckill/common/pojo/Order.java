@@ -1,6 +1,7 @@
 // com/aliyun/seckill/common/pojo/Order.java
 package com.aliyun.seckill.common.pojo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -10,7 +11,10 @@ public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String id;
+    /** 跨 JS 边界以字符串传输，避免大整数精度丢失 */
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long userId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long couponId;
     private String virtualId; // 添加虚拟ID字段
 

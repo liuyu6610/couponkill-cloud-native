@@ -145,10 +145,10 @@ public class UserServiceImpl implements UserService {
         redisTemplate.opsForValue().set(USER_LOGIN_KEY + user.getId(), token,
                 24, TimeUnit.HOURS);
 
-        // 返回结果
+        // 返回结果；userId 以字符串写出，避免 Map 绕过 POJO 注解导致 JS 精度丢失
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("userId", user.getId());
+        result.put("userId", String.valueOf(user.getId()));
         result.put("username", user.getUsername());
         result.put("roles", roles);
         return result;

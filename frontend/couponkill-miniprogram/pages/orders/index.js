@@ -1,224 +1,86 @@
-// pages/orders/index.js
-const app = getApp()
+const api = require('../../utils/api')
 
 Page({
   data: {
     orders: [],
     isLoading: true,
-    hasMore: true,
-    currentPage: 1,
+    pageNum: 1,
     pageSize: 10,
-    statusFilter: '',
-    statusList: [
-      { value: '', label: '全部订单' },
-      { value: 'PENDING', label: '待支付' },
-      { value: 'PAID', label: '已支付' },
-      { value: 'SHIPPED', label: '已发货' },
-      { value: 'DELIVERED', label: '已完成' },
-      { value: 'CANCELLED', label: '已取消' }
-    ]
+    hasMore: true,
   },
 
-  onLoad: function () {
+  onShow() {
+    if (!api.isLoggedIn()) {
+      wx.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    this.setData({ pageNum: 1, orders: [], hasMore: true })
     this.loadOrders()
   },
 
-  onPullDownRefresh: function () {
-    this.setData({
-      currentPage: 1,
-      orders: [],
-      hasMore: true
-    })
-    this.loadOrders(() => {
-      wx.stopPullDownRefresh()
-    })
+  onPullDownRefresh() {
+    this.setData({ pageNum: 1, orders: [], hasMore: true })
+    this.loadOrders(() => wx.stopPullDownRefresh())
   },
 
-  onReachBottom: function () {
+  onReachBottom() {
     if (this.data.hasMore && !this.data.isLoading) {
-      this.loadMoreOrders()
+      this.setData({ pageNum: this.data.pageNum + 1 })
+      this.loadOrders(null, true)
     }
   },
 
-  // 加载订单列表
-  loadOrders: function (callback) {
+  async loadOrders(cb, append) {
     this.setData({ isLoading: true })
-
-    wx.request({
-      url: app.globalData.apiBase + '/orders',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + wx.getStorageSync('token')
-      },
-      data: {
-        page: this.data.currentPage,
-        size: this.data.pageSize,
-        status: this.data.statusFilter
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          const data = res.data.data
-          this.setData({
-            orders: data.records || [],
-            hasMore: this.data.currentPage < data.pages,
-            currentPage: data.current,
-            isLoading: false
-          })
-        } else {
-          this.setData({ isLoading: false })
-          wx.showToast({
-            title: res.data.message || '加载失败',
-            icon: 'none'
-          })
-        }
-        if (callback) callback()
-      },
-      fail: () => {
-        this.setData({ isLoading: false })
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        })
-        if (callback) callback()
+    try {
+      const list = await api.listMyOrders(this.data.pageNum, this.data.pageSize)
+      const mapped = list.map((o) => ({
+        ...o,
+        statusText: api.orderStatusText(o.status),
+      }))
+      // 观测：订单侧 ID 均为字符串
+      if (mapped[0]) {
+        console.log(
+          '[orders] sample id/userId/couponId types=',
+          typeof mapped[0].id,
+          typeof mapped[0].userId,
+          typeof mapped[0].couponId
+        )
       }
-    })
+      this.setData({
+        orders: append ? this.data.orders.concat(mapped) : mapped,
+        hasMore: mapped.length >= this.data.pageSize,
+        isLoading: false,
+      })
+    } catch (e) {
+      this.setData({ isLoading: false })
+      wx.showToast({ title: (e && e.message) || '加载失败', icon: 'none' })
+    }
+    if (cb) cb()
   },
 
-  // 加载更多订单
-  loadMoreOrders: function () {
-    if (!this.data.hasMore || this.data.isLoading) return
-
-    this.setData({
-      currentPage: this.data.currentPage + 1
-    })
-
-    wx.request({
-      url: app.globalData.apiBase + '/orders',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + wx.getStorageSync('token')
-      },
-      data: {
-        page: this.data.currentPage,
-        size: this.data.pageSize,
-        status: this.data.statusFilter
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          const data = res.data.data
-          this.setData({
-            orders: [...this.data.orders, ...(data.records || [])],
-            hasMore: this.data.currentPage < data.pages
-          })
-        }
-      }
-    })
-  },
-
-  // 筛选订单状态
-  onStatusFilter: function (e) {
-    this.setData({
-      statusFilter: e.detail.value,
-      currentPage: 1,
-      orders: [],
-      hasMore: true
-    })
-    this.loadOrders()
-  },
-
-  // 跳转到订单详情
-  goToOrderDetail: function (e) {
-    const orderId = e.currentTarget.dataset.id
+  goToOrderDetail(e) {
     wx.navigateTo({
-      url: `/pages/order-detail/index?id=${orderId}`
+      url: '/pages/order-detail/index?id=' + e.currentTarget.dataset.id,
     })
   },
 
-  // 取消订单
-  cancelOrder: function (e) {
-    e.stopPropagation()
-    const orderId = e.currentTarget.dataset.id
-
+  cancelOrder(e) {
+    const orderId = String(e.currentTarget.dataset.id)
     wx.showModal({
       title: '确认取消',
-      content: '确定要取消这个订单吗？',
-      success: (res) => {
-        if (res.confirm) {
-          wx.request({
-            url: app.globalData.apiBase + `/orders/${orderId}/cancel`,
-            method: 'POST',
-            header: {
-              'Authorization': 'Bearer ' + wx.getStorageSync('token')
-            },
-            success: (cancelRes) => {
-              if (cancelRes.data.code === 200) {
-                wx.showToast({
-                  title: '取消成功',
-                  icon: 'success'
-                })
-
-                // 刷新订单列表
-                this.setData({
-                  currentPage: 1,
-                  orders: [],
-                  hasMore: true
-                })
-                this.loadOrders()
-              } else {
-                wx.showToast({
-                  title: cancelRes.data.message || '取消失败',
-                  icon: 'none'
-                })
-              }
-            },
-            fail: () => {
-              wx.showToast({
-                title: '网络错误',
-                icon: 'none'
-              })
-            }
-          })
+      content: '确定取消该订单？',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await api.cancelOrder(orderId)
+          wx.showToast({ title: '已取消', icon: 'success' })
+          this.setData({ pageNum: 1, orders: [], hasMore: true })
+          this.loadOrders()
+        } catch (err) {
+          wx.showToast({ title: (err && err.message) || '取消失败', icon: 'none' })
         }
-      }
+      },
     })
   },
-
-  // 获取订单状态文本
-  getStatusText: function (status) {
-    const statusMap = {
-      'PENDING': '待支付',
-      'PAID': '已支付',
-      'SHIPPED': '已发货',
-      'DELIVERED': '已完成',
-      'CANCELLED': '已取消',
-      'REFUNDING': '退款中',
-      'REFUNDED': '已退款'
-    }
-    return statusMap[status] || status
-  },
-
-  // 获取订单状态颜色
-  getStatusColor: function (status) {
-    const colorMap = {
-      'PENDING': '#ff9800',
-      'PAID': '#2196f3',
-      'SHIPPED': '#9c27b0',
-      'DELIVERED': '#4caf50',
-      'CANCELLED': '#f44336',
-      'REFUNDING': '#ff9800',
-      'REFUNDED': '#4caf50'
-    }
-    return colorMap[status] || '#666'
-  },
-
-  // 格式化日期
-  formatDate: function (dateStr) {
-    const date = new Date(dateStr)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  }
 })

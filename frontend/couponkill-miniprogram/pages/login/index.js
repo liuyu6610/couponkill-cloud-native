@@ -1,36 +1,51 @@
-// pages/login/index.js
+const api = require('../../utils/api')
 const app = getApp()
 
 Page({
   data: {
-    isLoading: false
+    username: 'demo',
+    password: 'demo1234',
+    isLoading: false,
   },
 
-  onLoad: function () {
-    // 检查是否已经登录
+  onLoad() {
     if (app.isLoggedIn()) {
-      wx.switchTab({
-        url: '/pages/index/index'
-      })
+      wx.switchTab({ url: '/pages/index/index' })
     }
   },
 
-  // 微信登录
-  wechatLogin: function () {
+  onUsername(e) {
+    this.setData({ username: e.detail.value })
+  },
+
+  onPassword(e) {
+    this.setData({ password: e.detail.value })
+  },
+
+  async doLogin() {
+    const username = (this.data.username || '').trim()
+    const password = this.data.password || ''
+    if (!username || !password) {
+      wx.showToast({ title: '请输入用户名和密码', icon: 'none' })
+      return
+    }
     this.setData({ isLoading: true })
-
-    app.login((userInfo) => {
+    try {
+      const result = await api.login(username, password)
+      wx.showToast({ title: '登录成功', icon: 'success' })
+      // 冒烟可观测：userId 必须是字符串
+      console.log('[login] userId typeof=', typeof result.userId, 'value=', result.userId)
+      setTimeout(() => {
+        wx.switchTab({ url: '/pages/index/index' })
+      }, 400)
+    } catch (e) {
+      wx.showToast({ title: (e && e.message) || '登录失败', icon: 'none' })
+    } finally {
       this.setData({ isLoading: false })
+    }
+  },
 
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success'
-      })
-
-      // 跳转到首页
-      wx.switchTab({
-        url: '/pages/index/index'
-      })
-    })
-  }
+  goRegister() {
+    wx.navigateTo({ url: '/pages/register/index' })
+  },
 })

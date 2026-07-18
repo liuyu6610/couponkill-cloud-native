@@ -1,6 +1,7 @@
 // com.aliyun.seckill.common.pojo.UserCouponCount.java
 package com.aliyun.seckill.common.pojo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 public class UserCouponCount implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long userId; // 关联用户ID（对应表中user_id，主键）
 
     private Integer totalCount = 0;
