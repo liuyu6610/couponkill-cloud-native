@@ -97,12 +97,6 @@ type Config struct {
 				Password   string   `yaml:"password"`
 			} `yaml:"sentinel"`
 		} `yaml:"redis"`
-		Rocketmq struct {
-			Cluster struct {
-				Enabled    bool     `yaml:"enabled"`
-				NameServer []string `yaml:"nameServer"`
-			} `yaml:"cluster"`
-		} `yaml:"rocketmq"`
 		Kafka struct {
 			Cluster struct {
 				Enabled bool     `yaml:"enabled"`
@@ -239,12 +233,6 @@ func Load() (*Config, error) {
 							Password   string   `yaml:"password"`
 						} `yaml:"sentinel"`
 					} `yaml:"redis"`
-					Rocketmq struct {
-						Cluster struct {
-							Enabled    bool     `yaml:"enabled"`
-							NameServer []string `yaml:"nameServer"`
-						} `yaml:"cluster"`
-					} `yaml:"rocketmq"`
 					Kafka struct {
 						Cluster struct {
 							Enabled bool     `yaml:"enabled"`

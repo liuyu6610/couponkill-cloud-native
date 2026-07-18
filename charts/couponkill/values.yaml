@@ -189,44 +189,6 @@ services:
       maxReplicas: 10
       targetCPUUtilizationPercentage: 80
 
-# RocketMQ配置（已迁移至 Kafka，默认关闭；保留结构以便回滚对比）
-rocketmq:
-  enabled: false
-  name: rocketmq
-  namesrv:
-    replicas: 1
-    port: 9876
-    image:
-      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      tag: rocketmq-namesrv
-      pullPolicy: IfNotPresent
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
-        memory: "1Gi"
-        cpu: "500m"
-    service:
-      port: 9876
-  broker:
-    replicas: 1
-    image:
-      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      tag: rocketmq-broker
-      pullPolicy: IfNotPresent
-    resources:
-      requests:
-        memory: "1Gi"
-        cpu: "500m"
-      limits:
-        memory: "2Gi"
-        cpu: "1"
-    service:
-      ports:
-        listenPort: 10911
-        haListenPort: 10912
-
 # Redis配置
 redis:
   enabled: true
@@ -277,7 +239,7 @@ kafka:
 
 # PostgreSQL 集群开关（Deployment 读 .Values.postgres.cluster.*）。
 # 应用连接真源请用上方 db.*；本块仅承载集群开关 / 中间件样例元数据。
-postgres: &postgres_settings
+postgres:
   enabled: false
   name: postgres
   port: 5432
@@ -296,7 +258,7 @@ postgres: &postgres_settings
       cpu: "500m"
   cluster:
     enabled: false
-    # standalone | master-slave（PG 流复制）；旧 MySQL 专用类型已移除
+    # standalone | master-slave（PG 流复制）
     type: standalone
     masterSlave:
       enabled: false
@@ -308,9 +270,6 @@ postgres: &postgres_settings
           port: 5432
         - host: postgres-replica-1
           port: 5432
-
-# DEPRECATED：历史 key，与 postgres 同锚点。新配置请写 postgres；下一主要版本将删除 mysql。
-mysql: *postgres_settings
 
 # Nacos配置
 nacos:

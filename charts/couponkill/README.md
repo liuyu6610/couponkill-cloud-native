@@ -265,7 +265,7 @@ cd D:\couponkill\couponkill-cloud-native
 | `kafka.enabled` | 是否启用 Kafka（KRaft） | `true` |
 | `kafka.partitions` | 业务主题分区数（与本地 compose / init-job 对齐） | `16` |
 | `db.host` / `db.port` | PostgreSQL 连接（应用侧真源） | `postgres` / `5432` |
-| `rocketmq.enabled` | **已废弃**，保留仅供回滚对比 | `false` |
+| ~~`rocketmq.*`~~ | **已移除**（消息真源仅 Kafka） | — |
 | `nacos.enabled` | 是否启用Nacos | `true` |
 | `nacos.service.external.enabled` | 是否启用Nacos外部访问 | `true` |
 | `sentinel.enabled` | 是否启用Sentinel | `false` |
@@ -303,7 +303,7 @@ middleware:
       slaves: []
 ```
 
-> Chart 集群开关真源为 `postgres.cluster`（`mysql:` 仅为同锚点 DEPRECATED 别名，下一主要版本删除）。应用连接请用 `db` / PostgreSQL 语义。迁移说明见 [`docs/MIGRATION-PostgreSQL-Kafka.md`](../../docs/MIGRATION-PostgreSQL-Kafka.md)。
+> Chart 集群开关真源为 `postgres.cluster`（已移除历史 `mysql:` 别名）。应用连接请用 `db` / PostgreSQL 语义。迁移说明见 [`docs/MIGRATION-PostgreSQL-Kafka.md`](../../docs/MIGRATION-PostgreSQL-Kafka.md)。
 
 #### Redis配置模板
 

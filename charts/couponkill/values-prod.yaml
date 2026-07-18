@@ -61,35 +61,6 @@ kafka:
       tag: kafka
       pullPolicy: IfNotPresent
 
-# RocketMQ 已迁移至 Kafka，生产默认关闭（保留结构便于回滚对比）
-rocketmq:
-  enabled: false
-  name: rocketmq
-  image:
-    repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-    tag: rocketmq-namesrv
-    pullPolicy: IfNotPresent
-  nameServer:
-    replicas: 3
-    service:
-      port: 9876
-  broker:
-    replicas: 3
-    service:
-      ports:
-        listenPort: 10911
-        haListenPort: 10912
-  init:
-    enabled: false
-    name: rocketmq-init
-    image:
-      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      tag: rocketmq-namesrv
-      pullPolicy: IfNotPresent
-  topics: "seckill_order_create,seckill_order_cancel"
-  cluster:
-    enabled: false
-
 # Nacos??
 nacos:
   enabled: true

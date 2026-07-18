@@ -85,34 +85,6 @@ spec:
   clusterIP: None
 {{- end }}
 ---
-# RocketMQ Name Server Service definition
-{{- if .Values.rocketmq.enabled }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.rocketmq.name }}-namesrv
-  namespace: {{ .Values.namespace }}
-spec:
-  ports:
-    - port: {{ .Values.rocketmq.namesrv.service.port }}
-      targetPort: 9876
-  clusterIP: None
----
-# RocketMQ Broker Service definition
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.rocketmq.name }}-broker
-  namespace: {{ .Values.namespace }}
-spec:
-  ports:
-    - port: {{ .Values.rocketmq.broker.service.ports.listenPort }}
-      targetPort: 10911
-    - port: {{ .Values.rocketmq.broker.service.ports.haListenPort }}
-      targetPort: 10912
-  clusterIP: None
-{{- end }}
----
 # Nacos Service definition
 {{- if .Values.nacos.enabled }}
 apiVersion: v1

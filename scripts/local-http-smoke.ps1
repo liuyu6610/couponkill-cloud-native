@@ -45,10 +45,11 @@ function Get-ListenCommandLine([int]$Port) {
 function Assert-PortOwnedBy([int]$Port, [string]$Pattern, [string]$Label) {
     $cmd = Get-ListenCommandLine $Port
     if ([string]::IsNullOrWhiteSpace($cmd)) {
-        throw ("{0}: 端口 {1} 无监听进程" -f $Label, $Port)
+        throw ("{0}: port {1} has no listener" -f $Label, $Port)
     }
     if ($cmd -notmatch $Pattern) {
-        throw ("{0}: 端口 {1} 被非目标进程占用 → {2}" -f $Label, $Port, $cmd.Substring(0, [Math]::Min(180, $cmd.Length)))
+        $snip = $cmd.Substring(0, [Math]::Min(180, $cmd.Length))
+        throw ("{0}: port {1} owned by unexpected process: {2}" -f $Label, $Port, $snip)
     }
 }
 

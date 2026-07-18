@@ -275,33 +275,6 @@ spec:
       simple: LEAST_REQUEST
 ---
 {{/*
-  为RocketMQ Name Server创建DestinationRule
-*/}}
-{{- if .Values.rocketmq.enabled }}
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
-metadata:
-  name: {{ .Values.rocketmq.name }}-namesrv-dr
-  namespace: {{ .Values.namespace }}
-spec:
-  host: {{ .Values.rocketmq.name }}-namesrv.{{ .Values.namespace }}.svc.cluster.local
-  trafficPolicy:
-    connectionPool:
-      tcp:
-        maxConnections: {{ .Values.istio.destinationRule.connectionPool.tcp.maxConnections }}
-      http:
-        http1MaxPendingRequests: {{ .Values.istio.destinationRule.connectionPool.http.http1MaxPendingRequests }}
-        maxRequestsPerConnection: {{ .Values.istio.destinationRule.connectionPool.http.maxRequestsPerConnection }}
-    outlierDetection:
-      consecutiveErrors: {{ .Values.istio.destinationRule.outlierDetection.consecutiveErrors }}
-      interval: {{ .Values.istio.destinationRule.outlierDetection.interval }}
-      baseEjectionTime: {{ .Values.istio.destinationRule.outlierDetection.baseEjectionTime }}
-      maxEjectionPercent: {{ .Values.istio.destinationRule.outlierDetection.maxEjectionPercent }}
-    tls:
-      mode: ISTIO_MUTUAL
-{{- end }}
----
-{{/*
   为Nacos创建DestinationRule
 */}}
 {{- if .Values.nacos.enabled }}

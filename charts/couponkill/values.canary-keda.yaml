@@ -151,19 +151,6 @@ redis:
         - host: redis-node-5
           port: 6379
 
-# RocketMQ配置
-rocketmq:
-  # RocketMQ集群配置
-  cluster:
-    # 是否启用集群模式
-    enabled: false
-    # Name Server配置
-    namesrv:
-      replicas: 3
-    # Broker配置
-    broker:
-      replicas: 3
-
 # KEDA 自动扩缩容配置部分，基于 Kafka 消费延迟进行扩缩容
 keda:
   # 是否启用 KEDA 自动扩缩容
