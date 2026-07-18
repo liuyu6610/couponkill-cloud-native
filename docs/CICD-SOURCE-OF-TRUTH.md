@@ -10,7 +10,7 @@
 |------|------|------|
 | **生产 / 演示集群 CD 真源** | [`Jenkinsfile`](../Jenkinsfile) | 构建 Java/Go/Operator → 构建并推送镜像 → `helm upgrade --install` 部署 `charts/couponkill`（含金丝雀 values） |
 | **镜像本地构建入口** | [`Makefile`](../Makefile) / [`build.ps1`](../build.ps1) | 开发机构建/打 tag；**不替代** Jenkins 发布职责 |
-| **GitHub PR / push 校验（CI）** | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | 仅做编译/测试门禁，**不**推镜像、**不**改集群、**不**假设 Argo CD |
+| **GitHub PR / push 校验（CI）** | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | 父工程 `-am` 编译 + 单元/契约测试（排除 `*ApplicationTests`）；**不**起中间件、**不**推镜像、**不**改集群；完整上下文冒烟用 `scripts/local-http-smoke.ps1` |
 | **可选质量扫描** | [`.github/workflows/qodana_code_quality.yml`](../.github/workflows/qodana_code_quality.yml) | Qodana；需 `QODANA_TOKEN`，失败不替代 Jenkins CD |
 | 本地 HTTP 冒烟 | [`scripts/local-http-smoke.ps1`](../scripts/local-http-smoke.ps1) | 开发机联调验证，不属于集群 CD |
 

@@ -19,12 +19,15 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-      # 必须从父工程 -am 构建，才能解析本地 couponkill-common（单独 -f 子模块会缺 SNAPSHOT）
-      - name: Test Java modules (with reactor deps)
+      # -am：解析本地 couponkill-common SNAPSHOT
+      # 排除 *ApplicationTests：完整 Spring 上下文依赖 PG/Nacos/ShardingSphere，属本地/联调冒烟，不在 GHA 起中间件
+      - name: Compile and run unit/contract tests
         run: >
-          mvn -B -pl
-          couponkill-coupon-service,couponkill-order-service,couponkill-user-service,couponkill-gateway
+          mvn -B
+          -pl couponkill-coupon-service,couponkill-order-service,couponkill-user-service,couponkill-gateway
           -am test
+          -Dtest='!*ApplicationTests'
+          -Dsurefire.failIfNoSpecifiedTests=false
 
   go-test:
     runs-on: ubuntu-latest
