@@ -1,5 +1,5 @@
 import React from 'react'
-import { Row, Col, Card, Typography, Button, Descriptions, Tag, Divider, Spin, App, Result, Space } from 'antd'
+import { Row, Col, Card, Typography, Button, Descriptions, Tag, Divider, Spin, App, Result, Space, Table } from 'antd'
 import { ArrowLeftOutlined, ThunderboltOutlined, ReloadOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -45,6 +45,13 @@ const CouponDetail: React.FC = () => {
     queryFn: () => connectorService.getBindingByCoupon(id as string),
     enabled: !!id,
     staleTime: staleTimes.connectorBindings,
+  })
+
+  const { data: priceCompare, isFetching: priceCompareFetching } = useQuery({
+    queryKey: queryKeys.connector.priceCompare(id ?? ''),
+    queryFn: () => connectorService.priceCompare(id as string),
+    enabled: !!id && !!coupon && isSeckillCoupon(coupon),
+    staleTime: 30_000,
   })
 
   if (isLoading && !coupon) {
@@ -190,6 +197,47 @@ const CouponDetail: React.FC = () => {
                   </Descriptions.Item>
                 )}
               </Descriptions>
+
+              {seckillType && (
+                <>
+                  <Divider />
+                  <Title level={5}>同品参考价</Title>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 12 }}>
+                    仅供决策参考，不保证最低价；请查看可信度与抓取时间。不是跨平台代下单。
+                  </Text>
+                  <Table
+                    size="small"
+                    rowKey={(r) => `${r.platform}-${r.externalSkuId}`}
+                    loading={priceCompareFetching}
+                    pagination={false}
+                    locale={{ emptyText: binding ? '暂无比价数据' : '未绑定外部商品，暂无比价' }}
+                    dataSource={priceCompare?.items ?? []}
+                    columns={[
+                      { title: '平台', dataIndex: 'platform', width: 80 },
+                      { title: 'SKU', dataIndex: 'externalSkuId', ellipsis: true },
+                      {
+                        title: '价格',
+                        dataIndex: 'price',
+                        width: 100,
+                        render: (v: number | null | undefined, row) =>
+                          v != null ? `${row.currency || 'CNY'} ${v}` : '-',
+                      },
+                      {
+                        title: '可信度',
+                        dataIndex: 'confidence',
+                        width: 90,
+                        render: (c: string | null | undefined) => {
+                          const color =
+                            c === 'HIGH' ? 'green' : c === 'MEDIUM' ? 'orange' : 'default'
+                          return <Tag color={color}>{c || '-'}</Tag>
+                        },
+                      },
+                      { title: '来源', dataIndex: 'source', width: 80 },
+                      { title: '抓取时间', dataIndex: 'fetchedAt', width: 160 },
+                    ]}
+                  />
+                </>
+              )}
             </Card>
           </Col>
 

@@ -38,6 +38,7 @@ export const queryKeys = {
     platforms: ['connector', 'platforms'] as const,
     bindings: ['connector', 'bindings'] as const,
     bindingByCoupon: (couponId: string) => ['connector', 'binding', couponId] as const,
+    priceCompare: (couponId: string) => ['connector', 'price-compare', couponId] as const,
   },
   reservations: {
     root: ['reservations'] as const,

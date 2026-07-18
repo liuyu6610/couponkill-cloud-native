@@ -33,8 +33,9 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/v1/auth/token/mock",
             // Connector 探活：仅健康检查免登录，绑定/同步仍需 JWT+admin
             "/api/v1/connector/health",
-            // C 端只读：按券查绑定（预约帮抢详情展示）
-            "/api/v1/connector/bindings/by-coupon/"
+            // C 端只读：按券查绑定 / 同品比价（详情与成功页展示）
+            "/api/v1/connector/bindings/by-coupon/",
+            "/api/v1/connector/price-compare"
     );
 
     @Autowired
@@ -123,8 +124,9 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         if (path.equals("/api/v1/connector/health")) {
             return false;
         }
-        // C 端只读绑定查询不走 admin 门禁
-        return !path.startsWith("/api/v1/connector/bindings/by-coupon/");
+        // C 端只读不走 admin 门禁
+        return !path.startsWith("/api/v1/connector/bindings/by-coupon/")
+                && !path.startsWith("/api/v1/connector/price-compare");
     }
 
     private boolean isAdmin(String userId, List<String> roles) {

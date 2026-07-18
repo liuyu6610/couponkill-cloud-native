@@ -207,6 +207,27 @@ export interface PlatformProductSnapshot {
   rawStatus?: string | null
 }
 
+/** 同品比价条目（对齐 GET /connector/price-compare） */
+export interface PriceCompareItem {
+  platform: PlatformTypeValue | string
+  externalSkuId: string
+  title?: string | null
+  price?: number | null
+  currency?: string | null
+  fetchedAt?: string | null
+  /** PROBE / MANUAL / BINDING */
+  source?: string | null
+  /** HIGH / MEDIUM / LOW */
+  confidence?: string | null
+  message?: string | null
+}
+
+export interface PriceCompareResult {
+  couponId: string
+  bindingId?: string | null
+  items: PriceCompareItem[]
+}
+
 export interface SyncAllResult {
   syncedOk: number
   failed?: number

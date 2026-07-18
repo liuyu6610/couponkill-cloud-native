@@ -298,9 +298,9 @@
 | 数据源 | Connector `probeProduct`（已有 price）；运营可手工补 TB/PDD SKU 映射（即使平台 stub，可手工价） |
 | 展示时点 | ① 秒杀成功页 ② 订单详情 ③ 券详情「同品参考价」；**不在**热路径阻塞 |
 | 可信度 | UI 必须展示：`fetched_at`、来源、`confidence`（HIGH=官方 API / MEDIUM=手工 / LOW=过期>24h） |
-| API | `GET /api/v1/connector/price-compare?couponId=` |
+| API | `GET /api/v1/connector/price-compare?couponId=`（**已落地 MVP**：绑定 + 实时 probe，暂无 `price_compare_*` 表；多平台手工映射为后续增强） |
 | 不做 | 保证最低价下单；历史价曲线（P2） |
-| 模块 | `connector-service` + `frontend` |
+| 模块 | `connector-service` + `frontend`（券详情「同品参考价」） |
 
 #### P1-2 体验与运维
 

@@ -5,6 +5,7 @@ import type {
   PlatformProductSnapshot,
   PlatformSkuBinding,
   PlatformStockSnapshot,
+  PriceCompareResult,
   SkuBindingCommand,
   SyncAllResult,
 } from '../types/api'
@@ -64,6 +65,13 @@ export const connectorService = {
     return http.get<PlatformSkuBinding | null>(
       `/api/v1/connector/bindings/by-coupon/${couponId}`
     )
+  },
+
+  /** C 端只读：同品比价（绑定 + probe；可匿名） */
+  priceCompare(couponId: string): Promise<PriceCompareResult> {
+    return http.get<PriceCompareResult>('/api/v1/connector/price-compare', {
+      params: { couponId },
+    })
   },
 }
 

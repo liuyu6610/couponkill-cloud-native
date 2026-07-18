@@ -36,6 +36,11 @@ public class ConnectorAdminInterceptor implements HandlerInterceptor {
         if (path.equals("/api/v1/connector/health") || path.startsWith("/actuator")) {
             return true;
         }
+        // C 端只读：绑定查询 / 同品比价（与网关白名单对齐）
+        if (path.startsWith("/api/v1/connector/bindings/by-coupon/")
+                || path.startsWith("/api/v1/connector/price-compare")) {
+            return true;
+        }
         if (!path.startsWith("/api/v1/connector/")) {
             return true;
         }
