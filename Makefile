@@ -210,46 +210,27 @@ push-all-images-canary: ## Push all Docker images for canary release to registry
 build-and-push-all-canary: build-all-images-canary push-all-images-canary ## Build and push all canary images to registry
 
 .PHONY: pull-dependency-images
-pull-dependency-images: ## Pull all dependency images to local registry
-	# Pull and retag MySQL image
-	docker pull mysql:8.0
-	docker tag mysql:8.0 ${REGISTRY}:mysql
-	docker push ${REGISTRY}:mysql
-	
-	# Pull and retag Redis image
+pull-dependency-images: ## Pull/retag/push middleware images (PG + Kafka KRaft + Redis + Nacos + Sentinel)
+	# Align with Jenkinsfile + build.ps1; MySQL / RocketMQ / ZooKeeper removed after PG/Kafka migration
+	docker pull postgres:16
+	docker tag postgres:16 ${REGISTRY}:postgres
+	docker push ${REGISTRY}:postgres
+
 	docker pull redis:7.0
 	docker tag redis:7.0 ${REGISTRY}:redis
 	docker push ${REGISTRY}:redis
-	
-	# Pull and retag RocketMQ nameserver image
-	docker pull apache/rocketmq:5.3.1
-	docker tag apache/rocketmq:5.3.1 ${REGISTRY}:rocketmq-namesrv
-	docker push ${REGISTRY}:rocketmq-namesrv
-	
-	# Pull and retag RocketMQ broker image
-	docker pull apache/rocketmq:5.3.1
-	docker tag apache/rocketmq:5.3.1 ${REGISTRY}:rocketmq-broker
-	docker push ${REGISTRY}:rocketmq-broker
-	
-	# Pull and retag Nacos image
+
 	docker pull nacos/nacos-server:v3.1.1
 	docker tag nacos/nacos-server:v3.1.1 ${REGISTRY}:nacos-server
 	docker push ${REGISTRY}:nacos-server
-	
-	# Pull and retag Sentinel image
+
 	docker pull bladex/sentinel-dashboard:1.8.6
 	docker tag bladex/sentinel-dashboard:1.8.6 ${REGISTRY}:sentinel-dashboard
 	docker push ${REGISTRY}:sentinel-dashboard
-	
-	# Pull and retag Kafka image
-	docker pull bitnami/kafka:3.4.0
-	docker tag bitnami/kafka:3.4.0 ${REGISTRY}:kafka
+
+	docker pull apache/kafka:3.8.0
+	docker tag apache/kafka:3.8.0 ${REGISTRY}:kafka
 	docker push ${REGISTRY}:kafka
-	
-	# Pull and retag Zookeeper image (for Kafka)
-	docker pull bitnami/zookeeper:3.8.1
-	docker tag bitnami/zookeeper:3.8.1 ${REGISTRY}:zookeeper
-	docker push ${REGISTRY}:zookeeper
 
 .PHONY: build-and-push-all-complete
 build-and-push-all-complete: build-and-push-all build-and-push-all-canary pull-dependency-images ## Build and push all project and dependency images

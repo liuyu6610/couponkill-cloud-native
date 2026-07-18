@@ -21,7 +21,6 @@
 | 「GitHub Actions 推 main 触发 Argo CD」 | **无效叙事** — 仓库无 Argo Application、无 `bump-chart-version.sh`；禁止再写进文档或 workflow |
 | 「仅靠 GHA 完成生产部署」 | **禁止** — 生产/演示 CD 以 Jenkins + Helm 为准 |
 | `ansible/` 内嵌 CI | **DEPRECATED**（随 ansible 部署路径一并废弃） |
-| Makefile `pull-dependency-images` 中 MySQL/RocketMQ 目标 | **过时辅助** — 中间件以 PG/Kafka 为准，见迁移文档；勿当作发布清单 |
 
 ## 推荐流水线语义
 

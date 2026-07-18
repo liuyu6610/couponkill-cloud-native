@@ -149,10 +149,10 @@ function Pull-Dependency-Images {
     docker tag nacos/nacos-server:v3.1.1 "${REGISTRY}/nacos-server"
     docker push "${REGISTRY}/nacos-server"
     
-    # Sentinel
+    # Sentinel（tag / push 使用同一仓库路径，避免 push 到未打 tag 的引用）
     docker pull bladex/sentinel-dashboard:1.8.6
     docker tag bladex/sentinel-dashboard:1.8.6 "${REGISTRY}/sentinel-dashboard"
-    docker push "${REGISTRY}/sentinel-dashboard:1.8.6"
+    docker push "${REGISTRY}/sentinel-dashboard"
     
     # Kafka（KRaft，无需 ZooKeeper / RocketMQ）
     docker pull apache/kafka:3.8.0
