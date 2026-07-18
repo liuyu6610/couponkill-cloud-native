@@ -17,8 +17,12 @@ public interface CouponMapper {
 
     int insertCoupon(Coupon coupon);
 
-    // 查询指定优惠券的所有分片
+    // 查询指定优惠券的所有分片（依赖广播；路由不稳定时请用 selectByCouponIdAndShardIndex）
     List<Coupon> selectByCouponId(@Param("couponId") Long couponId);
+
+    /** 按 id + shard_index 精确路由单分片（库存汇总真源） */
+    Coupon selectByCouponIdAndShardIndex(@Param("couponId") Long couponId,
+                                         @Param("shardIndex") Integer shardIndex);
 
     // 查询所有主分片用于缓存预热
     List<Coupon> selectMainShardsForCache();

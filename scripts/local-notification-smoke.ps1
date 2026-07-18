@@ -95,11 +95,14 @@ try {
     Write-Host "== seed notification for demo user 10000 =="
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
+    $sqlPath = Join-Path $logDir 'seed-notification.sql'
     $sql = @"
 INSERT INTO user_notification (user_id, type, title, content, ref_id, read_flag, create_time)
-VALUES (10000, 'RESERVATION_SUCCESS', '预约帮抢成功', '券 1001 联调铃铛冒烟', 1, FALSE, NOW());
+VALUES (10000, 'RESERVATION_SUCCESS', E'\u9884\u7ea6\u5e2e\u62a2\u6210\u529f', E'\u5238 1001 \u8054\u8c03\u94c3\u94db\u5192\u70df', 1, FALSE, NOW());
 "@
-    $sql | docker exec -i couponkill-postgres psql -U postgres -d order_db_0 | Out-Host
+    [System.IO.File]::WriteAllText($sqlPath, $sql, [System.Text.UTF8Encoding]::new($false))
+    docker cp $sqlPath couponkill-postgres:/tmp/seed-notification.sql | Out-Null
+    docker exec couponkill-postgres psql -U postgres -d order_db_0 -f /tmp/seed-notification.sql | Out-Host
     $ErrorActionPreference = $prev
 
     Write-Host "== install common =="

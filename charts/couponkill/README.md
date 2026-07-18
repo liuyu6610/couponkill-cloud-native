@@ -381,7 +381,9 @@ kafka:
     enabled: true
 ```
 
-> 演示环境默认单节点 KRaft（`replicationFactor: 1`）。多副本需自行提供多 broker StatefulSet 或外部托管 Kafka。
+> 演示环境默认单节点 KRaft（`kafka.statefulSet.enabled: true`，`replicationFactor: 1`，镜像 `apache/kafka:3.8.0`）。
+> 模板：`templates/kafka-statefulset.yaml`（Headless + ClusterIP `kafka` + 兼容别名 `broker`）。
+> 多副本或外部托管时将 `kafka.statefulSet.enabled` 设为 `false` 并改写 `bootstrapServers`。
 
 #### PostgreSQL 集群 / 多节点
 

@@ -71,8 +71,10 @@ spec:
     - port: 6379
       targetPort: 6379
   clusterIP: None
+{{- /* Kafka broker Service：由 kafka-statefulset.yaml 在 statefulSet.enabled 时创建（带 selector） */ -}}
+{{- if not (.Values.kafka.statefulSet.enabled | default false) }}
 ---
-# Kafka Service definition
+# Kafka Service 占位（无 STS 时；外部托管 Kafka 可自行对接）
 apiVersion: v1
 kind: Service
 metadata:
@@ -84,6 +86,8 @@ spec:
       targetPort: 9092
   clusterIP: None
 {{- end }}
+{{- end }}
+
 ---
 # Nacos Service definition
 {{- if .Values.nacos.enabled }}

@@ -215,10 +215,11 @@ redis:
 # Kafka 配置（消息中间件，替代 RocketMQ）
 kafka:
   enabled: true
-  name: broker
+  # STS / Service 名；ClusterIP 亦暴露兼容别名 broker
+  name: kafka
   port: 9092
   broker: broker:9092
-  # 单节点 KRaft；生产多副本 broker 需提供 StatefulSet 或外部托管 Kafka
+  # 单节点 KRaft；bootstrap 可用 kafka:9092 或兼容别名 broker:9092
   bootstrapServers: broker:9092
   # 主题真源：与 docker-compose.migration.yml / kafka-init-job 对齐 16 分区
   topics:
@@ -227,6 +228,23 @@ kafka:
     - seckill_compensation
   partitions: 16
   replicationFactor: 1
+  image:
+    repository: apache/kafka
+    tag: "3.8.0"
+    pullPolicy: IfNotPresent
+  # 演示默认开启单节点 KRaft STS；生产可改 false 并接外部托管 Kafka
+  statefulSet:
+    enabled: true
+    replicas: 1
+    storageSize: 10Gi
+    # storageClassName: ""
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
   cluster:
     enabled: false
   init:
@@ -236,6 +254,7 @@ kafka:
       repository: apache/kafka
       tag: "3.8.0"
       pullPolicy: IfNotPresent
+
 
 # PostgreSQL 集群开关（Deployment 读 .Values.postgres.cluster.*）。
 # 应用连接真源请用上方 db.*；本块仅承载集群开关 / 中间件样例元数据。

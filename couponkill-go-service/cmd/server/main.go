@@ -21,7 +21,7 @@ import (
 	"couponkill-go-service/internal/handler"
 	"couponkill-go-service/internal/repository"
 	"couponkill-go-service/internal/service"
-	"couponkill-go-service/pkg/mysqlclient"
+	"couponkill-go-service/pkg/postgresclient"
 	"couponkill-go-service/pkg/redisclient"
 	"couponkill-go-service/pkg/sharding"
 )
@@ -152,7 +152,7 @@ func initializePostgresClient(cfg *config.Config) (*sharding.MultiDataSource, er
 		convertedDataSources[name] = struct{ DSN string }{DSN: dsConfig.DSN}
 	}
 
-	multiDS, err := mysqlclient.NewMultiMysqlClient(
+	multiDS, err := postgresclient.NewMultiClient(
 		block.DSN,
 		convertedDataSources,
 	)

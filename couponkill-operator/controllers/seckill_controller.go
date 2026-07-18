@@ -8,6 +8,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -271,11 +272,98 @@ func (r *SeckillReconciler) reconcileHPA(ctx context.Context, seckill *opsv1.Sec
 	return nil
 }
 
-// updateStatus updates the Seckill status
+// updateStatus 汇总各启用服务 Deployment 就绪态，写回 Seckill.Status。
 func (r *SeckillReconciler) updateStatus(ctx context.Context, seckill *opsv1.Seckill) error {
-	// TODO: Implement status update logic
-	// This would typically involve checking the status of deployments and services
-	// and updating the Seckill status accordingly
+	log := log.FromContext(ctx)
+
+	type svcRef struct {
+		key     string
+		enabled bool
+	}
+	refs := []svcRef{
+		{"go", seckill.Spec.Services.GoService.Enabled},
+		{"coupon", seckill.Spec.Services.CouponService.Enabled},
+		{"order", seckill.Spec.Services.OrderService.Enabled},
+		{"user", seckill.Spec.Services.UserService.Enabled},
+		{"gateway", seckill.Spec.Services.GatewayService.Enabled},
+	}
+
+	statuses := make(map[string]opsv1.ServiceStatus, len(refs))
+	readyCount := 0
+	enabledCount := 0
+
+	for _, ref := range refs {
+		if !ref.enabled {
+			continue
+		}
+		enabledCount++
+		depName := fmt.Sprintf("%s-%s", seckill.Name, ref.key)
+		dep := &appsv1.Deployment{}
+		err := r.Get(ctx, types.NamespacedName{Name: depName, Namespace: seckill.Namespace}, dep)
+		st := opsv1.ServiceStatus{}
+		if err != nil {
+			if errors.IsNotFound(err) {
+				st.Phase = "Pending"
+				st.ReadyReplicas = 0
+				st.TotalReplicas = 0
+			} else {
+				return err
+			}
+		} else {
+			st.ReadyReplicas = dep.Status.ReadyReplicas
+			st.TotalReplicas = dep.Status.Replicas
+			desired := int32(1)
+			if dep.Spec.Replicas != nil {
+				desired = *dep.Spec.Replicas
+			}
+			switch {
+			case st.ReadyReplicas >= desired && desired > 0:
+				st.Phase = "Ready"
+				readyCount++
+			case st.ReadyReplicas > 0:
+				st.Phase = "Degraded"
+			default:
+				st.Phase = "Pending"
+			}
+		}
+		statuses[ref.key] = st
+	}
+
+	phase := "Pending"
+	switch {
+	case enabledCount == 0:
+		phase = "Pending"
+	case readyCount == enabledCount:
+		phase = "Ready"
+	case readyCount > 0:
+		phase = "Degraded"
+	default:
+		phase = "Progressing"
+	}
+
+	readyStatus := metav1.ConditionFalse
+	readyReason := "ServicesNotReady"
+	readyMsg := fmt.Sprintf("%d/%d enabled services ready", readyCount, enabledCount)
+	if phase == "Ready" {
+		readyStatus = metav1.ConditionTrue
+		readyReason = "AllServicesReady"
+		readyMsg = "All enabled service deployments are ready"
+	}
+
+	meta.SetStatusCondition(&seckill.Status.Conditions, metav1.Condition{
+		Type:               "Ready",
+		Status:             readyStatus,
+		Reason:             readyReason,
+		Message:            readyMsg,
+		ObservedGeneration: seckill.Generation,
+	})
+	seckill.Status.Phase = phase
+	seckill.Status.ServiceStatuses = statuses
+
+	if err := r.Status().Update(ctx, seckill); err != nil {
+		log.Error(err, "failed to update Seckill status")
+		return err
+	}
 	return nil
 }
 

@@ -70,9 +70,19 @@
                per_user_limit, total_stock, seckill_total_stock, remaining_stock,
                seckill_remaining_stock, status, seckill_start_at, seckill_end_at,
                create_time, update_time, version
-        FROM coupon 
-        WHERE id = #{couponId} 
+        FROM coupon
+        WHERE id = #{couponId}
         ORDER BY shard_index
+    </select>
+
+    <select id="selectByCouponIdAndShardIndex" resultMap="CouponMap">
+        SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
+               per_user_limit, total_stock, seckill_total_stock, remaining_stock,
+               seckill_remaining_stock, status, seckill_start_at, seckill_end_at,
+               create_time, update_time, version
+        FROM coupon
+        WHERE id = #{couponId} AND shard_index = #{shardIndex}
+        LIMIT 1
     </select>
 
     <!-- 查询所有优惠券的主分片（shard_index=0）用于预热 -->

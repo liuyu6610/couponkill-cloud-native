@@ -1,4 +1,4 @@
-package mysqlclient
+package postgresclient
 
 import (
 	"couponkill-go-service/pkg/sharding"
@@ -8,9 +8,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// NewMultiMysqlClient 初始化多 PostgreSQL 连接。
+// NewMultiClient 初始化多 PostgreSQL 连接。
 // 连接池参数由 sharding.AddDataSource 统一设置（可用 GO_DB_MAX_OPEN_CONNS / GO_DB_MAX_IDLE_CONNS 覆盖）。
-func NewMultiMysqlClient(
+func NewMultiClient(
 	dsn string,
 	dataSources map[string]struct {
 		DSN string
@@ -27,7 +27,6 @@ func NewMultiMysqlClient(
 		return multiDS, nil
 	}
 
-	// 单 DSN 兼容路径：提高默认池上限（仍可被环境变量覆盖）
 	if os.Getenv("GO_DB_MAX_OPEN_CONNS") == "" {
 		_ = os.Setenv("GO_DB_MAX_OPEN_CONNS", "100")
 	}
@@ -40,8 +39,8 @@ func NewMultiMysqlClient(
 	return multiDS, nil
 }
 
-// NewMultiMysqlClientWithConfig 初始化多 PostgreSQL 连接，使用配置结构体
-func NewMultiMysqlClientWithConfig(
+// NewMultiClientWithConfig 初始化多 PostgreSQL 连接，使用配置结构体
+func NewMultiClientWithConfig(
 	dsn string,
 	dataSources map[string]struct {
 		DSN      string
@@ -74,3 +73,9 @@ func NewMultiMysqlClientWithConfig(
 	}
 	return multiDS, nil
 }
+
+// 历史名兼容（一版后可删）
+var (
+	NewMultiMysqlClient           = NewMultiClient
+	NewMultiMysqlClientWithConfig = NewMultiClientWithConfig
+)
