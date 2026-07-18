@@ -24,9 +24,10 @@ function Ensure-Namespace([string]$id, [string]$name) {
 
 function Localize([string]$text) {
     if ([string]::IsNullOrEmpty($text)) { return $text }
+    # 与 docker-compose.migration.yml 宿主机映射 5433:5432 对齐（注释勿插在反引号续行中间）
     return $text `
-        -replace "jdbc:postgresql://postgres:5432", "jdbc:postgresql://127.0.0.1:5432" `
-        -replace "host=postgres port=5432", "host=127.0.0.1 port=5432" `
+        -replace "jdbc:postgresql://postgres:5432", "jdbc:postgresql://127.0.0.1:5433" `
+        -replace "host=postgres port=5432", "host=127.0.0.1 port=5433" `
         -replace "(?m)^(\s*host:\s*)redis-master\s*$", '${1}127.0.0.1' `
         -replace "(?m)^(\s*host:\s*)redis\s*$", '${1}127.0.0.1' `
         -replace "redis-master:6379", "127.0.0.1:6379" `

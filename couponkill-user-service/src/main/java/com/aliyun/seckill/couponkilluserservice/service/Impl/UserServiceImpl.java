@@ -1,7 +1,7 @@
 // 文件路径: com/aliyun/seckill/couponkilluserservice/service/Impl/UserServiceImpl.java
 package com.aliyun.seckill.couponkilluserservice.service.Impl;
 
-import com.aliyun.seckill.common.enums.ResultCode;
+import com.aliyun.seckill.common.api.ErrorCodes;
 import com.aliyun.seckill.common.exception.BusinessException;
 import com.aliyun.seckill.common.pojo.User;
 import com.aliyun.seckill.common.pojo.UserCouponCount;
@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
         // 检查用户名是否已存在
         User existUser = userMapper.selectByUsername(username);
         if (existUser != null) {
-            throw new BusinessException(ResultCode.USER_EXIST);
+            throw new BusinessException(ErrorCodes.USER_EXIST, "用户已存在");
         }
 
         // 创建新用户
@@ -108,7 +108,7 @@ public class UserServiceImpl implements UserService {
         // 插入用户（注意：去掉 useGeneratedKeys）
         int result = userMapper.insertUser(user);
         if (result <= 0 || user.getId() == null) {
-            throw new BusinessException(ResultCode.SYSTEM_BUSY.getCode(), "用户注册失败");
+            throw new BusinessException(ErrorCodes.SYSTEM_BUSY, "用户注册失败");
         }
 
         // 初始化用户优惠券统计
@@ -129,12 +129,12 @@ public class UserServiceImpl implements UserService {
         // 查询用户
         User user = userMapper.selectByUsername(username);
         if (user == null) {
-            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+            throw new BusinessException(ErrorCodes.USER_NOT_FOUND, "用户不存在");
         }
 
         // 验证密码
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BusinessException(ResultCode.PASSWORD_ERROR);
+            throw new BusinessException(ErrorCodes.PASSWORD_ERROR, "密码错误");
         }
 
         // 生成令牌（管理员写入 roles）
@@ -227,7 +227,7 @@ public class UserServiceImpl implements UserService {
             }
         } catch (Exception e) {
             log.error("更新用户秒杀优惠券数量异常: userId={}, count={}", userId, count, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券数量失败");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "更新用户优惠券数量失败");
         }
     }
     
@@ -243,7 +243,7 @@ public class UserServiceImpl implements UserService {
             }
         } catch (Exception e) {
             log.error("更新用户普通优惠券数量异常: userId={}, count={}", userId, count, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR.getCode(), "更新用户优惠券数量失败");
+            throw new BusinessException(ErrorCodes.SYS_ERROR, "更新用户优惠券数量失败");
         }
     }
     

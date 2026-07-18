@@ -3,6 +3,7 @@
 # 用法：
 #   docker compose -f docker-compose.migration.yml up -d
 # 验证：
+#   - postgres 宿主机映射 **5433**（避免与本机其他 PG/5432 冲突）；导入 Nacos 用 scripts/import-nacos-local.ps1
 #   - postgres 会自动执行 init-postgres.sql 建库建表，再执行 02-seed-demo.sql 写入演示数据
 #   - kafka 单节点 KRaft：宿主机 localhost:9092，容器内 kafka:29092
 #   - nacos standalone v3.1.1（内置 Derby，避免元数据库插件依赖；生产元数据库迁移见 README）
@@ -16,7 +17,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - ./charts/couponkill/scripts/init-postgres.sql:/docker-entrypoint-initdb.d/01-init-postgres.sql:ro
       - ./charts/couponkill/scripts/02-seed-demo.sql:/docker-entrypoint-initdb.d/02-seed-demo.sql:ro
