@@ -101,7 +101,19 @@ public interface CouponService {
     SyncStockResult syncRedisStock(Long couponId, Long targetStock, boolean force);
 
     /**
-     * 设置/更新秒杀活动时间窗；start 必须早于 end。
+     * 设置/更新秒杀活动时间窗；start 必须早于 end。写入全部物理分片。
      */
     Coupon updateSeckillWindow(Long couponId, LocalDateTime seckillStartAt, LocalDateTime seckillEndAt);
+
+    /**
+     * 更新优惠券状态（全部物理分片）。
+     * @return 实际更新到的分片行数
+     */
+    int updateCouponStatus(Long couponId, int status);
+
+    /**
+     * 删除优惠券（全部物理分片），并清理相关缓存。
+     * @return 实际删除的分片行数
+     */
+    int deleteCoupon(Long couponId);
 }

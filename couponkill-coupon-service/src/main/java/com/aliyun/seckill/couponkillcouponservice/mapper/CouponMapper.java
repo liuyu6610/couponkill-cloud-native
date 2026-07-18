@@ -17,7 +17,11 @@ public interface CouponMapper {
 
     int insertCoupon(Coupon coupon);
 
-    // 查询指定优惠券的所有分片（依赖广播；路由不稳定时请用 selectByCouponIdAndShardIndex）
+    /**
+     * @deprecated 无 shard_index 时 ShardingSphere 路由不稳定，请用 {@link #selectByCouponIdAndShardIndex}
+     *             或 Service 层 {@code loadAllShards}。
+     */
+    @Deprecated
     List<Coupon> selectByCouponId(@Param("couponId") Long couponId);
 
     /** 按 id + shard_index 精确路由单分片（库存汇总真源） */
@@ -43,14 +47,34 @@ public interface CouponMapper {
     // 查询过期优惠券
     List<Coupon> selectExpiredCoupons(@Param("expireTime") LocalDateTime expireTime);
 
-    // 更新优惠券状态
+    /**
+     * @deprecated 请用 {@link #updateCouponStatusByShardIndex}
+     */
+    @Deprecated
     int updateCouponStatus(@Param("couponId") Long couponId, @Param("status") int status);
 
-    /** 更新秒杀活动时间窗（写所有分片） */
+    int updateCouponStatusByShardIndex(@Param("couponId") Long couponId,
+                                       @Param("shardIndex") Integer shardIndex,
+                                       @Param("status") int status);
+
+    /**
+     * @deprecated 请用 {@link #updateSeckillWindowByShardIndex}
+     */
+    @Deprecated
     int updateSeckillWindow(@Param("couponId") Long couponId,
                             @Param("seckillStartAt") LocalDateTime seckillStartAt,
                             @Param("seckillEndAt") LocalDateTime seckillEndAt);
-    
-    // 根据ID删除优惠券
+
+    int updateSeckillWindowByShardIndex(@Param("couponId") Long couponId,
+                                        @Param("shardIndex") Integer shardIndex,
+                                        @Param("seckillStartAt") LocalDateTime seckillStartAt,
+                                        @Param("seckillEndAt") LocalDateTime seckillEndAt);
+
+    /**
+     * @deprecated 请用 {@link #deleteCouponByIdAndShardIndex}
+     */
+    @Deprecated
     int deleteCouponById(@Param("id") Long id);
+
+    int deleteCouponByIdAndShardIndex(@Param("id") Long id, @Param("shardIndex") Integer shardIndex);
 }

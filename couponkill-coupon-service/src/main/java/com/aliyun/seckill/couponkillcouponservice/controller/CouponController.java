@@ -94,7 +94,7 @@ public class CouponController {
         return ApiResponse.success(createdCoupon);
     }
 
-    @Operation(summary = "更新秒杀活动时间窗", description = "仅秒抢券；start 必须早于 end")
+    @Operation(summary = "更新秒杀活动时间窗", description = "仅秒抢券；start 必须早于 end；写入全部物理分片")
     @PostMapping("/{id}/seckill-window")
     public ApiResponse<Coupon> updateSeckillWindow(
             @PathVariable Long id,
@@ -104,6 +104,28 @@ public class CouponController {
             LocalDateTime seckillEndAt) {
         try {
             return ApiResponse.success(couponService.updateSeckillWindow(id, seckillStartAt, seckillEndAt));
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.fail(400, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "更新优惠券状态", description = "写入全部物理分片；status: 0=无效 1=有效")
+    @PostMapping("/{id}/status")
+    public ApiResponse<Integer> updateCouponStatus(
+            @PathVariable Long id,
+            @RequestParam int status) {
+        try {
+            return ApiResponse.success(couponService.updateCouponStatus(id, status));
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.fail(400, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "删除优惠券", description = "删除全部物理分片并清理缓存")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Integer> deleteCoupon(@PathVariable Long id) {
+        try {
+            return ApiResponse.success(couponService.deleteCoupon(id));
         } catch (IllegalArgumentException e) {
             return ApiResponse.fail(400, e.getMessage());
         }

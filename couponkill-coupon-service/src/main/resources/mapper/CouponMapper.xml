@@ -38,8 +38,13 @@
                  )
     </insert>
 
+    <!-- @deprecated 无 shard_index；请用 deleteCouponByIdAndShardIndex -->
     <delete id="deleteCouponById">
         DELETE FROM coupon WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteCouponByIdAndShardIndex">
+        DELETE FROM coupon WHERE id = #{id} AND shard_index = #{shardIndex}
     </delete>
 
     <select id="selectAvailableCoupons" resultMap="CouponMap">
@@ -65,6 +70,7 @@
     </select>
 
     <!-- 根据优惠券ID查询所有分片，优化查询性能 -->
+    <!-- @deprecated 无 shard_index 广播不稳定；请用 selectByCouponIdAndShardIndex -->
     <select id="selectByCouponId" resultMap="CouponMap">
         SELECT id, shard_index, name, description, type, face_value, min_spend, valid_days,
                per_user_limit, total_stock, seckill_total_stock, remaining_stock,
@@ -97,12 +103,21 @@
         LIMIT 1000
     </select>
 
+    <!-- @deprecated 请用 updateSeckillWindowByShardIndex -->
     <update id="updateSeckillWindow">
         UPDATE coupon
         SET seckill_start_at = #{seckillStartAt},
             seckill_end_at = #{seckillEndAt},
             update_time = NOW()
         WHERE id = #{couponId}
+    </update>
+
+    <update id="updateSeckillWindowByShardIndex">
+        UPDATE coupon
+        SET seckill_start_at = #{seckillStartAt},
+            seckill_end_at = #{seckillEndAt},
+            update_time = NOW()
+        WHERE id = #{couponId} AND shard_index = #{shardIndex}
     </update>
 
     <update id="updateStockByShardIndex">
@@ -140,11 +155,19 @@
         LIMIT 1000
     </select>
 
+    <!-- @deprecated 请用 updateCouponStatusByShardIndex -->
     <update id="updateCouponStatus">
         UPDATE coupon
         SET status = #{status},
             update_time = NOW()
         WHERE id = #{couponId}
+    </update>
+
+    <update id="updateCouponStatusByShardIndex">
+        UPDATE coupon
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{couponId} AND shard_index = #{shardIndex}
     </update>
 
 </mapper>

@@ -117,9 +117,21 @@ function Invoke-Json([string]$Method, [string]$Url, [hashtable]$Headers = @{}, [
     return [pscustomobject]@{ Code = $code; Body = $body; Raw = $raw }
 }
 
-# PG 容器时区多为 UTC；timestamptz 必须写 UTC，否则中国本地时间会被当成 UTC 导致「活动未开始」
-function Format-UtcTs([datetime]$dt) {
-    return $dt.ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')
+# coupon API 的 seckillStartAt 按 JVM 本地时区解析（通常 GMT+8），与 LocalDateTime.now() 对齐
+function Format-ApiTs([datetime]$dt) {
+    return $dt.ToString('yyyy-MM-dd HH:mm:ss')
+}
+
+function Set-SeckillWindowApi([string]$CouponBase, [string]$CouponId, [datetime]$Start, [datetime]$End) {
+    $startQs = [uri]::EscapeDataString((Format-ApiTs $Start))
+    $endQs = [uri]::EscapeDataString((Format-ApiTs $End))
+    $url = "$CouponBase/api/v1/coupon/$CouponId/seckill-window?seckillStartAt=$startQs&seckillEndAt=$endQs"
+    $resp = Invoke-Json POST $url @{}
+    Write-Host $resp.Body
+    if ($resp.Code -ne 200 -or $resp.Body -notmatch '"code"\s*:\s*0') {
+        throw ("seckill-window API failed for coupon {0}" -f $CouponId)
+    }
+    return $resp
 }
 
 $started = @()
@@ -166,7 +178,7 @@ try {
     if (-not $token) { throw "no token" }
     $auth = @{ Authorization = "Bearer $token" }
 
-    # 演示秒抢券 1001（多 shard_index 行）。新建券需填 shard_index，/create 当前会 Sharding null——作技术债另修
+    # 演示秒抢券 1001；改窗走 coupon 直连 API（全分片写，网关会拦 /create|/preheat）
     $couponId = "1001"
 
     Write-Host "== cancel leftover active reservations for demo/1001 =="
@@ -187,25 +199,8 @@ WHERE user_id = 10000 AND coupon_id = 1001 AND status IN ('PENDING','FIRING','QU
     docker cp $cleanupSql couponkill-postgres:/tmp/cleanup-resv.sql | Out-Null
     docker exec couponkill-postgres psql -U postgres -d order_db_0 -f /tmp/cleanup-resv.sql | Out-Host
 
-    Write-Host "== set FUTURE seckill window on all shards (SQL, UTC) =="
-    $startFuture = Format-UtcTs ((Get-Date).AddMinutes(10))
-    $endFuture = Format-UtcTs ((Get-Date).AddHours(2))
-    $winSql = Join-Path $logDir 'set-future-window.sql'
-    $winBody = @"
-DO `$`$
-BEGIN
-  FOR i IN 0..15 LOOP
-    EXECUTE format(
-      'UPDATE coupon_%s SET seckill_start_at = %L::timestamptz, seckill_end_at = %L::timestamptz, update_time = NOW() WHERE id = 1001',
-      i, '$startFuture+00', '$endFuture+00');
-  END LOOP;
-END
-`$`$;
-"@
-    [System.IO.File]::WriteAllText($winSql, $winBody, [System.Text.UTF8Encoding]::new($false))
-    docker cp $winSql couponkill-postgres:/tmp/set-future-window.sql | Out-Null
-    docker exec couponkill-postgres psql -U postgres -d coupon_db_0 -f /tmp/set-future-window.sql | Out-Host
-    docker exec couponkill-redis redis-cli DEL "coupon:detail:1001" "coupon:available" | Out-Host
+    Write-Host "== set FUTURE seckill window via coupon API (all shards) =="
+    Set-SeckillWindowApi $couponBase $couponId ((Get-Date).AddMinutes(10)) ((Get-Date).AddHours(2)) | Out-Null
 
     Write-Host "== create reservation =="
     $resvBodyPath = Join-Path $logDir 'create-reservation.json'
@@ -228,26 +223,9 @@ END
         throw "expected PENDING after create"
     }
 
-    Write-Host "== open window (UTC) + clear cache + preheat, THEN advance trigger_at =="
-    $openStart = Format-UtcTs ((Get-Date).AddMinutes(-5))
-    $openEnd = Format-UtcTs ((Get-Date).AddHours(1))
-    $openCoupon = Join-Path $logDir 'open-coupon.sql'
-    [System.IO.File]::WriteAllText($openCoupon, @"
-DO `$`$
-BEGIN
-  FOR i IN 0..15 LOOP
-    EXECUTE format(
-      'UPDATE coupon_%s SET seckill_start_at = %L::timestamptz, seckill_end_at = %L::timestamptz, update_time = NOW() WHERE id = 1001',
-      i, '$openStart+00', '$openEnd+00');
-  END LOOP;
-END
-`$`$;
-SELECT id, seckill_start_at, seckill_end_at, NOW() AS db_now FROM coupon_0 WHERE id = 1001;
-"@, [System.Text.UTF8Encoding]::new($false))
-    docker cp $openCoupon couponkill-postgres:/tmp/open-coupon.sql | Out-Null
-    docker exec couponkill-postgres psql -U postgres -d coupon_db_0 -f /tmp/open-coupon.sql | Out-Host
-
-    docker exec couponkill-redis redis-cli DEL "coupon:detail:1001" "coupon:available" "seckill:cooldown:10000:1001" "seckill:deduct:10000:1001" | Out-Host
+    Write-Host "== open window via coupon API + preheat, THEN advance trigger_at =="
+    Set-SeckillWindowApi $couponBase $couponId ((Get-Date).AddMinutes(-5)) ((Get-Date).AddHours(1)) | Out-Null
+    docker exec couponkill-redis redis-cli DEL "seckill:cooldown:10000:1001" "seckill:deduct:10000:1001" | Out-Host
 
     $preheat = Invoke-Json POST "$couponBase/api/v1/coupon/preheat-stock/$couponId" @{}
     Write-Host $preheat.Body
@@ -255,7 +233,7 @@ SELECT id, seckill_start_at, seckill_end_at, NOW() AS db_now FROM coupon_0 WHERE
         throw "preheat failed"
     }
 
-    # 经 coupon 直连确认时间窗已开（避免缓存/时区导致 fireDue 打成 NOT_STARTED）
+    # 确认聚合视图时间窗已开（API 已清详情缓存）
     $couponView = Invoke-Json GET "$couponBase/api/v1/coupon/$couponId" @{}
     Write-Host ("coupon view: {0}" -f $couponView.Body)
     if ($couponView.Body -notmatch '"code"\s*:\s*0') { throw "get coupon failed before fire" }

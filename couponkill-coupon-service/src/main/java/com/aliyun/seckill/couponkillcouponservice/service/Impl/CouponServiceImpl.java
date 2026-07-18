@@ -785,9 +785,53 @@ public class CouponServiceImpl implements CouponService {
         if (existing.getType() == null || existing.getType() != 2) {
             throw new IllegalArgumentException("仅秒抢券可设置活动时间窗");
         }
-        couponMapper.updateSeckillWindow(couponId, seckillStartAt, seckillEndAt);
+        int updated = 0;
+        for (int i = 0; i < TOTAL_SHARDS; i++) {
+            updated += couponMapper.updateSeckillWindowByShardIndex(
+                    couponId, i, seckillStartAt, seckillEndAt);
+        }
+        if (updated == 0) {
+            throw new IllegalArgumentException("优惠券分片不存在: " + couponId);
+        }
+        log.info("更新秒杀时间窗全分片完成: couponId={}, rows={}, start={}, end={}",
+                couponId, updated, seckillStartAt, seckillEndAt);
+        clearCouponCaches(couponId);
+        return getCouponById(couponId);
+    }
+
+    @Override
+    @Transactional
+    public int updateCouponStatus(Long couponId, int status) {
+        if (couponId == null) {
+            throw new IllegalArgumentException("couponId 不能为空");
+        }
+        int updated = 0;
+        for (int i = 0; i < TOTAL_SHARDS; i++) {
+            updated += couponMapper.updateCouponStatusByShardIndex(couponId, i, status);
+        }
+        clearCouponCaches(couponId);
+        log.info("更新优惠券状态全分片完成: couponId={}, status={}, rows={}", couponId, status, updated);
+        return updated;
+    }
+
+    @Override
+    @Transactional
+    public int deleteCoupon(Long couponId) {
+        if (couponId == null) {
+            throw new IllegalArgumentException("couponId 不能为空");
+        }
+        int deleted = 0;
+        for (int i = 0; i < TOTAL_SHARDS; i++) {
+            deleted += couponMapper.deleteCouponByIdAndShardIndex(couponId, i);
+        }
+        clearCouponCaches(couponId);
+        log.info("删除优惠券全分片完成: couponId={}, rows={}", couponId, deleted);
+        return deleted;
+    }
+
+    private void clearCouponCaches(Long couponId) {
         redisTemplate.delete(COUPON_DETAIL_KEY + couponId);
         redisTemplate.delete(COUPON_AVAILABLE_KEY);
-        return getCouponById(couponId);
+        redisTemplate.delete(COUPON_STOCK_KEY + couponId);
     }
 }
