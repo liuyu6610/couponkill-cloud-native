@@ -33,6 +33,25 @@ function Wait-Port([int]$Port, [int]$Seconds) {
     return $false
 }
 
+# 端口被占用 ≠ 目标服务已就绪（曾出现 8082 被 service-catalog 占用导致网关 503）
+function Get-ListenCommandLine([int]$Port) {
+    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -eq $conn) { return $null }
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($conn.OwningProcess)" -ErrorAction SilentlyContinue
+    return $proc.CommandLine
+}
+
+function Assert-PortOwnedBy([int]$Port, [string]$Pattern, [string]$Label) {
+    $cmd = Get-ListenCommandLine $Port
+    if ([string]::IsNullOrWhiteSpace($cmd)) {
+        throw ("{0}: 端口 {1} 无监听进程" -f $Label, $Port)
+    }
+    if ($cmd -notmatch $Pattern) {
+        throw ("{0}: 端口 {1} 被非目标进程占用 → {2}" -f $Label, $Port, $cmd.Substring(0, [Math]::Min(180, $cmd.Length)))
+    }
+}
+
 function Start-Module([string]$ModuleDir, [string]$Name, [int]$Port) {
     $out = Join-Path $logDir "$Name.out.log"
     $err = Join-Path $logDir "$Name.err.log"
@@ -78,6 +97,12 @@ try {
     $started += Start-Module 'couponkill-coupon-service' 'coupon' 8080
 
     $ready = @{}
+    $ownerPattern = @{
+        user    = 'couponkilluserservice|couponkill-user-service'
+        gateway = 'couponkillgateway|couponkill-gateway'
+        order   = 'couponkillorderservice|couponkill-order-service'
+        coupon  = 'couponkillcouponservice|couponkill-coupon-service'
+    }
     foreach ($it in $started) {
         $ok = Wait-Port $it.Port 90
         $ready[$it.Name] = $ok
@@ -87,6 +112,9 @@ try {
             Get-Content $it.Err -Tail 80 -ErrorAction SilentlyContinue
             Write-Host "--- $($it.Name) out tail ---"
             Get-Content $it.Out -Tail 40 -ErrorAction SilentlyContinue
+        } elseif ($ownerPattern.ContainsKey($it.Name)) {
+            Assert-PortOwnedBy $it.Port $ownerPattern[$it.Name] $it.Name
+            Write-Host ("port {0} ({1}) owner=OK" -f $it.Port, $it.Name)
         }
     }
 
