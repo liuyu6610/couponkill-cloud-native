@@ -18,10 +18,10 @@ spec:
       route:
         # 稳定版本路由配置，权重默认为100
         - destination: {host: {{ .Values.services.coupon.name }}, subset: stable, port: {number: 80}}
-          weight: {{ default 100 .Values.canary.coupon.weightStable }}
+          weight: {{ .Values.canary.coupon.weightStable | default 100 }}
         # 金丝雀版本路由配置，权重默认为0
         - destination: {host: {{ .Values.services.coupon.name }}, subset: canary, port: {number: 80}}
-          weight: {{ default 0 .Values.canary.coupon.weightCanary }}
+          weight: {{ .Values.canary.coupon.weightCanary | default 0 }}
 
     # user服务路由规则：处理认证相关API请求
     - name: user-route
