@@ -456,6 +456,24 @@ istio:
     name: couponkill-gateway
     host: couponkill.example.com
     port: 80
+  # DestinationRule 缺省（istio.enabled=true 时模板必读）
+  destinationRule:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 10
+  virtualService:
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: "5xx,connect-failure,refused-stream"
 
 # 动态配置 / 刷新（deploy-user 等模板引用；缺省避免 helm nil）
 config:

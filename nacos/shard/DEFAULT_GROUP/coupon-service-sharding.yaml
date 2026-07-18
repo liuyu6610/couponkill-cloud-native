@@ -1,4 +1,4 @@
-# 单节点模式数据源配置
+﻿# 单节点模式数据源配置
 dataSources:
   coupon-db-0:
     driverClassName: org.postgresql.Driver
@@ -25,54 +25,21 @@ dataSources:
     minimumIdle: 4
     leakDetectionThreshold: 60000
 
-# 集群模式数据源配置（注释掉单节点配置后启用）
+
+# 集群/主从样例（按需启用；驱动与端口为 PostgreSQL）
 # dataSources:
-#   # 数据库集群0
-#   coupon-db-cluster-0-master:
-#     driverClassName: com.mysql.cj.jdbc.Driver
-#     jdbcUrl: jdbc:mysql://coupon-db-cluster-0-master:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-#     username: root
-#     password: root
+#   coupon-db-cluster-0-master:   # 名称按服务调整 order-/coupon-
+#     driverClassName: org.postgresql.Driver
+#     jdbcUrl: jdbc:postgresql://postgres-primary:5432/<db>?reWriteBatchedInserts=true&sslmode=disable
+#     username: postgres
+#     password: postgres
 #     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-#     connectionTimeout: 2000
-#     idleTimeout: 600000
-#     maxLifetime: 1800000
-#     maximumPoolSize: 32
-#     minimumIdle: 4
-#   coupon-db-cluster-0-slave-0:
-#     driverClassName: com.mysql.cj.jdbc.Driver
-#     jdbcUrl: jdbc:mysql://coupon-db-cluster-0-slave-0:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-#     username: root
-#     password: root
+#   coupon-db-cluster-0-replica-0:
+#     driverClassName: org.postgresql.Driver
+#     jdbcUrl: jdbc:postgresql://postgres-replica-0:5432/<db>?reWriteBatchedInserts=true&sslmode=disable
+#     username: postgres
+#     password: postgres
 #     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-#     connectionTimeout: 2000
-#     idleTimeout: 600000
-#     maxLifetime: 1800000
-#     maximumPoolSize: 32
-#     minimumIdle: 4
-#   # 数据库集群1
-#   coupon-db-cluster-1-master:
-#     driverClassName: com.mysql.cj.jdbc.Driver
-#     jdbcUrl: jdbc:mysql://coupon-db-cluster-1-master:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-#     username: root
-#     password: root
-#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-#     connectionTimeout: 2000
-#     idleTimeout: 600000
-#     maxLifetime: 1800000
-#     maximumPoolSize: 32
-#     minimumIdle: 4
-#   coupon-db-cluster-1-slave-0:
-#     driverClassName: com.mysql.cj.jdbc.Driver
-#     jdbcUrl: jdbc:mysql://coupon-db-cluster-1-slave-0:3306/coupon?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-#     username: root
-#     password: root
-#     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-#     connectionTimeout: 2000
-#     idleTimeout: 600000
-#     maxLifetime: 1800000
-#     maximumPoolSize: 32
-#     minimumIdle: 4
 
 rules:
   - !SHARDING
