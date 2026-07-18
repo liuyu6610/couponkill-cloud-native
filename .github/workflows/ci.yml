@@ -19,14 +19,12 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-      - name: Test coupon service
-        run: mvn -B -f couponkill-coupon-service/pom.xml test
-      - name: Test order service
-        run: mvn -B -f couponkill-order-service/pom.xml test
-      - name: Test user service
-        run: mvn -B -f couponkill-user-service/pom.xml test
-      - name: Test gateway
-        run: mvn -B -f couponkill-gateway/pom.xml test
+      # 必须从父工程 -am 构建，才能解析本地 couponkill-common（单独 -f 子模块会缺 SNAPSHOT）
+      - name: Test Java modules (with reactor deps)
+        run: >
+          mvn -B -pl
+          couponkill-coupon-service,couponkill-order-service,couponkill-user-service,couponkill-gateway
+          -am test
 
   go-test:
     runs-on: ubuntu-latest
