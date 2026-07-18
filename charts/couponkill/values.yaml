@@ -245,6 +245,10 @@ redis:
       limits:
         memory: "512Mi"
         cpu: "200m"
+  # deploy-* 环境变量引用；缺省避免 helm nil
+  cluster:
+    enabled: false
+    type: standalone
 
 # Kafka 配置（消息中间件，替代 RocketMQ）
 kafka:
@@ -338,6 +342,18 @@ nacos:
       script: |
         #!/bin/sh
         echo "Initializing Nacos configurations from external source..."
+    # Deployment 注解 checksum 用；空串即可（真源在仓库 nacos/ 与 values-prod 覆盖）
+    common:
+      content: ""
+    go:
+      content: ""
+    sharding:
+      user:
+        content: ""
+      order:
+        content: ""
+      coupon:
+        content: ""
   configWatcher:
     enabled: true
     name: nacos-config-watcher
@@ -429,3 +445,15 @@ istio:
     name: couponkill-gateway
     host: couponkill.example.com
     port: 80
+
+# 动态配置 / 刷新（deploy-user 等模板引用；缺省避免 helm nil）
+config:
+  refreshInterval: 30s
+
+dynamic:
+  config:
+    enabled: true
+    refreshInterval: 30s
+    sourceType: nacos
+    sourceUrl: ""
+  featureToggles: {}

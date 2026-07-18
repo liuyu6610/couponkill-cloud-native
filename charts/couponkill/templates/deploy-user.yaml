@@ -33,11 +33,11 @@ spec:
         prometheus.io/port: "{{ .Values.services.user.port }}"
         prometheus.io/path: "/actuator/prometheus"
         # Nacos配置检查，用于实现零停机配置更新
-        nacos-config-checksum: "{{ .Values.nacos.config.sharding.user.content | sha256sum }}"
-        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
+        nacos-config-checksum: {{ .Values.nacos.config.sharding.user.content | default "" | sha256sum | quote }}
+        nacos-common-checksum: {{ .Values.nacos.config.common.content | default "" | sha256sum | quote }}
         # 动态配置注解
-        config-refresh-interval: "{{ .Values.config.refreshInterval | default "30s" }}"
-        config-checksum: "{{ .Values.dynamic.config | sha256sum }}"
+        config-refresh-interval: {{ .Values.config.refreshInterval | default "30s" | quote }}
+        config-checksum: {{ .Values.dynamic.config | toYaml | sha256sum | quote }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount2.name }}
       containers:
@@ -103,15 +103,15 @@ spec:
             {{- end }}
             # 动态配置相关环境变量
             - name: CONFIG_REFRESH_ENABLED
-              value: "{{ .Values.dynamic.config.enabled | default "true" }}"
+              value: {{ .Values.dynamic.config.enabled | default true | quote }}
             - name: CONFIG_REFRESH_INTERVAL
-              value: "{{ .Values.dynamic.config.refreshInterval | default "30s" }}"
+              value: {{ .Values.dynamic.config.refreshInterval | default "30s" | quote }}
             - name: CONFIG_SOURCE_TYPE
-              value: "{{ .Values.dynamic.config.sourceType | default "nacos" }}"
+              value: {{ .Values.dynamic.config.sourceType | default "nacos" | quote }}
             - name: CONFIG_SOURCE_URL
-              value: "{{ .Values.dynamic.config.sourceUrl }}"
+              value: {{ .Values.dynamic.config.sourceUrl | default "" | quote }}
             - name: FEATURE_TOGGLE
-              value: "{{ .Values.dynamic.featureToggles | toJson }}"
+              value: {{ .Values.dynamic.featureToggles | default dict | toJson | quote }}
 ---
 # Service配置：为用户服务提供稳定的网络访问入口
 # 参数说明：

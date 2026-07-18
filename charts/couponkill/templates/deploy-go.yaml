@@ -33,8 +33,8 @@ spec:
         prometheus.io/port: "{{ .Values.services.go.port }}"
         prometheus.io/path: "/metrics"
         # 添加Nacos配置检查注解，用于实现零停机配置更新
-        nacos-config-checksum: "{{ .Values.nacos.config.go.content | sha256sum }}"
-        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
+        nacos-config-checksum: {{ .Values.nacos.config.go.content | default "" | sha256sum | quote }}
+        nacos-common-checksum: {{ .Values.nacos.config.common.content | default "" | sha256sum | quote }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount0.name }}
       containers:
@@ -80,7 +80,7 @@ spec:
             {{- end }}
             # Nacos动态配置相关环境变量
             - name: NACOS_CONFIG_ADDR
-              value: "{{ .Values.nacos.name }}:{{ .Values.nacos.config.port | default 8848 }}"
+              value: {{ printf "%s:%v" .Values.nacos.name (.Values.nacos.service.port | default 8848) | quote }}
             - name: NACOS_CONFIG_NAMESPACE
               value: "{{ .Values.nacos.namespace | default "couponkill" }}"
             - name: NACOS_CONFIG_GROUP

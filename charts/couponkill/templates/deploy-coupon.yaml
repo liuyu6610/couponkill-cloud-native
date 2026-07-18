@@ -29,8 +29,8 @@ spec:
         # 添加配置更新时间戳，用于触发滚动更新
         config-update-time: "{{ now | date "2025-09-02T15:04:05Z07:00" }}"
         # 添加Nacos配置检查注解，用于实现零停机配置更新
-        nacos-config-checksum: "{{ .Values.nacos.config.sharding.coupon.content | sha256sum }}"
-        nacos-common-checksum: "{{ .Values.nacos.config.common.content | sha256sum }}"
+        nacos-config-checksum: {{ .Values.nacos.config.sharding.coupon.content | default "" | sha256sum | quote }}
+        nacos-common-checksum: {{ .Values.nacos.config.common.content | default "" | sha256sum | quote }}
 
     spec:
       serviceAccountName: {{ .Values.serviceAccount1.name }}
