@@ -19,6 +19,7 @@ import {
 import {
   ApiOutlined,
   CloudSyncOutlined,
+  DeleteOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -26,6 +27,7 @@ import {
 import { connectorService } from '../services/connectorService'
 import { PlatformType } from '../types/api'
 import type {
+  CouponPriceMap,
   PlatformProductSnapshot,
   PlatformSkuBinding,
   PlatformStockSnapshot,
@@ -86,6 +88,10 @@ const ConnectorAdmin: React.FC = () => {
 
   const [bindForm] = Form.useForm()
   const [probeForm] = Form.useForm()
+  const [mapForm] = Form.useForm()
+  const [priceMaps, setPriceMaps] = useState<CouponPriceMap[]>([])
+  const [mapsLoading, setMapsLoading] = useState(false)
+  const [mapsCouponId, setMapsCouponId] = useState('1001')
 
   const platformsQuery = useConnectorPlatforms()
   const bindingsQuery = useConnectorBindings()
@@ -95,6 +101,59 @@ const ConnectorAdmin: React.FC = () => {
 
   const platforms = platformsQuery.data ?? []
   const bindings = bindingsQuery.data ?? []
+
+  const MAP_PLATFORM_OPTIONS = [
+    { value: PlatformType.MOCK, label: 'MOCK' },
+    { value: PlatformType.JD, label: 'JD' },
+    { value: PlatformType.TB, label: 'TB（手工价）' },
+    { value: PlatformType.PDD, label: 'PDD（手工价）' },
+  ]
+
+  const loadPriceMaps = async (couponId: string) => {
+    if (!couponId.trim()) return
+    setMapsLoading(true)
+    try {
+      const list = await connectorService.listPriceMaps(couponId.trim())
+      setPriceMaps(list ?? [])
+    } catch (e) {
+      message.error(getErrorMessage(e, '加载比价映射失败'))
+    } finally {
+      setMapsLoading(false)
+    }
+  }
+
+  const onUpsertPriceMap = async () => {
+    try {
+      const values = await mapForm.validateFields()
+      await connectorService.upsertPriceMap({
+        couponId: values.couponId,
+        platform: values.platform,
+        externalSkuId: String(values.externalSkuId).trim(),
+        title: values.title?.trim() || undefined,
+        manualPrice: values.manualPrice != null && values.manualPrice !== ''
+          ? Number(values.manualPrice)
+          : null,
+        currency: values.currency || 'CNY',
+        enabled: values.enabled ?? true,
+      })
+      message.success('比价映射已保存')
+      setMapsCouponId(String(values.couponId))
+      await loadPriceMaps(String(values.couponId))
+    } catch (e) {
+      if ((e as { errorFields?: unknown }).errorFields) return
+      message.error(getErrorMessage(e, '保存比价映射失败'))
+    }
+  }
+
+  const onDeletePriceMap = async (id: string) => {
+    try {
+      await connectorService.deletePriceMap(id)
+      message.success('已删除')
+      await loadPriceMaps(mapsCouponId)
+    } catch (e) {
+      message.error(getErrorMessage(e, '删除失败'))
+    }
+  }
 
   if (bindingsQuery.isError) {
     const e = bindingsQuery.error
@@ -453,6 +512,97 @@ const ConnectorAdmin: React.FC = () => {
           dataSource={bindings}
           scroll={{ x: 1100 }}
           pagination={{ pageSize: 10 }}
+        />
+      </Card>
+
+      <Card
+        title="同品比价手工映射（多平台）"
+        style={{ marginTop: 16 }}
+        extra={
+          <Space>
+            <Input
+              value={mapsCouponId}
+              onChange={(e) => setMapsCouponId(e.target.value)}
+              placeholder="券 ID"
+              style={{ width: 120 }}
+            />
+            <Button
+              icon={<ReloadOutlined />}
+              loading={mapsLoading}
+              onClick={() => void loadPriceMaps(mapsCouponId)}
+            >
+              按券加载
+            </Button>
+          </Space>
+        }
+      >
+        <Paragraph type="secondary" style={{ marginBottom: 12 }}>
+          TB/PDD 等 stub 平台请填手工价；会并入 C 端 <Text code>price-compare</Text>，不参与库存同步。
+        </Paragraph>
+        <Form
+          form={mapForm}
+          layout="inline"
+          initialValues={{
+            platform: PlatformType.TB,
+            couponId: '1001',
+            currency: 'CNY',
+            enabled: true,
+            manualPrice: 88,
+          }}
+          style={{ marginBottom: 16, rowGap: 12 }}
+        >
+          <Form.Item name="couponId" label="券 ID" rules={[{ required: true }]}>
+            <Input style={{ width: 120 }} />
+          </Form.Item>
+          <Form.Item name="platform" label="平台" rules={[{ required: true }]}>
+            <Select style={{ width: 160 }} options={MAP_PLATFORM_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="externalSkuId" label="SKU" rules={[{ required: true }]}>
+            <Input style={{ width: 180 }} placeholder="外部 sku" />
+          </Form.Item>
+          <Form.Item name="title" label="标题">
+            <Input style={{ width: 160 }} placeholder="可选" />
+          </Form.Item>
+          <Form.Item name="manualPrice" label="手工价">
+            <Input type="number" style={{ width: 100 }} placeholder="元" />
+          </Form.Item>
+          <Form.Item name="enabled" label="启用" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => void onUpsertPriceMap()}>
+              保存映射
+            </Button>
+          </Form.Item>
+        </Form>
+        <Table
+          rowKey="id"
+          size="small"
+          loading={mapsLoading}
+          dataSource={priceMaps}
+          pagination={false}
+          columns={[
+            { title: '平台', dataIndex: 'platform', width: 80 },
+            { title: 'SKU', dataIndex: 'externalSkuId', ellipsis: true },
+            { title: '标题', dataIndex: 'title', ellipsis: true },
+            { title: '手工价', dataIndex: 'manualPrice', width: 90 },
+            { title: '币种', dataIndex: 'currency', width: 70 },
+            {
+              title: '操作',
+              width: 80,
+              render: (_: unknown, row: CouponPriceMap) => (
+                <Button
+                  type="link"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={() => void onDeletePriceMap(row.id)}
+                >
+                  删
+                </Button>
+              ),
+            },
+          ]}
         />
       </Card>
     </div>

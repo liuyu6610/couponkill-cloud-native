@@ -2,6 +2,8 @@ import { http } from '../lib/apiClient'
 import type {
   ConnectorHealth,
   ConnectorPlatformInfo,
+  CouponPriceMap,
+  CouponPriceMapCommand,
   PlatformProductSnapshot,
   PlatformSkuBinding,
   PlatformStockSnapshot,
@@ -72,6 +74,23 @@ export const connectorService = {
     return http.get<PriceCompareResult>('/api/v1/connector/price-compare', {
       params: { couponId },
     })
+  },
+
+  listPriceMaps(couponId: string): Promise<CouponPriceMap[]> {
+    return http.get<CouponPriceMap[]>('/api/v1/connector/price-maps', {
+      params: { couponId },
+    })
+  },
+
+  upsertPriceMap(cmd: CouponPriceMapCommand): Promise<CouponPriceMap> {
+    return http.post<CouponPriceMap>('/api/v1/connector/price-maps', {
+      ...cmd,
+      couponId: String(cmd.couponId),
+    })
+  },
+
+  deletePriceMap(id: string | number): Promise<void> {
+    return http.del<void>(`/api/v1/connector/price-maps/${id}`)
   },
 }
 

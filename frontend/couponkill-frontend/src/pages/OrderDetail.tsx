@@ -1,6 +1,6 @@
 import React from 'react'
-import { Card, Typography, Descriptions, Tag, Button, Spin, App, Result } from 'antd'
-import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Card, Typography, Descriptions, Tag, Button, Spin, App, Result, Space } from 'antd'
+import { ArrowLeftOutlined, ReloadOutlined, FundOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store'
@@ -113,11 +113,21 @@ const OrderDetail: React.FC = () => {
             <Descriptions.Item label="来源">{order.createdByGo ? 'Go 秒杀服务' : 'Java 服务'}</Descriptions.Item>
           </Descriptions>
 
-          {order.status === OrderStatus.CREATED && (
-            <Button danger style={{ marginTop: 24 }} loading={cancelOrder.isPending} onClick={handleCancel}>
-              取消订单
+          <Space style={{ marginTop: 24 }} wrap>
+            <Button
+              type="primary"
+              ghost
+              icon={<FundOutlined />}
+              onClick={() => navigate(`/coupons/${order.couponId}#price-compare`)}
+            >
+              查看同品比价
             </Button>
-          )}
+            {order.status === OrderStatus.CREATED && (
+              <Button danger loading={cancelOrder.isPending} onClick={handleCancel}>
+                取消订单
+              </Button>
+            )}
+          </Space>
         </Card>
       </div>
     </div>

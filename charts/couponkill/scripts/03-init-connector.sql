@@ -22,3 +22,20 @@ CREATE TABLE IF NOT EXISTS platform_sku_binding (
 );
 
 CREATE INDEX IF NOT EXISTS idx_binding_coupon_id ON platform_sku_binding (coupon_id);
+
+-- 同品比价手工映射（多平台参考；不参与库存同步）
+CREATE TABLE IF NOT EXISTS coupon_price_map (
+    id               BIGSERIAL PRIMARY KEY,
+    coupon_id        BIGINT       NOT NULL,
+    platform         VARCHAR(32)  NOT NULL,
+    external_sku_id  VARCHAR(128) NOT NULL,
+    title            VARCHAR(256),
+    manual_price     NUMERIC(18, 2),
+    currency         VARCHAR(8)   NOT NULL DEFAULT 'CNY',
+    enabled          BOOLEAN      NOT NULL DEFAULT TRUE,
+    create_time      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    update_time      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_price_map_coupon_platform UNIQUE (coupon_id, platform)
+);
+
+CREATE INDEX IF NOT EXISTS idx_price_map_coupon_id ON coupon_price_map (coupon_id);

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aliyun.seckill.couponkillconnectorservice.mapper.CouponPriceMapMapper">
+
+    <resultMap id="PriceMapMap" type="com.aliyun.seckill.couponkillconnectorservice.domain.CouponPriceMap">
+        <id column="id" property="id"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="platform" property="platform"/>
+        <result column="external_sku_id" property="externalSkuId"/>
+        <result column="title" property="title"/>
+        <result column="manual_price" property="manualPrice"/>
+        <result column="currency" property="currency"/>
+        <result column="enabled" property="enabled"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO coupon_price_map (
+            coupon_id, platform, external_sku_id, title, manual_price, currency, enabled,
+            create_time, update_time
+        ) VALUES (
+            #{couponId}, #{platform}, #{externalSkuId}, #{title}, #{manualPrice},
+            #{currency}, #{enabled}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE coupon_price_map SET
+            external_sku_id = #{externalSkuId},
+            title = #{title},
+            manual_price = #{manualPrice},
+            currency = #{currency},
+            enabled = #{enabled},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM coupon_price_map WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" resultMap="PriceMapMap">
+        SELECT * FROM coupon_price_map WHERE id = #{id}
+    </select>
+
+    <select id="selectByCouponPlatform" resultMap="PriceMapMap">
+        SELECT * FROM coupon_price_map
+        WHERE coupon_id = #{couponId} AND platform = #{platform}
+        LIMIT 1
+    </select>
+
+    <select id="selectByCouponId" resultMap="PriceMapMap">
+        SELECT * FROM coupon_price_map WHERE coupon_id = #{couponId} ORDER BY id
+    </select>
+
+    <select id="selectEnabledByCouponId" resultMap="PriceMapMap">
+        SELECT * FROM coupon_price_map
+        WHERE coupon_id = #{couponId} AND enabled = TRUE
+        ORDER BY id
+    </select>
+</mapper>

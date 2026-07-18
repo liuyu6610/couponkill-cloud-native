@@ -8,16 +8,20 @@ import com.aliyun.seckill.common.connector.PlatformStockSnapshot;
 import com.aliyun.seckill.common.connector.PlatformType;
 import com.aliyun.seckill.common.connector.SkuBindingCommand;
 import com.aliyun.seckill.couponkillconnectorservice.config.JdConnectorProperties;
+import com.aliyun.seckill.couponkillconnectorservice.domain.CouponPriceMap;
+import com.aliyun.seckill.couponkillconnectorservice.domain.CouponPriceMapCommand;
 import com.aliyun.seckill.couponkillconnectorservice.domain.PlatformSkuBinding;
 import com.aliyun.seckill.couponkillconnectorservice.domain.PriceCompareResult;
 import com.aliyun.seckill.couponkillconnectorservice.domain.SyncBatchResult;
 import com.aliyun.seckill.couponkillconnectorservice.service.BindingService;
 import com.aliyun.seckill.couponkillconnectorservice.service.PriceCompareService;
+import com.aliyun.seckill.couponkillconnectorservice.service.PriceMapService;
 import com.aliyun.seckill.couponkillconnectorservice.spi.ConnectorRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +42,7 @@ public class ConnectorController {
 
     private final BindingService bindingService;
     private final PriceCompareService priceCompareService;
+    private final PriceMapService priceMapService;
     private final ConnectorRegistry connectorRegistry;
     private final JdConnectorProperties jdProps;
 
@@ -59,10 +64,29 @@ public class ConnectorController {
         return ApiResponse.success(bindingService.getByCouponId(couponId));
     }
 
-    @Operation(summary = "同品比价（C 端只读；绑定 + probe，不写库）")
+    @Operation(summary = "同品比价（C 端只读；绑定 probe + 手工映射）")
     @GetMapping("/price-compare")
     public ApiResponse<PriceCompareResult> priceCompare(@RequestParam Long couponId) {
         return ApiResponse.success(priceCompareService.compareByCoupon(couponId));
+    }
+
+    @Operation(summary = "创建或更新同品比价手工映射（admin）")
+    @PostMapping("/price-maps")
+    public ApiResponse<CouponPriceMap> upsertPriceMap(@RequestBody CouponPriceMapCommand command) {
+        return ApiResponse.success(priceMapService.upsert(command));
+    }
+
+    @Operation(summary = "按券列出手工业价映射（admin）")
+    @GetMapping("/price-maps")
+    public ApiResponse<List<CouponPriceMap>> listPriceMaps(@RequestParam Long couponId) {
+        return ApiResponse.success(priceMapService.listByCoupon(couponId));
+    }
+
+    @Operation(summary = "删除手工比价映射（admin）")
+    @DeleteMapping("/price-maps/{id}")
+    public ApiResponse<Void> deletePriceMap(@PathVariable Long id) {
+        priceMapService.delete(id);
+        return ApiResponse.success(null);
     }
 
     @Operation(summary = "手动同步单个绑定；force=true 允许抬高库存（校准）")

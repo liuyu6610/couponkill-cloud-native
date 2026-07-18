@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Row, Col, Card, Typography, Button, Descriptions, Tag, Divider, Spin, App, Result, Space, Table } from 'antd'
 import { ArrowLeftOutlined, ThunderboltOutlined, ReloadOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -27,8 +27,15 @@ const { Title, Text, Paragraph } = Typography
 const CouponDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
+
+  useEffect(() => {
+    if (window.location.hash === '#price-compare') {
+      const el = document.getElementById('price-compare')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [id, coupon?.id])
 
   const { data: coupon, isLoading, isError, error, refetch, isFetching, isPlaceholderData } =
     useCouponDetail(id)
@@ -120,7 +127,25 @@ const CouponDetail: React.FC = () => {
       onError: (err: unknown) => message.error(getErrorMessage(err, '领取失败，请稍后重试')),
     }
     if (seckillType) {
-      seckill.mutate(args, opts)
+      seckill.mutate(args, {
+        onSuccess: () => {
+          modal.success({
+            title: '秒杀成功',
+            content: '订单已受理。可查看同品参考价，或前往「我的订单」。',
+            okText: '查看同品比价',
+            onOk: () => {
+              navigate(`/coupons/${coupon.id}#price-compare`)
+              requestAnimationFrame(() => {
+                document.getElementById('price-compare')?.scrollIntoView({ behavior: 'smooth' })
+              })
+            },
+            cancelText: '我的订单',
+            onCancel: () => navigate('/orders'),
+            okCancel: true,
+          })
+        },
+        onError: opts.onError,
+      })
     } else {
       createOrder.mutate(args, opts)
     }
@@ -199,7 +224,7 @@ const CouponDetail: React.FC = () => {
               </Descriptions>
 
               {seckillType && (
-                <>
+                <div id="price-compare">
                   <Divider />
                   <Title level={5}>同品参考价</Title>
                   <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 12 }}>
@@ -236,7 +261,7 @@ const CouponDetail: React.FC = () => {
                       { title: '抓取时间', dataIndex: 'fetchedAt', width: 160 },
                     ]}
                   />
-                </>
+                </div>
               )}
             </Card>
           </Col>

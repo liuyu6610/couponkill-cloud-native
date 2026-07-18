@@ -20,7 +20,7 @@ const { Title, Text } = Typography
 
 const Seckill: React.FC = () => {
   const navigate = useNavigate()
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
 
   const {
@@ -69,7 +69,17 @@ const Seckill: React.FC = () => {
     seckill.mutate(
       { couponId: coupon.id },
       {
-        onSuccess: () => message.success('秒杀成功！可在“我的订单”中查看'),
+        onSuccess: () => {
+          modal.success({
+            title: '秒杀成功',
+            content: '订单已受理。可查看同品参考价，或前往「我的订单」。',
+            okText: '查看同品比价',
+            cancelText: '我的订单',
+            okCancel: true,
+            onOk: () => navigate(`/coupons/${coupon.id}#price-compare`),
+            onCancel: () => navigate('/orders'),
+          })
+        },
         onError: (err) => message.error(getErrorMessage(err, '秒杀失败，请稍后重试')),
         onSettled: () => setSeckillingId(null),
       }

@@ -228,6 +228,30 @@ export interface PriceCompareResult {
   items: PriceCompareItem[]
 }
 
+/** 同品比价手工映射（admin） */
+export interface CouponPriceMap {
+  id: string
+  couponId: string
+  platform: PlatformTypeValue | string
+  externalSkuId: string
+  title?: string | null
+  manualPrice?: number | null
+  currency?: string | null
+  enabled?: boolean
+  createTime?: string
+  updateTime?: string
+}
+
+export interface CouponPriceMapCommand {
+  couponId: string | number
+  platform: PlatformTypeValue | string
+  externalSkuId: string
+  title?: string
+  manualPrice?: number | null
+  currency?: string
+  enabled?: boolean
+}
+
 export interface SyncAllResult {
   syncedOk: number
   failed?: number
