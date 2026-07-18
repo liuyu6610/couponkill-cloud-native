@@ -39,15 +39,13 @@ db:
       limits:
         memory: "512Mi"
         cpu: "200m"
-  # 集群模式配置 (适用于MySQL Group Replication或类似集群方案)
+  # 多节点 / 外部托管 PostgreSQL（host:port）
   cluster:
     enabled: false
-    # 节点列表格式: host:port
-    # 示例: 
+    # 示例:
     # nodes:
-    #   - "mysql-node1:3306"
-    #   - "mysql-node2:3306"
-    #   - "mysql-node3:3306"
+    #   - "postgres-0.postgres-headless:5432"
+    #   - "postgres-1.postgres-headless:5432"
     nodes: []
 
 # 镜像配置部分，定义了服务使用的镜像仓库地址和标签
@@ -273,7 +271,8 @@ kafka:
       tag: "3.8.0"
       pullPolicy: IfNotPresent
 
-# PostgreSQL配置（数据库，替代 MySQL；key 保留为 mysql 以兼容既有模板引用，值已切换为 PG）
+# 兼容 key：部分 Deployment 仍读 .Values.mysql.cluster.*（见 deploy-*.yaml）。
+# 语义与镜像均为 PostgreSQL；应用连接真源请用上方 db.*。
 mysql:
   enabled: false
   name: postgres
@@ -291,43 +290,20 @@ mysql:
     limits:
       memory: "1Gi"
       cpu: "500m"
-  # MySQL集群配置
   cluster:
-    # 是否启用集群模式
     enabled: false
-    # 集群类型: standalone, master-slave, group-replication, innodb-cluster
+    # standalone | master-slave（PG 流复制）；旧 MySQL 专用类型已移除
     type: standalone
-    # 主从复制配置
     masterSlave:
       enabled: false
       master:
-        host: mysql-master
-        port: 3306
+        host: postgres-primary
+        port: 5432
       slaves:
-        - host: mysql-slave-0
-          port: 3306
-        - host: mysql-slave-1
-          port: 3306
-    # Group Replication配置
-    groupReplication:
-      enabled: false
-      nodes:
-        - host: mysql-gr-0
-          port: 3306
-        - host: mysql-gr-1
-          port: 3306
-        - host: mysql-gr-2
-          port: 3306
-    # InnoDB Cluster配置
-    innodbCluster:
-      enabled: false
-      nodes:
-        - host: mysql-innodb-0
-          port: 3306
-        - host: mysql-innodb-1
-          port: 3306
-        - host: mysql-innodb-2
-          port: 3306
+        - host: postgres-replica-0
+          port: 5432
+        - host: postgres-replica-1
+          port: 5432
 
 # Nacos配置
 nacos:
