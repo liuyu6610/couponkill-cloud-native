@@ -1,4 +1,5 @@
-# config/samples/ops_v1_seckill.yaml
+# sample/ops_v1_seckill.yaml
+# 示例 CR：中间件与应用侧均为 PostgreSQL（非 MySQL）。
 apiVersion: ops.couponkill.io/v1
 kind: Seckill
 metadata:
@@ -25,8 +26,9 @@ spec:
       env:
         - name: REDIS_ADDR
           value: "redis:6379"
-        - name: MYSQL_DSN
-          value: "user:password@tcp(mysql:3306)/couponkill"
+        # 与 charts/couponkill deploy-go 对齐：POSTGRES_DSN（libpq 风格）
+        - name: POSTGRES_DSN
+          value: "host=postgres port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
 
     couponService:
       enabled: true
@@ -46,7 +48,11 @@ spec:
           protocol: TCP
       env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:mysql://mysql:3306/couponkill"
+          value: "jdbc:postgresql://postgres:5432/coupon_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "postgres"
         - name: SPRING_REDIS_HOST
           value: "redis"
 
@@ -68,7 +74,11 @@ spec:
           protocol: TCP
       env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:mysql://mysql:3306/couponkill"
+          value: "jdbc:postgresql://postgres:5432/order_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "postgres"
         - name: SPRING_REDIS_HOST
           value: "redis"
 
@@ -90,7 +100,11 @@ spec:
           protocol: TCP
       env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:mysql://mysql:3306/couponkill"
+          value: "jdbc:postgresql://postgres:5432/user_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "postgres"
         - name: SPRING_REDIS_HOST
           value: "redis"
         - name: JWT_SECRET

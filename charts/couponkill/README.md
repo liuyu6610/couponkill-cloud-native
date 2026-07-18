@@ -303,7 +303,7 @@ middleware:
       slaves: []
 ```
 
-> Chart `values.yaml` 中仍保留历史 key `mysql:`，但镜像与端口已切到 `postgres:16` / `5432`，**新文档与配置请用 `db` / PostgreSQL 语义**。迁移说明见 [`docs/MIGRATION-PostgreSQL-Kafka.md`](../../docs/MIGRATION-PostgreSQL-Kafka.md)。
+> Chart 集群开关真源为 `postgres.cluster`（`mysql:` 仅为同锚点 DEPRECATED 别名，下一主要版本删除）。应用连接请用 `db` / PostgreSQL 语义。迁移说明见 [`docs/MIGRATION-PostgreSQL-Kafka.md`](../../docs/MIGRATION-PostgreSQL-Kafka.md)。
 
 #### Redis配置模板
 

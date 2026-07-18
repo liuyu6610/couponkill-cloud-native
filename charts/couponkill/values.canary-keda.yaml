@@ -87,45 +87,22 @@ nacos:
       tag: latest
       pullPolicy: IfNotPresent
 
-# MySQL配置
-mysql:
-  # MySQL集群配置
+# PostgreSQL 集群样例（disabled；对齐 values.yaml postgres.cluster）
+postgres:
   cluster:
-    # 是否启用集群模式
     enabled: false
-    # 集群类型: standalone, master-slave, group-replication, innodb-cluster
+    # standalone | master-slave（PG 流复制）
     type: standalone
-    # 主从复制配置
     masterSlave:
       enabled: false
       master:
-        host: mysql-master
-        port: 3306
+        host: postgres-primary
+        port: 5432
       slaves:
-        - host: mysql-slave-0
-          port: 3306
-        - host: mysql-slave-1
-          port: 3306
-    # Group Replication配置
-    groupReplication:
-      enabled: false
-      nodes:
-        - host: mysql-gr-0
-          port: 3306
-        - host: mysql-gr-1
-          port: 3306
-        - host: mysql-gr-2
-          port: 3306
-    # InnoDB Cluster配置
-    innodbCluster:
-      enabled: false
-      nodes:
-        - host: mysql-innodb-0
-          port: 3306
-        - host: mysql-innodb-1
-          port: 3306
-        - host: mysql-innodb-2
-          port: 3306
+        - host: postgres-replica-0
+          port: 5432
+        - host: postgres-replica-1
+          port: 5432
 
 # Redis配置
 redis:

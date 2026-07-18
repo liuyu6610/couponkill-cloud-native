@@ -316,8 +316,8 @@
 - TB/PDD 正式 Connector 实现  
 - 一场活动多券、预约排队优先级、公平抽签模式  
 - 历史价、降价提醒  
-- 小程序契约对齐 `seckillStartTime`（当前假字段）  
-- 多端推送（企微/邮件）
+- 多端推送（企微/邮件）  
+- （C 端仅 Web `frontend/couponkill-frontend`；微信小程序已移除，非目标）
 
 ---
 

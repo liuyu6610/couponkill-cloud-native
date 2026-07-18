@@ -94,9 +94,9 @@ spec:
               value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
             {{- end }}
             - name: POSTGRES_CLUSTER_ENABLED
-              value: "{{ .Values.mysql.cluster.enabled | default "false" }}"
+              value: "{{ .Values.postgres.cluster.enabled | default "false" }}"
             - name: POSTGRES_CLUSTER_TYPE
-              value: "{{ .Values.mysql.cluster.type | default "standalone" }}"
+              value: "{{ .Values.postgres.cluster.type | default "standalone" }}"
             - name: REDIS_CLUSTER_ENABLED
               value: "{{ .Values.redis.cluster.enabled | default "false" }}"
             - name: REDIS_CLUSTER_TYPE

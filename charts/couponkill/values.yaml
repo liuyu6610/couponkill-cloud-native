@@ -275,9 +275,9 @@ kafka:
       tag: "3.8.0"
       pullPolicy: IfNotPresent
 
-# 兼容 key：部分 Deployment 仍读 .Values.mysql.cluster.*（见 deploy-*.yaml）。
-# 语义与镜像均为 PostgreSQL；应用连接真源请用上方 db.*。
-mysql:
+# PostgreSQL 集群开关（Deployment 读 .Values.postgres.cluster.*）。
+# 应用连接真源请用上方 db.*；本块仅承载集群开关 / 中间件样例元数据。
+postgres: &postgres_settings
   enabled: false
   name: postgres
   port: 5432
@@ -308,6 +308,9 @@ mysql:
           port: 5432
         - host: postgres-replica-1
           port: 5432
+
+# DEPRECATED：历史 key，与 postgres 同锚点。新配置请写 postgres；下一主要版本将删除 mysql。
+mysql: *postgres_settings
 
 # Nacos配置
 nacos:
