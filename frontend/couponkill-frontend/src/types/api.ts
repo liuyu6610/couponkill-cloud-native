@@ -93,6 +93,14 @@ export interface LoginResult {
   roles?: string[]
 }
 
+/** 秒杀热路径入队响应（对齐 EnterSeckillResp） */
+export interface EnterSeckillResp {
+  status: string // QUEUED / REJECTED
+  requestId?: string
+  err?: number
+  message?: string
+}
+
 // ---- 展示辅助 ----
 
 export const isSeckillCoupon = (c: Pick<Coupon, 'type'>) => c.type === CouponType.SECKILL

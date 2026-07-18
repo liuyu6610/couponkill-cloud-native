@@ -1,5 +1,5 @@
 import { http } from '../lib/apiClient'
-import type { Order } from '../types/api'
+import type { EnterSeckillResp, Order } from '../types/api'
 
 // Phase1：统一走 /api/v1/order/**（网关与后端仍兼容旧 /order/**）
 // 身份由网关 JWT → X-User-Id 注入，不再传可伪造的 userId
@@ -18,9 +18,17 @@ export const orderService = {
     })
   },
 
-  async seckill(couponId: string): Promise<unknown> {
-    return http.post<unknown>(`${ORDER_BASE}/seckill`, null, {
+  /** 热路径入队；成功 data 含 requestId，供 /seckill/result 轮询 */
+  async seckill(couponId: string): Promise<EnterSeckillResp> {
+    return http.post<EnterSeckillResp>(`${ORDER_BASE}/seckill`, null, {
       params: { couponId },
+    })
+  },
+
+  /** 按 requestId 查异步落单结果：PENDING / SUCCESS:orderId / FAIL / UNKNOWN */
+  async seckillResult(requestId: string): Promise<string> {
+    return http.get<string>(`${ORDER_BASE}/seckill/result`, {
+      params: { requestId },
     })
   },
 

@@ -34,23 +34,10 @@ type Config struct {
 			StockKeyPrefix string `yaml:"stock-key-prefix"` // 对应seckill.redis.stock-key-prefix
 		} `yaml:"redis"`
 	} `yaml:"seckill"`
-	Mysql struct {
-		// 单数据源配置（用于向后兼容）
-		DSN      string `yaml:"dsn"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Database string `yaml:"database"`
-		// 多数据源配置
-		DataSources map[string]DataSourceConfig `yaml:"dataSources"`
-		// 主从复制配置
-		Replication struct {
-			Enabled bool               `yaml:"enabled"`
-			Master  DataSourceConfig   `yaml:"master"`
-			Slaves  []DataSourceConfig `yaml:"slaves"`
-		} `yaml:"replication"`
-	} `yaml:"mysql"`
+	// Postgres 为 PG DSN 真源（yaml key: postgres）
+	Postgres dbBlock `yaml:"postgres"`
+	// Mysql 为历史别名（yaml key: mysql）；Load 后与 Postgres 合并，代码仍可读 cfg.Mysql
+	Mysql dbBlock `yaml:"mysql"`
 	Redis struct {
 		Addr     string `yaml:"host"`
 		UserName string `yaml:"username"`
@@ -135,6 +122,37 @@ type DataSourceConfig struct {
 	Database string `yaml:"database"`
 }
 
+// dbBlock 对应 yaml 顶层 postgres / mysql（值为 PostgreSQL DSN）
+type dbBlock struct {
+	DSN         string                      `yaml:"dsn"`
+	Username    string                      `yaml:"username"`
+	Password    string                      `yaml:"password"`
+	Host        string                      `yaml:"host"`
+	Port        int                         `yaml:"port"`
+	Database    string                      `yaml:"database"`
+	DataSources map[string]DataSourceConfig `yaml:"dataSources"`
+	Replication struct {
+		Enabled bool               `yaml:"enabled"`
+		Master  DataSourceConfig   `yaml:"master"`
+		Slaves  []DataSourceConfig `yaml:"slaves"`
+	} `yaml:"replication"`
+}
+
+func (b dbBlock) empty() bool {
+	return b.DSN == "" && len(b.DataSources) == 0 && !b.Replication.Enabled
+}
+
+// mergeDBAlias：postgres 优先；仅有 mysql 时回填 postgres，并保证 cfg.Mysql 始终有可用数据供既有调用方使用。
+func mergeDBAlias(c *Config) {
+	if !c.Postgres.empty() {
+		c.Mysql = c.Postgres
+		return
+	}
+	if !c.Mysql.empty() {
+		c.Postgres = c.Mysql
+	}
+}
+
 // Load 加载配置：优先从Nacos读取，失败后尝试本地配置，最后使用默认值
 func Load() (*Config, error) {
 	var cfg Config
@@ -162,6 +180,7 @@ func Load() (*Config, error) {
 			if err := yaml.Unmarshal([]byte(content), &cfg); err != nil {
 				log.Printf("解析Nacos配置失败: %v，将尝试本地配置", err)
 			} else {
+				mergeDBAlias(&cfg)
 				log.Println("成功从Nacos加载配置")
 				nacosLoaded = true // 标记Nacos配置加载成功
 
@@ -172,6 +191,7 @@ func Load() (*Config, error) {
 					if err := yaml.Unmarshal([]byte(data), &newCfg); err != nil {
 						log.Printf("解析变更的配置失败: %v", err)
 					} else {
+						mergeDBAlias(&newCfg)
 						cfg = newCfg // 更新配置
 						log.Println("配置已更新")
 
@@ -273,6 +293,7 @@ func Load() (*Config, error) {
 				if err := yaml.Unmarshal(data, &cfg); err != nil {
 					log.Printf("解析本地配置文件失败: %v，将使用默认配置", err)
 				} else {
+					mergeDBAlias(&cfg)
 					log.Println("成功从本地配置文件加载配置")
 				}
 			}
@@ -302,6 +323,7 @@ func Load() (*Config, error) {
 					log.Printf("解析定期检查的配置失败: %v", err)
 					continue
 				}
+				mergeDBAlias(&newCfg)
 
 				// 比较配置是否有变化
 				if isConfigChanged(&cfg, &newCfg) {

@@ -16,9 +16,9 @@ seckill:
   redis:
     stock-key-prefix: "coupon:stock:"
 
-# 注：key 名 mysql 为历史遗留；值为 PostgreSQL DSN（lib/pq）。
-# 多数据源名称必须与 sharding_rule.go / Java ShardingSphere 一致。
-mysql:
+# PostgreSQL DSN（lib/pq）。多数据源名须与 sharding_rule.go / Java ShardingSphere 一致。
+# Go 仍兼容历史 key `mysql:`（见 mergeDBAlias）；新配置请只用 postgres。
+postgres:
   dataSources:
     order-db-0:
       dsn: "host=postgres port=5432 user=postgres password=postgres dbname=order_db_0 sslmode=disable"

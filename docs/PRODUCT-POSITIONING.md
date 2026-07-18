@@ -304,7 +304,8 @@
 
 #### P1-2 体验与运维
 
-- 前端改用 `GET /order/seckill/result?requestId=`（已有后端，前端未用）缩短误判  
+- ~~前端改用 `GET /api/v1/order/seckill/result?requestId=`~~（已落地：`useSeckill` 按 requestId 轮询）  
+
 - 预约成功/失败站内通知  
 - Connector 解绑 API  
 - 绑定与创建券向导（Admin）

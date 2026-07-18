@@ -109,7 +109,7 @@ public class OrderController {
         return ApiResponse.success(orders);
     }
 
-    @Operation(summary = "执行优惠券秒杀", description = "热路径：Lua 预扣 + Kafka 异步落单；前端可轮询 /api/v1/order/check/{couponId}（旧 /order/check 仍兼容）")
+    @Operation(summary = "执行优惠券秒杀", description = "热路径：Lua 预扣 + Kafka 异步落单；前端应按返回 requestId 轮询 /api/v1/order/seckill/result（旧 /order/check/{couponId} 仍兼容）")
     @PostMapping("/seckill")
     @SentinelResource(
             value = "couponSeckill",
