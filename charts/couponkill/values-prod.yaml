@@ -1,4 +1,4 @@
-# ????????
+﻿# ????????
 # ??????????????
 
 namespace: couponkill
@@ -17,17 +17,17 @@ dependencies:
 
 # ????�?
 db:
-  host: mysql
-  port: 3306
-  user: root
-  password: password
-  database: couponkill
+  host: postgres
+  port: 5432
+  username: postgres
+  password: postgres
+  database: postgres
   init:
     enabled: true
     name: db-init
     image:
-      repository: crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker/my-docker
-      tag: mysql
+      repository: postgres
+      tag: "16"
       pullPolicy: IfNotPresent
 
 # Redis??
@@ -107,12 +107,13 @@ nacos:
       type: LoadBalancer
       port: 8848
   storage:
-    type: mysql
-    mysql:
-      host: mysql
-      port: 3306
-      user: root
-      password: password
+    # Nacos 元库：演示用 embedded；生产 PG 需社区插件，见 values.yaml 注释
+    type: embedded
+    postgresql:
+      host: postgres
+      port: 5432
+      user: postgres
+      password: postgres
       database: nacos
   config:
     # Nacos????
@@ -141,17 +142,18 @@ nacos:
               discovery:
                 server-addr: nacos:8848
           datasource:
-            url: jdbc:mysql://mysql:3306/couponkill?useSSL=false&serverTimezone=UTC
-            username: root
-            password: password
-            driver-class-name: com.mysql.cj.jdbc.Driver
-        rocketmq:
-          name-server: rocketmq-namesrv:9876
-          producer:
-            group: common-producer-group
-            send-message-timeout: 3000
-            retry-times-when-send-failed: 1
-            max-message-size: 4096
+            # 公共库连接示例；各服务以 sharding YAML 为准
+            url: jdbc:postgresql://postgres:5432/postgres?reWriteBatchedInserts=true&sslmode=disable
+            username: postgres
+            password: postgres
+            driver-class-name: org.postgresql.Driver
+          kafka:
+            bootstrap-servers: broker:9092
+        kafka:
+          topic:
+            seckill-order-create: seckill_order_create
+            seckill-order-result: seckill_order_result
+            seckill-compensation: seckill_compensation
         thread-pool:
           async:
             core-pool-size: 16
@@ -174,16 +176,16 @@ nacos:
         content: |
           dataSources:
             user-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/user_db_0?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/user_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             user-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/user_db_1?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/user_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
           - !SHARDING
@@ -226,28 +228,28 @@ nacos:
         content: |
           dataSources:
             order-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_0?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/order_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_1?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/order_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-2:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_2?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/order_db_2?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-3:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/order_db_3?charset=utf8mb4&parseTime=True&loc=Local
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/order_db_3?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
           - !SHARDING
@@ -287,28 +289,28 @@ nacos:
         content: |
           dataSources:
             coupon-db-0:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_0?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-1:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_1?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-2:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_2?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_2?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-3:
-              driverClassName: com.mysql.cj.jdbc.Driver
-              jdbcUrl: jdbc:mysql://mysql:3306/coupon_db_3?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
-              username: root
-              password: password
+              driverClassName: org.postgresql.Driver
+              jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_3?reWriteBatchedInserts=true&ApplicationName=couponkill
+              username: postgres
+              password: postgres
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
             - !SHARDING
@@ -372,7 +374,7 @@ nacos:
       group: DEFAULT_GROUP
       content: |
         middleware:
-          mysql:
+          postgres:
             cluster:
               enabled: false
               nodes: []
@@ -380,7 +382,7 @@ nacos:
               enabled: false
               master:
                 host: ""
-                port: 3306
+                port: 5432
               slaves: []
           redis:
             cluster:
@@ -391,10 +393,6 @@ nacos:
               masterName: "mymaster"
               nodes: []
               password: ""
-          rocketmq:
-            cluster:
-              enabled: false
-              nameServer: []
           kafka:
             cluster:
               enabled: false
@@ -446,34 +444,29 @@ nacos:
           redis:
             stock-key-prefix: "coupon:stock:"
 
+        # key 名 mysql 为历史遗留；值为 PostgreSQL DSN（对齐 nacos/go-service-dev.yaml）
         mysql:
           dataSources:
             order-db-0:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=order_db_0 sslmode=disable"
             order-db-1:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_1?charset=utf8mb4&parseTime=True&loc=Local"
-            order-db-2:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_2?charset=utf8mb4&parseTime=True&loc=Local"
-            order-db-3:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/order_db_3?charset=utf8mb4&parseTime=True&loc=Local"
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=order_db_1 sslmode=disable"
             coupon-db-0:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_0?charset=utf8mb4&parseTime=True&loc=Local"
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=coupon_db_0 sslmode=disable"
             coupon-db-1:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_1?charset=utf8mb4&parseTime=True&loc=Local"
-            coupon-db-2:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_2?charset=utf8mb4&parseTime=True&loc=Local"
-            coupon-db-3:
-              dsn: "master0:Yu20040925@@tcp(rm-bp19518a44a083lmyio.mysql.rds.aliyuncs.com:3306)/coupon_db_3?charset=utf8mb4&parseTime=True&loc=Local
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=coupon_db_1 sslmode=disable"
+            user-db-0:
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=user_db_0 sslmode=disable"
+            user-db-1:
+              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=user_db_1 sslmode=disable"
 
         data.redis:
-          host: "r-bp1fgq38nv4mtbp2b9pd.redis.rds.aliyuncs.com:6379"
-          username: "master0"
-          password: "Yu20040925@"
+          host: "redis-master:6379"
           db: 0
 
         nacos:
           server-addr: "nacos:8848"
-          namespace-id: "120"
+          namespace-id: "couponkill"
 
 # Sentinel??
 sentinel:
