@@ -17,6 +17,7 @@ import {
   loadOrderDetail,
   loadUserCenter,
   loadConnectorAdmin,
+  loadCouponAdmin,
   loadMyReservations,
 } from './lib/routePreload'
 import './App.css'
@@ -32,6 +33,7 @@ const OrderList = lazy(loadOrderList)
 const OrderDetail = lazy(loadOrderDetail)
 const UserCenter = lazy(loadUserCenter)
 const ConnectorAdmin = lazy(loadConnectorAdmin)
+const CouponAdmin = lazy(loadCouponAdmin)
 const MyReservations = lazy(loadMyReservations)
 
 const { Content } = Layout
@@ -101,6 +103,14 @@ function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <ConnectorAdmin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/coupons"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <CouponAdmin />
                   </ProtectedRoute>
                 }
               />

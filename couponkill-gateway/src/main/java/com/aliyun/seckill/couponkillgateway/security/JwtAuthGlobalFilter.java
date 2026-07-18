@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -49,10 +51,14 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     @Value("${connector.admin.token:}")
     private String adminToken;
 
+    private static final Pattern COUPON_STATUS = Pattern.compile("^/api/v1/coupon/\\d+/status/?$");
+    private static final Pattern COUPON_DELETE = Pattern.compile("^/api/v1/coupon/\\d+/?$");
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+        HttpMethod method = request.getMethod();
 
         log.debug("收到请求: path={}", path);
 
@@ -61,8 +67,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Connector 管理面：JWT + admin（或 X-Admin-Token）
-        if (isConnectorAdminPath(path)) {
+        // 管理面：JWT + admin（或 X-Admin-Token）——Connector 与券管理写
+        if (isAdminProtectedPath(path, method)) {
             String headerAdmin = request.getHeaders().getFirst("X-Admin-Token");
             if (StringUtils.hasText(adminToken) && adminToken.equals(headerAdmin)) {
                 ServerHttpRequest mutated = request.mutate()
@@ -98,8 +104,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             List<String> roles = extractRoles(claims);
             boolean admin = isAdmin(userId, roles);
 
-            if (isConnectorAdminPath(path) && !admin) {
-                log.warn("拒绝非管理员访问 Connector: userId={}, path={}", userId, path);
+            if (isAdminProtectedPath(path, method) && !admin) {
+                log.warn("拒绝非管理员访问管理写接口: userId={}, method={}, path={}", userId, method, path);
                 exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                 return exchange.getResponse().setComplete();
             }
@@ -117,6 +123,10 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         }
     }
 
+    private boolean isAdminProtectedPath(String path, HttpMethod method) {
+        return isConnectorAdminPath(path) || isCouponAdminPath(path, method);
+    }
+
     private boolean isConnectorAdminPath(String path) {
         if (path == null || !path.startsWith("/api/v1/connector/")) {
             return false;
@@ -127,6 +137,26 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         // C 端只读不走 admin 门禁
         return !path.startsWith("/api/v1/connector/bindings/by-coupon/")
                 && !path.startsWith("/api/v1/connector/price-compare");
+    }
+
+    /**
+     * 券管理写（方案 B）：create / seckill-window / status / DELETE {id} 需 admin。
+     * 预热与库存扣减仍由 InternalApiBlock 拦截。
+     */
+    static boolean isCouponAdminPath(String path, HttpMethod method) {
+        if (path == null || !path.startsWith("/api/v1/coupon/")) {
+            return false;
+        }
+        if (path.startsWith("/api/v1/coupon/create")) {
+            return true;
+        }
+        if (path.contains("/seckill-window")) {
+            return true;
+        }
+        if (COUPON_STATUS.matcher(path).matches()) {
+            return true;
+        }
+        return method == HttpMethod.DELETE && COUPON_DELETE.matcher(path).matches();
     }
 
     private boolean isAdmin(String userId, List<String> roles) {

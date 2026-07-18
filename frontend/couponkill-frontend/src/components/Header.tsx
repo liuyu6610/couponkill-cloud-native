@@ -10,6 +10,7 @@ import {
   ThunderboltOutlined,
   OrderedListOutlined,
   ApiOutlined,
+  SettingOutlined,
   ClockCircleOutlined,
   BellOutlined,
 } from '@ant-design/icons'
@@ -137,16 +138,29 @@ const Header: React.FC = () => {
       ? [
           {
             key: 'admin',
-            icon: <ApiOutlined />,
-            label: <NavLink to="/admin/connector">Connector</NavLink>,
+            icon: <SettingOutlined />,
+            label: '管理',
+            children: [
+              {
+                key: 'admin-coupons',
+                icon: <TagsOutlined />,
+                label: <NavLink to="/admin/coupons">优惠券</NavLink>,
+              },
+              {
+                key: 'admin-connector',
+                icon: <ApiOutlined />,
+                label: <NavLink to="/admin/connector">Connector</NavLink>,
+              },
+            ],
           },
         ]
       : []),
   ]
 
   const selectedKeys = (() => {
+    if (location.pathname.startsWith('/admin/coupons')) return ['admin-coupons']
+    if (location.pathname.startsWith('/admin/connector')) return ['admin-connector']
     const seg = location.pathname.split('/')[1] || 'home'
-    if (seg === 'admin') return ['admin']
     return [seg]
   })()
 

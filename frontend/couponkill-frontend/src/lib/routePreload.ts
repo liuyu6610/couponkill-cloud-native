@@ -10,6 +10,7 @@ export const loadOrderList = () => import('../pages/OrderList')
 export const loadOrderDetail = () => import('../pages/OrderDetail')
 export const loadUserCenter = () => import('../pages/UserCenter')
 export const loadConnectorAdmin = () => import('../pages/ConnectorAdmin')
+export const loadCouponAdmin = () => import('../pages/CouponAdmin')
 export const loadMyReservations = () => import('../pages/MyReservations')
 
 const preloaders: Record<string, () => Promise<unknown>> = {
@@ -22,6 +23,7 @@ const preloaders: Record<string, () => Promise<unknown>> = {
   '/login': loadLogin,
   '/register': loadRegister,
   '/admin/connector': loadConnectorAdmin,
+  '/admin/coupons': loadCouponAdmin,
 }
 
 /** 按路径意图预加载；已加载过的模块会被浏览器/ bundler 缓存，可重复调用 */

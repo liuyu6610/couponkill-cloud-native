@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,8 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * 阻断仅供服务间调用的内部写接口从网关暴露（库存扣减、用户券计数改写等）。
- * 这些接口应由集群内 Feign/服务发现直连，不得经公网网关。
+ * 阻断仅供服务间调用的内部写接口从网关暴露（库存扣减、预热等）。
+ * 券管理写（create / seckill-window / status / delete）走 JWT+admin（方案 B），不在此拦截。
  */
 @Slf4j
 @Component
@@ -25,7 +26,6 @@ public class InternalApiBlockFilter implements GlobalFilter, Ordered {
             "/api/v1/user/coupon/",
             "/api/v1/user/batch/",
             "/api/v1/coupon/stock/",
-            "/api/v1/coupon/create",
             "/order/admin",
             "/api/v1/order/admin"
     );
@@ -46,8 +46,9 @@ public class InternalApiBlockFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
-        if (isBlocked(path)) {
-            log.warn("拒绝经网关访问内部接口: path={}", path);
+        HttpMethod method = exchange.getRequest().getMethod();
+        if (isBlocked(path, method)) {
+            log.warn("拒绝经网关访问内部接口: method={}, path={}", method, path);
             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
             exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
             byte[] body = "{\"code\":403,\"message\":\"forbidden: internal api\"}".getBytes(StandardCharsets.UTF_8);
@@ -56,7 +57,8 @@ public class InternalApiBlockFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange);
     }
 
-    private boolean isBlocked(String path) {
+    /** 供单测与过滤器共用 */
+    static boolean isBlocked(String path, HttpMethod method) {
         if (path == null) {
             return false;
         }
@@ -77,6 +79,6 @@ public class InternalApiBlockFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -200; // 早于 JWT 过滤器
+        return -200;
     }
 }
