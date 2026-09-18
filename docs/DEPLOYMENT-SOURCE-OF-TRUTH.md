@@ -1,6 +1,7 @@
 # 部署真源（Source of Truth）
 
 > 生效日期：2026-07-18  
+> 修订：2026-09-18（记录 [#4](https://github.com/liuyu6610/couponkill-cloud-native/pull/4) 合并后的轮换项与剩余债）  
 > 目的：消除多套部署入口并存造成的漂移，明确「生产以谁为准」。
 
 ## 唯一生产入口
@@ -32,10 +33,30 @@
 
 ## 凭证注入（生产）
 
-禁止把真实口令、Token、dockerconfigjson 提交进 Git。
+禁止把真实口令、Token、dockerconfigjson 提交进 Git。Chart 侧命令见 [`charts/couponkill/README.md`](../charts/couponkill/README.md)。
 
 1. 复制根目录 [`.env.example`](../.env.example) 为 `.env`（已 gitignore），仅用于本地 compose。
 2. 集群使用 Kubernetes Secret（默认名 `couponkill-app-secrets`），由 Deployment `secretKeyRef` 注入 `POSTGRES_PASSWORD` / `JWT_SECRET` / `CONNECTOR_INTERNAL_TOKEN`。
 3. 生产 Helm：`secrets.create=false` + 预先创建 `secrets.existingSecret`，或 External Secrets Operator。
-4. 若仓库历史中出现过真实密钥（Apifox Token、ACR dockerconfigjson、RDS 主机名等），必须在对应平台**轮换**，不能只删文件。
+4. 若仓库历史中出现过真实密钥，必须在对应平台**轮换**，不能只删文件（见下一节）。
+
+### #4 合并后仍须人工轮换
+
+[#4](https://github.com/liuyu6610/couponkill-cloud-native/pull/4) 已从工作区删除或改为占位符，**Git 历史仍可能残留**。下表**不写密钥正文**；审查历史 diff 时也不要展开相关删除。
+
+| 项 | 历史位置（工作区已出库） | 须在平台侧做的事 |
+| --- | --- | --- |
+| Apifox Token | `.idea/ApifoxUploaderProjectSetting.xml`（`apiAccessToken`） | 在 Apifox 控制台吊销/轮换该个人访问令牌 |
+| ACR `dockerconfigjson` | `k8s-nothing/couponkill-simple/couponKill.yaml`（镜像拉取 Secret） | 在阿里云 ACR 轮换密码/Token；检查该 Secret 是否曾落到集群 |
+| Git 历史残留主机名 | `.idea/dataSources.xml`（RDS / Redis 公网主机名） | 收紧 RDS/Redis 访问白名单；主机名仍可从 Git 历史读出 |
+
+生产集群另须：用强随机值创建/替换 `couponkill-app-secrets`，不要沿用演示口令。本地 compose：复制 `.env.example` → `.env` 后再覆盖 Nacos/JWT。
+
+### 已知剩余债（文档记录，本轮不修）
+
+| 项 | 说明 | 范围 |
+| --- | --- | --- |
+| Java 业务镜像仍可能以 root 启动 | 当前 Java Dockerfile 无 `USER`；Chart 不默认 `runAsNonRoot`，以免 Pod 无法调度。Go / Operator 镜像已非 root。 | 后续改镜像后再收紧 Pod |
+| `templates/nacos-init-job.yaml` 既有 YAML 问题 | Helm 渲染时部分块缩进会导致 parse 失败（#4 改前即存在，未整文件重排）。 | 非本次文档范围 |
+| 开放 PR [#1](https://github.com/liuyu6610/couponkill-cloud-native/pull/1)、[#3](https://github.com/liuyu6610/couponkill-cloud-native/pull/3) | `#1` dockerfile complete；`#3` Qodana CI。 | 非本次范围 |
 

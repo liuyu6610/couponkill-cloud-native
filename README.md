@@ -9,7 +9,7 @@ CouponKill 是一个基于云原生技术栈构建的高并发秒杀系统，专
 开发语言: Java 25、Go
 容器编排: Kubernetes
 服务网格: Istio
-CI/CD: Jenkins（CD 真源）+ GitHub Actions（PR 校验）；说明见 `docs/CICD-SOURCE-OF-TRUTH.md`
+CI/CD: Jenkins=CD，GitHub Actions=PR 校验；说明见 [`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md)
 服务注册与发现: Nacos
 配置中心: Nacos
 分布式事务: 本地事务 + 最终一致（Kafka 异步 / 库存回补；**未启用 Seata**）
@@ -318,9 +318,22 @@ kubectl apply -f k8s-istio/
 | K8s 生产 / 演示部署 | **[`charts/couponkill`](charts/couponkill)**（唯一入口） |
 | 本地中间件 | [`docker-compose.migration.yml`](docker-compose.migration.yml)（PG 宿主机 **5433**） |
 | 部署路径说明 | [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](docs/DEPLOYMENT-SOURCE-OF-TRUTH.md) |
-| CI/CD 路径说明 | [`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md) |
+| CI/CD | [`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md)（**Jenkins=CD**，**GitHub Actions=PR 校验**） |
 
 `k8s-nothing/`、`ansible/`、`cross-namespace-monitoring/` 为 **DEPRECATED**；`k8s-istio/` 仅为 Helm Istio 之上的补充样例，不是独立部署入口。
+
+## 安全与凭证
+
+演示密钥、真实口令、Token、`dockerconfigjson` **禁止入库**（[#4](https://github.com/liuyu6610/couponkill-cloud-native/pull/4) 已把工作区明文出库；Git 历史仍须在平台侧轮换，见下方部署真源）。
+
+| 场景 | 做法 |
+|------|------|
+| 生产 / 演示集群 | 预创建 Kubernetes Secret **`couponkill-app-secrets`**，由 Deployment **`secretKeyRef`** 注入（`values-prod.yaml` 已 `secrets.create=false`） |
+| 本地 compose | 复制根目录 [`.env.example`](.env.example) 为 `.env`（已 gitignore）后再覆盖占位值 |
+
+操作、**#4 合并后仍须人工轮换** 的清单与已知剩余债见 [`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)；Chart 侧注入命令见 [`charts/couponkill/README.md`](charts/couponkill/README.md)。
+
+CI/CD 真源：**Jenkins = 集群 CD**，**GitHub Actions = PR 校验**（不推镜像、不部署），详见 [`docs/CICD-SOURCE-OF-TRUTH.md`](docs/CICD-SOURCE-OF-TRUTH.md)。
 
 ## 快速开始
 

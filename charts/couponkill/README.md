@@ -138,6 +138,8 @@ helm install couponkill ./couponkill -f ./couponkill/values-prod.yaml
 
 也可改用 External Secrets / SealedSecret 写入同名 `couponkill-app-secrets`。Nacos 与 ShardingSphere YAML 使用 `${POSTGRES_PASSWORD}` / `${JWT_SECRET}` 占位符，由进程环境变量（secretKeyRef）展开。
 
+> **#4 之后的轮换清单与已知剩余债**（Apifox Token、ACR `dockerconfigjson`、Git 历史主机名、Java 镜像 root、`nacos-init-job` 既有 YAML 等）只记在部署真源，避免与本页注入步骤重复：[`docs/DEPLOYMENT-SOURCE-OF-TRUTH.md`](../../docs/DEPLOYMENT-SOURCE-OF-TRUTH.md)。
+
 ### 自定义部署
 
 ```bash
