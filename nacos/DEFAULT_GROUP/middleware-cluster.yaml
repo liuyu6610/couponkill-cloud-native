@@ -14,37 +14,37 @@ middleware:
         host: postgres
         port: 5432
         username: postgres
-        password: postgres
+        password: ${POSTGRES_PASSWORD:postgres}
       master-slave:
         master:
           host: postgres-master
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
         slaves:
           - host: postgres-slave-0
             port: 5432
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD:postgres}
           - host: postgres-slave-1
             port: 5432
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD:postgres}
       # Patroni/流复制高可用集群
       patroni-cluster:
         nodes:
           - host: postgres-node-0
             port: 5432
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD:postgres}
           - host: postgres-node-1
             port: 5432
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD:postgres}
           - host: postgres-node-2
             port: 5432
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD:postgres}
             
   # 缓存集群配置
   cache:

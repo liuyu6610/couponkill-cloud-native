@@ -24,8 +24,20 @@ spec:
               value: "{{ .Values.redis.host }}"
             - name: REDIS_PORT
               value: "{{ .Values.redis.port }}"
+            {{- if .Values.redis.password }}
             - name: REDIS_PASSWORD
-              value: "{{ .Values.redis.password }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: redis-password
+            {{- end }}
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
           command:
             - /bin/sh
             - -c

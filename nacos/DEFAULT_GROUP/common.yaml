@@ -80,16 +80,16 @@ database:
       host: postgres-master
       port: 5432
       username: postgres
-      password: postgres
+      password: ${POSTGRES_PASSWORD:postgres}
     slaves:
       - host: postgres-slave-0
         port: 5432
         username: postgres
-        password: postgres
+        password: ${POSTGRES_PASSWORD:postgres}
       - host: postgres-slave-1
         port: 5432
         username: postgres
-        password: postgres
+        password: ${POSTGRES_PASSWORD:postgres}
 
 # 集群配置引用
 cluster:

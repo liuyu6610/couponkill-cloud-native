@@ -11,16 +11,16 @@ postgresql:
         host: postgres-master
         port: 5432
         username: postgres
-        password: postgres
+        password: ${POSTGRES_PASSWORD:postgres}
       slaves:
         - host: postgres-slave-0
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
         - host: postgres-slave-1
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
 
     # Patroni 高可用集群配置
     patroni-cluster:
@@ -29,15 +29,15 @@ postgresql:
         - host: postgres-node-0
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
         - host: postgres-node-1
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
         - host: postgres-node-2
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
 
     # 读写分离配置
     read-write-splitting:
@@ -47,16 +47,16 @@ postgresql:
         host: postgres-master
         port: 5432
         username: postgres
-        password: postgres
+        password: ${POSTGRES_PASSWORD:postgres}
       slaves:
         - host: postgres-slave-0
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
         - host: postgres-slave-1
           port: 5432
           username: postgres
-          password: postgres
+          password: ${POSTGRES_PASSWORD:postgres}
 
     # 连接池配置
     pool:

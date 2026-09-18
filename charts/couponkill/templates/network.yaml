@@ -1,3 +1,4 @@
+{{- if .Values.networkPolicy.enabled | default true }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -34,6 +35,60 @@ spec:
   podSelector: {}
   policyTypes:
   - Ingress
+  - Egress
   ingress:
   - from:
     - podSelector: {}
+  egress:
+  - to:
+    - podSelector: {}
+---
+# default-deny 后必须放行集群 DNS，否则服务发现全部失败
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kube-dns
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+{{- if .Values.networkPolicy.ingress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-configured-ingress
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+{{ toYaml .Values.networkPolicy.ingress | indent 2 }}
+{{- end }}
+{{- if .Values.networkPolicy.egress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-configured-egress
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+{{ toYaml .Values.networkPolicy.egress | indent 2 }}
+{{- end }}
+{{- end }}

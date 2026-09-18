@@ -56,7 +56,7 @@ data:
         driverClassName: com.mysql.cj.jdbc.Driver
         jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
         username: root
-        password: "123456"
+        password: "CHANGE_ME"
     rules:
     - !SHARDING
       tables:
@@ -71,7 +71,7 @@ data:
         driverClassName: com.mysql.cj.jdbc.Driver
         jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
         username: root
-        password: "123456"
+        password: "CHANGE_ME"
     rules:
       - !SHARDING
         tables:
@@ -103,7 +103,7 @@ data:
         driverClassName: com.mysql.cj.jdbc.Driver
         jdbcUrl: jdbc:mysql://storage-service:3306/couponkill?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true
         username: root
-        password: "123456"
+        password: "CHANGE_ME"
     rules:
     - !SHARDING
       tables:

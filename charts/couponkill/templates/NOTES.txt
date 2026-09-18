@@ -1,0 +1,19 @@
+CouponKill Chart 已渲染。
+
+凭证注入（生产必须）：
+  1. 不要把真实口令写进 values / Git。
+  2. 创建 Secret（名称默认 couponkill-app-secrets，可用 --set secrets.existingSecret=... 覆盖）：
+
+     kubectl -n {{ .Values.namespace }} create secret generic {{ include "couponkill.appSecretName" . }} \
+       --from-literal=postgres-password='<强随机>' \
+       --from-literal=jwt-secret='<≥32字节随机>' \
+       --from-literal=internal-token='<强随机>' \
+       --from-literal=nacos-auth-token='<Nacos 3.x：原文≥32字符后再 Base64>'
+
+  3. 生产覆盖示例：
+     helm upgrade --install couponkill ./charts/couponkill -f charts/couponkill/values-prod.yaml \
+       --set secrets.create=false \
+       --set secrets.existingSecret={{ include "couponkill.appSecretName" . }}
+
+当前 secrets.create={{ .Values.secrets.create | default false }}
+当前 Secret 名={{ include "couponkill.appSecretName" . }}

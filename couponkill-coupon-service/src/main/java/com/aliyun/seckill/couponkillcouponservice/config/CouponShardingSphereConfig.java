@@ -4,6 +4,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.aliyun.seckill.common.utils.SecretPlaceholderResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
 import org.apache.shardingsphere.driver.jdbc.core.datasource.ShardingSphereDataSource;
@@ -50,7 +51,7 @@ public class CouponShardingSphereConfig {
 
             // 从Nacos获取coupon-service的ShardingSphere配置
             String dataId = "coupon-service-sharding.yaml";
-            String configContent = configService.getConfig(dataId, group, 3000);
+            String configContent = SecretPlaceholderResolver.resolve(configService.getConfig(dataId, group, 3000));
 
             if (configContent == null || configContent.isEmpty()) {
                 log.warn("从Nacos获取的配置为空，将使用默认配置");
@@ -58,7 +59,7 @@ public class CouponShardingSphereConfig {
                 throw new RuntimeException("无法从Nacos获取分库分表配置");
             }
 
-            log.info("从Nacos获取到的ShardingSphere配置: {}", configContent);
+            log.info("已从 Nacos 获取 ShardingSphere 配置 dataId={}（内容含密钥占位符，不打印）", dataId);
 
             // 创建ShardingSphere数据源
             dataSource = YamlShardingSphereDataSourceFactory.createDataSource(configContent.getBytes());
@@ -72,10 +73,11 @@ public class CouponShardingSphereConfig {
 
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    log.info("接收到Nacos配置变更通知，新的配置内容: {}", configInfo);
+                    log.info("接收到Nacos配置变更通知 dataId={}（不打印配置正文）", dataId);
                     try {
                         // 创建新的数据源
-                        DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(configInfo.getBytes());
+                        DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(
+                                SecretPlaceholderResolver.resolve(configInfo).getBytes());
                         
                         // 关闭旧的数据源
                         if (dataSource != null) {
@@ -128,10 +130,11 @@ public class CouponShardingSphereConfig {
         String configContent = configService.getConfig(dataId, group, 3000);
         
         if (configContent != null && !configContent.isEmpty()) {
-            log.info("重新加载ShardingSphere配置: {}", configContent);
+            log.info("重新加载 ShardingSphere 配置 dataId={}（不打印配置正文）", dataId);
             
             // 创建新的数据源
-            DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(configContent.getBytes());
+            DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(
+                    SecretPlaceholderResolver.resolve(configContent).getBytes());
             
             // 关闭旧的数据源
             if (dataSource != null) {

@@ -28,6 +28,13 @@ spec:
               value: "{{ .Values.kafka.partitions | default 16 }}"
             - name: KAFKA_REPLICATION_FACTOR
               value: "{{ .Values.kafka.replicationFactor | default 1 }}"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
           command:
             - /bin/sh
             - -c

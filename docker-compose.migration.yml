@@ -13,8 +13,8 @@ services:
     image: postgres:16
     container_name: couponkill-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: postgres
     ports:
       - "5433:5432"
@@ -90,10 +90,10 @@ services:
       # 若需 PostgreSQL 元数据库，见 README 中 nacos-postgresql-datasource-plugin 说明。
       # Nacos 3.x 镜像强制要求 AUTH_*（即使关闭鉴权也要提供占位）
       NACOS_AUTH_ENABLE: "false"
-      # 原始密钥 ≥32 字符后的 Base64；本地 demo 固定值，生产务必轮换
-      NACOS_AUTH_TOKEN: "Q291cG9uS2lsbExvY2FsRGVtb1NlY3JldEtleTMyQiE="
-      NACOS_AUTH_IDENTITY_KEY: "couponkill"
-      NACOS_AUTH_IDENTITY_VALUE: "couponkillLocal"
+      # 本地演示占位；生产务必用环境变量覆盖，勿把真实 token 写入仓库
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:-Q291cG9uS2lsbExvY2FsRGVtb1NlY3JldEtleTMyQiE=}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-couponkill}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:-couponkillLocal}
     ports:
       - "8848:8848"
       - "9848:9848"

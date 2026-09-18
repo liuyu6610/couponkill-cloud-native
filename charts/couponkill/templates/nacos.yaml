@@ -101,6 +101,17 @@ spec:
               value: "hostname"
             - name: MODE
               value: "cluster"
+            - name: NACOS_AUTH_ENABLE
+              value: "{{ .Values.nacos.auth.enabled | default false }}"
+            - name: NACOS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.nacosAuthToken" . }}
+            - name: NACOS_AUTH_IDENTITY_KEY
+              value: "{{ .Values.nacos.auth.identityKey | default "nacos" }}"
+            - name: NACOS_AUTH_IDENTITY_VALUE
+              value: "{{ .Values.nacos.auth.identityValue | default "nacos" }}"
             {{- if eq .Values.nacos.storage.type "mysql" }}
             - name: SPRING_DATASOURCE_PLATFORM
               value: "mysql"
@@ -111,7 +122,10 @@ spec:
             - name: MYSQL_SERVICE_USER
               value: "{{ .Values.nacos.storage.mysql.user }}"
             - name: MYSQL_SERVICE_PASSWORD
-              value: "{{ .Values.nacos.storage.mysql.password }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.postgresPassword" . }}
             - name: MYSQL_SERVICE_DB_NAME
               value: "{{ .Values.nacos.storage.mysql.database }}"
             {{- end }}
@@ -213,6 +227,17 @@ spec:
               value: "hostname"
             - name: NACOS_SERVER_PORT
               value: "{{ .Values.nacos.service.port }}"
+            - name: NACOS_AUTH_ENABLE
+              value: "{{ .Values.nacos.auth.enabled | default false }}"
+            - name: NACOS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.nacosAuthToken" . }}
+            - name: NACOS_AUTH_IDENTITY_KEY
+              value: "{{ .Values.nacos.auth.identityKey | default "nacos" }}"
+            - name: NACOS_AUTH_IDENTITY_VALUE
+              value: "{{ .Values.nacos.auth.identityValue | default "nacos" }}"
             {{- if eq .Values.nacos.storage.type "mysql" }}
             - name: SPRING_DATASOURCE_PLATFORM
               value: "mysql"
@@ -223,7 +248,10 @@ spec:
             - name: MYSQL_SERVICE_USER
               value: "{{ .Values.nacos.storage.mysql.user }}"
             - name: MYSQL_SERVICE_PASSWORD
-              value: "{{ .Values.nacos.storage.mysql.password }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.postgresPassword" . }}
             - name: MYSQL_SERVICE_DB_NAME
               value: "{{ .Values.nacos.storage.mysql.database }}"
             - name: NACOS_REPLICAS

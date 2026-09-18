@@ -23,4 +23,5 @@ spring:
         namespace: ${NACOS_NAMESPACE:120}
         refresh-enabled: true
 jwt:
-  secret: ${JWT_SECRET:secret}
+  # 本地默认仅用于无 JWT_SECRET 时的联调；K8s 必须由 Secret 注入 JWT_SECRET 覆盖
+  secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong}

@@ -18,10 +18,15 @@ spec:
         nacos-common-checksum: {{ .Values.nacos.config.common.content | default "" | sha256sum | quote }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount2.name }}
+      automountServiceAccountToken: false
       containers:
         - name: app
           # 定义容器使用的镜像，包含注册表地址和标签
           image: "{{ .Values.image.registry }}:{{ .Values.services.order.image.name }}"
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           # 指定容器暴露的端口号
           ports: [{containerPort: {{ .Values.services.order.port }} }]
           # 配置就绪探针，用于检测应用是否准备好接收流量
@@ -29,9 +34,8 @@ spec:
           # 设置容器环境变量，包括数据库用户、密码和 Kafka 地址
           env:
             - name: DB_USER
-              value: "root"
-            - name: DB_PASS
-              value: "password"
+              value: "{{ .Values.db.username | default "postgres" }}"
+            {{- include "couponkill.env.postgresPassword" . | nindent 12 }}
             - name: KAFKA
               value: "{{ .Values.kafka.bootstrapServers | default .Values.kafka.broker | default "broker:9092" }}"
             # 集群开关真源：POSTGRES_/KAFKA_/REDIS_（已去掉误导性 MYSQL_/ROCKETMQ_）

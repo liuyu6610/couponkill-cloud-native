@@ -34,9 +34,14 @@ spec:
 
     spec:
       serviceAccountName: {{ .Values.serviceAccount1.name }}
+      automountServiceAccountToken: false
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.coupon.image.name }}}"
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports: 
             - containerPort: {{ .Values.services.coupon.port }}
           # 配置就绪探针，检查服务是否准备就绪
@@ -63,6 +68,11 @@ spec:
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
+            {{- include "couponkill.env.postgresPassword" . | nindent 12 }}
+            {{- include "couponkill.env.jwtSecret" . | nindent 12 }}
+            {{- include "couponkill.env.connectorInternalToken" . | nindent 12 }}
+            - name: CONNECTOR_INTERNAL_TOKEN_STRICT
+              value: "{{ .Values.services.connector.internalTokenStrict | default true }}"
             # 集群开关真源：POSTGRES_/KAFKA_/REDIS_（已去掉误导性 MYSQL_/ROCKETMQ_）
             - name: POSTGRES_CLUSTER_ENABLED
               value: "{{ .Values.postgres.cluster.enabled | default "false" }}"

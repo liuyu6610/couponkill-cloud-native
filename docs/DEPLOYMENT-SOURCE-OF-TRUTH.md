@@ -29,3 +29,13 @@
 1. 生产清单变更：只改 `charts/couponkill`（及必要的 Nacos 仓库副本 `nacos/`），再同步文档。  
 2. 禁止在 DEPRECATED 目录上叠加新功能；若需保留样例，仅允许修文档标注。  
 3. 本地联调与生产 Chart 配置漂移时，以「能跑通 `local-http-smoke.ps1` + Chart values 可解释」为准收敛。
+
+## 凭证注入（生产）
+
+禁止把真实口令、Token、dockerconfigjson 提交进 Git。
+
+1. 复制根目录 [`.env.example`](../.env.example) 为 `.env`（已 gitignore），仅用于本地 compose。
+2. 集群使用 Kubernetes Secret（默认名 `couponkill-app-secrets`），由 Deployment `secretKeyRef` 注入 `POSTGRES_PASSWORD` / `JWT_SECRET` / `CONNECTOR_INTERNAL_TOKEN`。
+3. 生产 Helm：`secrets.create=false` + 预先创建 `secrets.existingSecret`，或 External Secrets Operator。
+4. 若仓库历史中出现过真实密钥（Apifox Token、ACR dockerconfigjson、RDS 主机名等），必须在对应平台**轮换**，不能只删文件。
+

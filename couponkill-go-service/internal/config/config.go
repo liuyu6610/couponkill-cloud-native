@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"couponkill-go-service/pkg/nacosclient"
@@ -13,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-	// 全局中间件客户端
+// 全局中间件客户端
 var (
 	RedisClient        *redis.Client
 	RedisClusterClient *redis.ClusterClient
@@ -162,6 +163,53 @@ func mergeDBAlias(c *Config) {
 	} else if !c.Middleware.Mysql.empty() {
 		c.Middleware.Postgres = c.Middleware.Mysql
 	}
+	applySecretPlaceholders(c)
+}
+
+func applySecretPlaceholders(cfg *Config) {
+	pwd := os.Getenv("POSTGRES_PASSWORD")
+	expand := func(s string) string {
+		if s == "" {
+			return s
+		}
+		const prefix = "${POSTGRES_PASSWORD"
+		for {
+			i := strings.Index(s, prefix)
+			if i < 0 {
+				break
+			}
+			end := strings.Index(s[i:], "}")
+			if end < 0 {
+				break
+			}
+			token := s[i : i+end+1]
+			inner := token[2 : len(token)-1] // POSTGRES_PASSWORD or POSTGRES_PASSWORD:default
+			replacement := pwd
+			if replacement == "" {
+				if _, def, ok := strings.Cut(inner, ":"); ok {
+					replacement = def
+				} else {
+					break
+				}
+			}
+			s = s[:i] + replacement + s[i+len(token):]
+		}
+		return s
+	}
+	applyBlock := func(b *dbBlock) {
+		b.DSN = expand(b.DSN)
+		b.Password = expand(b.Password)
+		if pwd != "" && b.Password == "" {
+			b.Password = pwd
+		}
+		for k, ds := range b.DataSources {
+			ds.DSN = expand(ds.DSN)
+			ds.Password = expand(ds.Password)
+			b.DataSources[k] = ds
+		}
+	}
+	applyBlock(&cfg.Postgres)
+	applyBlock(&cfg.Mysql)
 }
 
 // Load 加载配置：优先从Nacos读取，失败后尝试本地配置，最后使用默认值

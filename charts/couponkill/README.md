@@ -125,8 +125,18 @@ helm install couponkill ./couponkill
 ### 生产环境部署
 
 ```bash
+# 1. 预先创建凭证（不要写进 values-prod.yaml / Git）
+kubectl -n couponkill create secret generic couponkill-app-secrets \
+  --from-literal=postgres-password='<强随机>' \
+  --from-literal=jwt-secret='<≥32字节随机>' \
+  --from-literal=internal-token='<强随机>' \
+  --from-literal=nacos-auth-token='<Nacos 3.x：原文≥32字符后再 Base64>'
+
+# 2. 安装（values-prod 已 secrets.create=false）
 helm install couponkill ./couponkill -f ./couponkill/values-prod.yaml
 ```
+
+也可改用 External Secrets / SealedSecret 写入同名 `couponkill-app-secrets`。Nacos 与 ShardingSphere YAML 使用 `${POSTGRES_PASSWORD}` / `${JWT_SECRET}` 占位符，由进程环境变量（secretKeyRef）展开。
 
 ### 自定义部署
 
@@ -264,10 +274,15 @@ cd D:\couponkill\couponkill-cloud-native
 | `services.operator.replicas` | Operator副本数 | `1` |
 | `kafka.enabled` | 是否启用 Kafka（KRaft） | `true` |
 | `kafka.partitions` | 业务主题分区数（与本地 compose / init-job 对齐） | `16` |
-| `db.host` / `db.port` | PostgreSQL 连接（应用侧真源） | `postgres` / `5432` |
+| `secrets.create` | 是否由 Chart 创建 Secret（演示用；生产必须 false） | `true` |
+| `secrets.existingSecret` | 使用已有 Secret 名称 | `""` / 生产 `couponkill-app-secrets` |
+| `db.password` | **已废弃明文**，改走 Secret `postgres-password` | `""` |
+| `nacos.auth.enabled` | Nacos 鉴权开关 | 演示 `false` / 生产 `true` |
+| `nacos.service.external.enabled` | 是否把 Nacos 暴露到集群外 | 演示 `false` / 生产必须 `false` |
+| `networkPolicy.enabled` | default-deny + 同命名空间 + DNS | `true` |
+| `containerSecurityContext` | 禁止提权、drop ALL | 见 values.yaml |
 | ~~`rocketmq.*`~~ | **已移除**（消息真源仅 Kafka） | — |
 | `nacos.enabled` | 是否启用Nacos | `true` |
-| `nacos.service.external.enabled` | 是否启用Nacos外部访问 | `true` |
 | `sentinel.enabled` | 是否启用Sentinel | `false` |
 
 ## 动态配置和集群支持
