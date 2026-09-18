@@ -19,6 +19,10 @@ spec:
         - name: postgres-client
           image: "{{ .Values.db.init.image.repository }}:{{ .Values.db.init.image.tag }}"
           imagePullPolicy: {{ .Values.db.init.image.pullPolicy }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: PGHOST
               value: "{{ .Values.db.host }}"
@@ -27,7 +31,10 @@ spec:
             - name: PGUSER
               value: "{{ .Values.db.username }}"
             - name: PGPASSWORD
-              value: "{{ .Values.db.password }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.postgresPassword" . }}
             - name: PGDATABASE
               value: "{{ .Values.db.database }}"
           command:

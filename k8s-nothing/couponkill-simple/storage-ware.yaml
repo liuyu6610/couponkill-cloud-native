@@ -22,13 +22,13 @@ spec:
         - containerPort: 3306
       env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "123456"
+          value: "CHANGE_ME"
         - name: MYSQL_DATABASE
           value: "couponkill"
         - name: MYSQL_USER
           value: "nacos"
         - name: MYSQL_PASSWORD
-          value: "nacos"
+          value: "CHANGE_ME"
       volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql

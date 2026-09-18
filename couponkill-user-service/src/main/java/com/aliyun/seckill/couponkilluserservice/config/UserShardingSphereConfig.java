@@ -4,6 +4,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.aliyun.seckill.common.utils.SecretPlaceholderResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
 import org.apache.shardingsphere.driver.jdbc.core.datasource.ShardingSphereDataSource;
@@ -47,7 +48,7 @@ UserShardingSphereConfig {
 
         // 从Nacos获取user-service的ShardingSphere配置
         String dataId = "user-service-sharding.yaml";
-        String configContent = configService.getConfig(dataId, group, 3000);
+        String configContent = SecretPlaceholderResolver.resolve(configService.getConfig(dataId, group, 3000));
 
         if (configContent == null || configContent.isEmpty()) {
             throw new IllegalStateException("未能从Nacos获取user-service的ShardingSphere配置，dataId: " + dataId);
@@ -82,7 +83,8 @@ UserShardingSphereConfig {
                     log.info("接收到Nacos配置变更通知，dataId: {}", dataId);
                     try {
                         // 重新创建数据源
-                        DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(configInfo.getBytes());
+                        DataSource newDataSource = YamlShardingSphereDataSourceFactory.createDataSource(
+                                SecretPlaceholderResolver.resolve(configInfo).getBytes());
                         
                         // 安全关闭旧的数据源
                         if (dataSource != null) {

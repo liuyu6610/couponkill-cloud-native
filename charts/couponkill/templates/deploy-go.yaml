@@ -37,10 +37,17 @@ spec:
         nacos-common-checksum: {{ .Values.nacos.config.common.content | default "" | sha256sum | quote }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount0.name }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.go.image.name }}"
           imagePullPolicy: Always
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.services.go.port }}
           # 就绪探针，检查服务是否可用
@@ -69,9 +76,7 @@ spec:
               value: "{{ .Values.services.go.port }}"
             - name: REDIS_ADDR
               value: "redis:6379"
-            # Go 默认关闭、不进热路径；DSN 真源为 PostgreSQL（不再使用 MYSQL_DSN）
-            - name: POSTGRES_DSN
-              value: "host=postgres port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+            {{- include "couponkill.env.postgresPassword" . | nindent 12 }}
             - name: KAFKA
               value: "{{ .Values.kafka.bootstrapServers | default .Values.kafka.broker | default "broker:9092" }}"
             {{- if .Values.nacos.enabled }}

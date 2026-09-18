@@ -11,8 +11,12 @@ metadata:
   name: mysecret
   namespace: couponkill
 type: kubernetes.io/dockerconfigjson
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJjcnBpLW41cnVtcGp3YnFpbm96NGMubmhzLmNuLWhhbmd6aG91LnBlcnNvbmFsLmNyLmFsaXl1bmNzLmNvbS90aGV0ZXN0c3BhY2Vmb3Jkb2NrZXIvbXktZG9ja2VyIjp7InVzZXJuYW1lIjoiYWRtaW4iLCJwYXNzd29yZCI6IjFmMmQxZTJlNjdkZiIsImF1dGgiOiJYV1pqY21WMExtTnZiUzkxYzI4dlkyOXRMM0J5YjJwbFkzUkFabTl5YlM5a1pYWXZkMjl5WkE9PSJ9fX0=
+# 禁止入库真实 dockerconfigjson。请在集群外创建：
+# kubectl create secret docker-registry mysecret \
+#   --docker-server=<ACR> --docker-username=<USER> --docker-password=<TOKEN> \
+#   -n couponkill
+stringData:
+  .dockerconfigjson: '{"auths":{"<REGISTRY>":{"username":"<USER>","password":"<TOKEN>"}}}'
 ---
 # 创建一个多容器的pod包含项目的所有业务服务镜像
 apiVersion: v1
@@ -47,7 +51,10 @@ spec:
         - name: NACOS_NAMESPACE
           value: "public"
         - name: JWT_SECRET
-          value: "secret"
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
       livenessProbe:
         httpGet:
           path: /actuator/health
@@ -88,7 +95,7 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "root"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "123456"
+          value: "CHANGE_ME"
         - name: SPRING_REDIS_HOST
           value: "storage-service"
         - name: SPRING_REDIS_PORT
@@ -96,7 +103,10 @@ spec:
         - name: ROCKETMQ_NAMESRV_ADDR
           value: "software-service:9876"
         - name: JWT_SECRET
-          value: "secret"
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
       livenessProbe:
         httpGet:
           path: /actuator/health
@@ -137,7 +147,7 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "root"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "123456"
+          value: "CHANGE_ME"
         - name: SPRING_REDIS_HOST
           value: "storage-service"
         - name: SPRING_REDIS_PORT
@@ -184,13 +194,16 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "root"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "123456"
+          value: "CHANGE_ME"
         - name: SPRING_REDIS_HOST
           value: "storage-service"
         - name: SPRING_REDIS_PORT
           value: "6379"
         - name: JWT_SECRET
-          value: "secret"
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
       livenessProbe:
         httpGet:
           path: /actuator/health
@@ -223,7 +236,7 @@ spec:
         - name: REDIS_ADDR
           value: "storage-service:6379"
         - name: MYSQL_DSN
-          value: "root:123456@tcp(storage-service:3306)/couponkill"
+          value: "root:CHANGE_ME@tcp(storage-service:3306)/couponkill"
         - name: ROCKET_MQ
           value: "software-service:9876"
         - name: NACOS_ADDR

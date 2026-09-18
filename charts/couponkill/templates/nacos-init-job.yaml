@@ -127,16 +127,16 @@ database:
       host: postgres-master
       port: 5432
       username: postgres
-      password: postgres
+      password: \${POSTGRES_PASSWORD}
     slaves:
       - host: postgres-slave-0
         port: 5432
         username: postgres
-        password: postgres
+        password: \${POSTGRES_PASSWORD}
       - host: postgres-slave-1
         port: 5432
         username: postgres
-        password: postgres
+        password: \${POSTGRES_PASSWORD}
 cluster:
   config:
     middleware: middleware-cluster.yaml
@@ -190,31 +190,31 @@ cluster:
         host: postgres-master
         port: 5432
         username: postgres
-        password: postgres
+        password: \${POSTGRES_PASSWORD}
       slaves:
         - host: postgres-slave-0
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
         - host: postgres-slave-1
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
     patroni-cluster:
       enabled: false
       nodes:
         - host: postgres-node-0
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
         - host: postgres-node-1
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
         - host: postgres-node-2
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
     read-write-splitting:
       enabled: false
       strategy: ROUND_ROBIN
@@ -222,16 +222,16 @@ cluster:
         host: postgres-master
         port: 5432
         username: postgres
-        password: postgres
+        password: \${POSTGRES_PASSWORD}
       slaves:
         - host: postgres-slave-0
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
         - host: postgres-slave-1
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
     pool:
       max-active: 100
       max-idle: 20
@@ -342,36 +342,36 @@ cluster:
         host: postgres
         port: 5432
         username: postgres
-        password: postgres
+        password: \${POSTGRES_PASSWORD}
       master-slave:
         master:
           host: postgres-master
           port: 5432
           username: postgres
-          password: postgres
+          password: \${POSTGRES_PASSWORD}
         slaves:
           - host: postgres-slave-0
             port: 5432
             username: postgres
-            password: postgres
+            password: \${POSTGRES_PASSWORD}
           - host: postgres-slave-1
             port: 5432
             username: postgres
-            password: postgres
+            password: \${POSTGRES_PASSWORD}
       patroni-cluster:
         nodes:
           - host: postgres-node-0
             port: 5432
             username: postgres
-            password: postgres
+            password: \${POSTGRES_PASSWORD}
           - host: postgres-node-1
             port: 5432
             username: postgres
-            password: postgres
+            password: \${POSTGRES_PASSWORD}
           - host: postgres-node-2
             port: 5432
             username: postgres
-            password: postgres
+            password: \${POSTGRES_PASSWORD}
   cache:
     redis:
       type: standalone

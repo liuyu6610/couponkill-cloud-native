@@ -27,7 +27,7 @@ coupon:
 
 # JWT配置
 jwt:
-  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+  secret: ${JWT_SECRET}
   expiration: 86400000 # 24小时，单位毫秒
 
 # 秒杀配置

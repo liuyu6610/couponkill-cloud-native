@@ -36,7 +36,7 @@ spec:
         - name: MYSQL_SERVICE_USER
           value: "root"
         - name: MYSQL_SERVICE_PASSWORD
-          value: "123456"
+          value: "CHANGE_ME"
       livenessProbe:
         httpGet:
           path: /nacos/actuator/health

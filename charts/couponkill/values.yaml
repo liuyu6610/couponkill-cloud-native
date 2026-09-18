@@ -4,6 +4,41 @@
 namespace: couponkill  # Kubernetes 命名空间名称
 namespaceMonitor: monitor
 
+# ---------------------------------------------------------------------------
+# 凭证：禁止把真实密钥提交进 Git。
+# 演示默认 secrets.create=true，仅写入本地演示口令 postgres（非生产）。
+# JWT / connector / Nacos token 在首次 install 时随机生成并在 upgrade 时 lookup 保留。
+# 生产：secrets.create=false + 预先创建 existingSecret（或 External Secrets）。
+# ---------------------------------------------------------------------------
+secrets:
+  create: true
+  existingSecret: ""
+  name: couponkill-app-secrets
+  keys:
+    postgresPassword: postgres-password
+    jwtSecret: jwt-secret
+    connectorInternalToken: internal-token
+    nacosAuthToken: nacos-auth-token
+  # 仅 create=true 时写入；生产切勿填写真实值
+  postgresPassword: "postgres"
+  jwtSecret: ""
+  connectorInternalToken: ""
+  nacosAuthToken: ""
+
+# 业务容器：Java 镜像当前以 root 启动，故不默认 runAsNonRoot（避免直接 Evicted）。
+# 仍 drop ALL + 禁止提权。Go / Operator 镜像已是非 root，模板里额外 runAsNonRoot。
+podSecurityContext: {}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# default-deny + 同命名空间 + DNS。生产可叠加 values-prod 的 ingress/egress。
+networkPolicy:
+  enabled: true
+
 # CRD安装选项
 crd:
   install: true
@@ -22,7 +57,8 @@ db:
   host: postgres
   port: 5432
   username: postgres
-  password: postgres
+  # 口令不要写在 Deployment env；见 secrets.postgresPassword / existingSecret
+  password: ""
   database: postgres
   # 初始化配置
   init:
@@ -145,7 +181,8 @@ services:
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
     internalTokenStrict: true
     internalTokenSecret:
-      name: connector-secrets
+      # 空 = 使用 couponkill-app-secrets
+      name: ""
       key: internal-token
       optional: true
     resources:
@@ -159,6 +196,7 @@ services:
   gateway:
     name: couponkill-gateway
     port: 8080
+    profile: dev
     jvmOpts: "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
     resources:
@@ -198,7 +236,7 @@ redis:
     port: 6379
     image:
       repository: redis
-      tag: latest
+      tag: "7"
       pullPolicy: IfNotPresent
     resources:
       requests:
@@ -262,7 +300,8 @@ postgres:
   enabled: false
   name: postgres
   port: 5432
-  rootPassword: postgres
+  # 口令走 secrets；切勿在此填写真实值
+  rootPassword: ""
   database: postgres
   image:
     repository: postgres
@@ -313,9 +352,9 @@ nacos:
     # Nacos配置加载方式
     # external 表示从外部源加载配置
     external:
-      enabled: true
-      # 外部配置源地址
-      url: "https://raw.githubusercontent.com/your-org/couponkill-configs/main/nacos-configs.zip"
+      enabled: false
+      # 外部配置源地址（未启用；启用前需校验完整性，禁止未签名 zip）
+      url: ""
     # 初始化配置
     init:
       enabled: true
@@ -360,8 +399,11 @@ nacos:
       host: postgres
       port: 5432
       user: postgres
-      password: postgres
+      password: ""
       database: nacos
+  auth:
+    # 演示默认关闭鉴权；Nacos 3.x 仍需占位 token（来自 Secret）
+    enabled: false
       
 # Sentinel配置
 sentinel:

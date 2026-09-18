@@ -88,7 +88,7 @@ spring:
 
 # JWT配置
 jwt:
-  secret: mySecretKeyForJWTTokenGenerationWhichShouldBeAtLeast256BitsLong
+  secret: ${JWT_SECRET}
 
 # Connector 管理鉴权（与 user-service 签发 roles 对齐）
 connector:

@@ -16,9 +16,14 @@ spec:
       labels:
         app: {{ .Values.services.connector.name }}
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.connector.image.name }}"
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.services.connector.port }}
           readinessProbe:
@@ -51,18 +56,22 @@ spec:
             {{- end }}
             - name: CONNECTOR_DB_HOST
               value: "{{ .Values.db.host | default "postgres" }}"
+            - name: CONNECTOR_DB_USER
+              value: "{{ .Values.db.username | default "postgres" }}"
+            {{- include "couponkill.env.postgresPassword" . | nindent 12 }}
+            - name: CONNECTOR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "couponkill.appSecretName" . }}
+                  key: {{ include "couponkill.secretKey.postgresPassword" . }}
+            {{- include "couponkill.env.jwtSecret" . | nindent 12 }}
             - name: JAVA_TOOL_OPTIONS
               value: {{ .Values.services.connector.jvmOpts | default "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0" | quote }}
             {{- if .Values.services.connector.threadPoolOpts }}
             - name: THREAD_POOL_OPTS
               value: "{{ .Values.services.connector.threadPoolOpts }}"
             {{- end }}
-            - name: CONNECTOR_INTERNAL_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.services.connector.internalTokenSecret.name | default "connector-secrets" }}
-                  key: {{ .Values.services.connector.internalTokenSecret.key | default "internal-token" }}
-                  optional: {{ .Values.services.connector.internalTokenSecret.optional | default true }}
+            {{- include "couponkill.env.connectorInternalToken" . | nindent 12 }}
             - name: CONNECTOR_INTERNAL_TOKEN_STRICT
               value: "{{ .Values.services.connector.internalTokenStrict | default true }}"
 ---

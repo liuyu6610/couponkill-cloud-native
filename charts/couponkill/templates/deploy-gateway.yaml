@@ -26,10 +26,15 @@ spec:
         prometheus.io/path: "/actuator/prometheus"
     spec:
       serviceAccountName: {{ .Values.serviceAccount4.name }}
+      automountServiceAccountToken: false
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.gateway.image.name }}"
           imagePullPolicy: Always
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.services.gateway.port }}
           # 就绪探针，检查服务是否可用
@@ -57,7 +62,7 @@ spec:
             - name: SERVER_PORT
               value: "{{ .Values.services.gateway.port }}"
             - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
+              value: "{{ .Values.services.gateway.profile | default "prod" }}"
             {{- if .Values.nacos.enabled }}
             - name: NACOS_SERVER_ADDR
               value: "{{ .Values.nacos.name }}:{{ .Values.nacos.service.port }}"
@@ -74,11 +79,7 @@ spec:
             - name: SENTINEL_DASHBOARD
               value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
             {{- end }}
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: jwt-secret
-                  key: secret
+            {{- include "couponkill.env.jwtSecret" . | nindent 12 }}
             # JVM 单真源 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders）
             - name: JAVA_TOOL_OPTIONS
               value: {{ .Values.services.gateway.jvmOpts | default "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0" | quote }}

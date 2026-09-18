@@ -4,7 +4,7 @@ dataSources:
     driverClassName: org.postgresql.Driver
     jdbcUrl: jdbc:postgresql://postgres:5432/user_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill-user
     username: postgres
-    password: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     connectionTimeout: 2000
     idleTimeout: 600000
@@ -16,7 +16,7 @@ dataSources:
     driverClassName: org.postgresql.Driver
     jdbcUrl: jdbc:postgresql://postgres:5432/user_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill-user
     username: postgres
-    password: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     connectionTimeout: 2000
     idleTimeout: 600000
@@ -32,13 +32,13 @@ dataSources:
 #     driverClassName: org.postgresql.Driver
 #     jdbcUrl: jdbc:postgresql://postgres-primary:5432/<db>?reWriteBatchedInserts=true&sslmode=disable
 #     username: postgres
-#     password: postgres
+#     password: ${POSTGRES_PASSWORD:postgres}
 #     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
 #   user-db-cluster-0-replica-0:
 #     driverClassName: org.postgresql.Driver
 #     jdbcUrl: jdbc:postgresql://postgres-replica-0:5432/<db>?reWriteBatchedInserts=true&sslmode=disable
 #     username: postgres
-#     password: postgres
+#     password: ${POSTGRES_PASSWORD:postgres}
 #     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
 
 rules:

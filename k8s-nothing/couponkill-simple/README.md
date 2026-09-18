@@ -122,6 +122,9 @@ crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker
 3. 首次部署时，中间件和存储服务可能需要一些时间初始化
 4. 可以通过`kubectl get pods -n couponkill`查看Pod状态
 5. 通过`kubectl logs -n couponkill <pod-name> -c <container-name>`查看容器日志
+6. **安全**：本目录曾含镜像仓库拉取凭证与弱口令。已改为占位符。若该 Secret 曾被应用到任何集群，请立即在 ACR 轮换密码/Token，并删除旧 Secret。创建方式：
+   `kubectl create secret docker-registry mysecret --docker-server=<REGISTRY> --docker-username=<USER> --docker-password=<TOKEN> -n couponkill`
+7. 数据库口令请用独立 Secret 注入，禁止再写入清单明文。
 6. 网关作为统一入口，负责将请求路由到相应的后端服务
 7. 服务间通过software-service和storage-service进行通信
 8. 所有配置通过ConfigMap提供最基本的服务发现地址，详细配置由Nacos管理

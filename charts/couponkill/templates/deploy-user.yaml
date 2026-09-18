@@ -39,11 +39,16 @@ spec:
         config-refresh-interval: {{ .Values.config.refreshInterval | default "30s" | quote }}
         config-checksum: {{ .Values.dynamic.config | toYaml | sha256sum | quote }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccount2.name }}
+      serviceAccountName: {{ .Values.serviceAccount3.name }}
+      automountServiceAccountToken: false
       containers:
         - name: app
           image: "{{ .Values.image.registry }}:{{ .Values.services.user.image.name }}"
           imagePullPolicy: Always
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.services.user.port }}
           # 就绪探针，检查服务是否可用
@@ -73,9 +78,8 @@ spec:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://postgres:5432/user_db_0?sslmode=disable"
             - name: SPRING_DATASOURCE_USERNAME
-              value: "postgres"
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: "postgres"
+              value: "{{ .Values.db.username | default "postgres" }}"
+            {{- include "couponkill.env.postgresPassword" . | nindent 12 }}
             - name: SPRING_REDIS_HOST
               value: "redis"
             - name: SPRING_REDIS_PORT
@@ -89,11 +93,7 @@ spec:
             - name: SPRING_CLOUD_SENTINEL_TRANSPORT_DASHBOARD
               value: "{{ .Values.sentinel.name }}-dashboard:{{ .Values.sentinel.dashboard.service.port }}"
             {{- end }}
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: jwt-secret
-                  key: secret
+            {{- include "couponkill.env.jwtSecret" . | nindent 12 }}
             # JVM 单真源 JAVA_TOOL_OPTIONS（JDK25 ZGC + CompactHeaders）
             - name: JAVA_TOOL_OPTIONS
               value: {{ .Values.services.user.jvmOpts | default "-XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0" | quote }}

@@ -36,3 +36,24 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Secrets / local credentials (never commit) ###
+.env
+.env.*
+!.env.example
+!.env.development
+!.env.production
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+**/secrets/*.yaml
+**/secrets/*.yml
+!**/secrets/.gitkeep
+
+### IntelliJ local tokens / datasources ###
+.idea/ApifoxUploaderProjectSetting.xml
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/dataSources/

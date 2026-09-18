@@ -1,7 +1,24 @@
-﻿# ????????
-# ??????????????
+﻿# 生产覆盖：禁止明文口令入库。部署前先创建 Secret（见 charts/couponkill/README.md）。
 
 namespace: couponkill
+
+secrets:
+  create: false
+  existingSecret: couponkill-app-secrets
+  name: couponkill-app-secrets
+  postgresPassword: ""
+  jwtSecret: ""
+  connectorInternalToken: ""
+  nacosAuthToken: ""
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+networkPolicy:
+  enabled: true
 
 # CRD????
 crd:
@@ -15,12 +32,12 @@ examples:
 dependencies:
   enabled: true
 
-# ????�?
+# 数据库（口令只进 Secret，见 secrets.existingSecret）
 db:
   host: postgres
   port: 5432
   username: postgres
-  password: postgres
+  password: ""
   database: postgres
   init:
     enabled: true
@@ -74,8 +91,9 @@ nacos:
     port: 8848
     # ??????
     external:
-      enabled: true
-      type: LoadBalancer
+      # 生产禁止把 Nacos 控制面暴露为 LoadBalancer
+      enabled: false
+      type: ClusterIP
       port: 8848
   storage:
     # Nacos 元库：演示用 embedded；生产 PG 需社区插件，见 values.yaml 注释
@@ -84,8 +102,10 @@ nacos:
       host: postgres
       port: 5432
       user: postgres
-      password: postgres
+      password: ""
       database: nacos
+  auth:
+    enabled: true
   config:
     # Nacos????
     common:
@@ -116,7 +136,7 @@ nacos:
             # 公共库连接示例；各服务以 sharding YAML 为准
             url: jdbc:postgresql://postgres:5432/postgres?reWriteBatchedInserts=true&sslmode=disable
             username: postgres
-            password: postgres
+            password: ${POSTGRES_PASSWORD}
             driver-class-name: org.postgresql.Driver
           kafka:
             bootstrap-servers: broker:9092
@@ -150,13 +170,13 @@ nacos:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/user_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             user-db-1:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/user_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
           - !SHARDING
@@ -189,7 +209,7 @@ nacos:
                   worker-id: 1
                   data-center-id: 1
           props:
-            sql-show: true
+            sql-show: false
             sql-trace: true
             query-with-cipher-column: false
             sql-comment-parse-enabled: true
@@ -202,25 +222,25 @@ nacos:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/order_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-1:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/order_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-2:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/order_db_2?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             order-db-3:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/order_db_3?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
           - !SHARDING
@@ -251,7 +271,7 @@ nacos:
                   worker-id: 1
                   data-center-id: 1
           props:
-            sql-show: true
+            sql-show: false
             query-with-cipher-column: false
             sql-comment-parse-enabled: true
       coupon:
@@ -263,25 +283,25 @@ nacos:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_0?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-1:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_1?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-2:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_2?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
             coupon-db-3:
               driverClassName: org.postgresql.Driver
               jdbcUrl: jdbc:postgresql://postgres:5432/coupon_db_3?reWriteBatchedInserts=true&ApplicationName=couponkill
               username: postgres
-              password: postgres
+              password: ${POSTGRES_PASSWORD}
               dataSourceClassName: com.zaxxer.hikari.HikariDataSource
           rules:
             - !SHARDING
@@ -326,7 +346,7 @@ nacos:
                     worker-id: 1
                     data-center-id: 1
           props:
-            sql-show: true
+            sql-show: false
             query-with-cipher-column: false
             sql-comment-parse-enabled: true
     collaboration:
@@ -419,17 +439,17 @@ nacos:
         postgres:
           dataSources:
             order-db-0:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=order_db_0 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=order_db_0 sslmode=disable"
             order-db-1:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=order_db_1 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=order_db_1 sslmode=disable"
             coupon-db-0:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=coupon_db_0 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=coupon_db_0 sslmode=disable"
             coupon-db-1:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=coupon_db_1 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=coupon_db_1 sslmode=disable"
             user-db-0:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=user_db_0 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=user_db_0 sslmode=disable"
             user-db-1:
-              dsn: "host=postgres port=5432 user=postgres password=postgres dbname=user_db_1 sslmode=disable"
+              dsn: "host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD} dbname=user_db_1 sslmode=disable"
 
         data.redis:
           host: "redis-master:6379"
@@ -470,6 +490,7 @@ services:
   gateway:
     name: couponkill-gateway  # ????
     port: 8080  # ????
+    profile: prod
     replicas: 2  # ????�?
     image:
       name: "gateway"
@@ -566,7 +587,7 @@ services:
     threadPoolOpts: "-Dspring.threads.virtual.enabled=true"
     internalTokenStrict: true
     internalTokenSecret:
-      name: connector-secrets
+      name: ""
       key: internal-token
       optional: false
     resources:
