@@ -1697,3 +1697,436 @@ INFO: Sentinel log level is: INFO
 2026-07-12T22:59:51.903+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-385] c.a.s.c.m.U.updateSeckillCount           : ==> Parameters: 1(Integer), 1(Integer), 20(Long)
 2026-07-12T22:59:51.905+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-385] c.a.s.c.m.U.updateSeckillCount           : <==    Updates: 1
 2026-07-12T22:59:51.905+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-385] c.a.s.c.service.Impl.UserServiceImpl     : 成功更新用户秒杀优惠券数量: userId=20, count=1
+2026-07-13T19:31:11.029+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] com.alibaba.nacos.common.remote.client   : Send request fail, request = ConfigBatchListenRequest{headers={charset=UTF-8, Client-AppName=unknown, Client-RequestToken=d1e8e6703480d8f67167fb40abd901a9, Client-RequestTS=1783869167988, exConfigInfo=true}, requestId='null'}, retryTimes = 0, errorMessage = java.util.concurrent.TimeoutException: Waited 3000 milliseconds (plus 73100056 milliseconds, 436300 nanoseconds delay) for com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls$GrpcFuture@4230e634[status=PENDING, info=[GrpcFuture{clientCall=ClientCallImpl{method=MethodDescriptor{fullMethodName=Request/request, type=UNARY, idempotent=false, safe=false, sampledToLocalTracing=true, requestMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@6b76d48a, responseMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@72ff5cc9, schemaDescriptor=com.alibaba.nacos.api.grpc.auto.RequestGrpc$RequestMethodDescriptorSupplier@72463ec}}}]]
+2026-07-13T19:31:11.037+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] c.a.n.client.config.impl.ClientWorker    : Execute listen config change error 
+
+ErrCode:500, ErrMsg:Waited 3000 milliseconds (plus 73100056 milliseconds, 436300 nanoseconds delay) for com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls$GrpcFuture@4230e634[status=PENDING, info=[GrpcFuture{clientCall=ClientCallImpl{method=MethodDescriptor{fullMethodName=Request/request, type=UNARY, idempotent=false, safe=false, sampledToLocalTracing=true, requestMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@6b76d48a, responseMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@72ff5cc9, schemaDescriptor=com.alibaba.nacos.api.grpc.auto.RequestGrpc$RequestMethodDescriptorSupplier@72463ec}}}]]
+	at com.alibaba.nacos.common.remote.client.grpc.GrpcConnection.request(GrpcConnection.java:82) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.common.remote.client.RpcClient.request(RpcClient.java:649) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.common.remote.client.RpcClient.request(RpcClient.java:626) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.requestProxy(ClientWorker.java:1317) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.requestProxy(ClientWorker.java:1296) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.lambda$checkListenCache$8(ClientWorker.java:1111) ~[nacos-client-3.1.1.jar!/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: java.util.concurrent.TimeoutException: Waited 3000 milliseconds (plus 73100056 milliseconds, 436300 nanoseconds delay) for com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls$GrpcFuture@4230e634[status=PENDING, info=[GrpcFuture{clientCall=ClientCallImpl{method=MethodDescriptor{fullMethodName=Request/request, type=UNARY, idempotent=false, safe=false, sampledToLocalTracing=true, requestMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@6b76d48a, responseMarshaller=com.alibaba.nacos.shaded.io.grpc.protobuf.lite.ProtoLiteUtils$MessageMarshaller@72ff5cc9, schemaDescriptor=com.alibaba.nacos.api.grpc.auto.RequestGrpc$RequestMethodDescriptorSupplier@72463ec}}}]]
+	at com.alibaba.nacos.shaded.com.google.common.util.concurrent.AbstractFuture.get(AbstractFuture.java:535) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.common.remote.client.grpc.GrpcConnection.request(GrpcConnection.java:79) ~[nacos-client-3.1.1.jar!/:na]
+	... 10 common frames omitted
+
+2026-07-13T19:31:11.239+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] com.alibaba.nacos.common.remote.client   : Send request fail, request = ConfigBatchListenRequest{headers={charset=UTF-8, Client-AppName=unknown, Client-RequestToken=681d413c58668279d6afbe12b3c1b162, Client-RequestTS=1783942271128, exConfigInfo=true}, requestId='null'}, retryTimes = 0, errorMessage = Client not connected, current status:UNHEALTHY
+2026-07-13T19:31:11.379+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] com.alibaba.nacos.common.remote.client   : Send request fail, request = ConfigBatchListenRequest{headers={charset=UTF-8, Client-AppName=unknown, Client-RequestToken=681d413c58668279d6afbe12b3c1b162, Client-RequestTS=1783942271128, exConfigInfo=true}, requestId='null'}, retryTimes = 1, errorMessage = Client not connected, current status:UNHEALTHY
+2026-07-13T19:31:11.482+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] com.alibaba.nacos.common.remote.client   : Send request fail, request = ConfigBatchListenRequest{headers={charset=UTF-8, Client-AppName=unknown, Client-RequestToken=681d413c58668279d6afbe12b3c1b162, Client-RequestTS=1783942271128, exConfigInfo=true}, requestId='null'}, retryTimes = 2, errorMessage = Client not connected, current status:UNHEALTHY
+2026-07-13T19:31:11.588+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] com.alibaba.nacos.common.remote.client   : Send request fail, request = ConfigBatchListenRequest{headers={charset=UTF-8, Client-AppName=unknown, Client-RequestToken=681d413c58668279d6afbe12b3c1b162, Client-RequestTS=1783942271128, exConfigInfo=true}, requestId='null'}, retryTimes = 3, errorMessage = Client not connected, current status:UNHEALTHY
+2026-07-13T19:31:11.589+08:00 ERROR 22608 --- [couponkill-user-service] [listener.task-0] c.a.n.client.config.impl.ClientWorker    : Execute listen config change error 
+
+ErrCode:-401, ErrMsg:Client not connected, current status:UNHEALTHY
+	at com.alibaba.nacos.common.remote.client.RpcClient.request(RpcClient.java:647) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.common.remote.client.RpcClient.request(RpcClient.java:626) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.requestProxy(ClientWorker.java:1317) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.requestProxy(ClientWorker.java:1296) ~[nacos-client-3.1.1.jar!/:na]
+	at com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient.lambda$checkListenCache$8(ClientWorker.java:1111) ~[nacos-client-3.1.1.jar!/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-07-13T19:31:12.372+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : [3eb901ec-a768-4e2b-919f-a48f82443822_config-0] Server check success, currentServer is 127.0.0.1:8848 
+2026-07-13T19:31:13.758+08:00  INFO 22608 --- [couponkill-user-service] [or-127.0.0.1-52] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Receive server push request, request = ClientDetectionRequest, requestId = 53
+2026-07-13T19:31:13.845+08:00  INFO 22608 --- [couponkill-user-service] [or-127.0.0.1-52] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Ack server push request, request = ClientDetectionRequest, requestId = 53
+2026-07-13T19:31:13.898+08:00 ERROR 22608 --- [couponkill-user-service] [or-127.0.0.1-53] c.a.n.c.remote.client.grpc.GrpcClient    : [1783866999541_172.21.0.1_51546]Request stream onCompleted, switch server
+2026-07-13T19:31:13.907+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Try to reconnect to a new server, server is  not appointed, will choose a random server.
+2026-07-13T19:31:13.915+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] c.a.n.c.remote.client.grpc.GrpcClient    : grpc client connection server: 127.0.0.1 ip, serverPort: 9848, grpcTslConfig: {"enableTls":false,"mutualAuthEnable":false,"trustAll":true}
+2026-07-13T19:31:13.970+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Success to connect a server [127.0.0.1:8848], connectionId = 1783942273951_172.21.0.1_58228
+2026-07-13T19:31:13.977+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Abandon prev connection, server is 127.0.0.1:8848, connectionId is 1783866999541_172.21.0.1_51546
+2026-07-13T19:31:13.991+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.1] com.alibaba.nacos.common.remote.client   : Close current connection 1783866999541_172.21.0.1_51546
+2026-07-13T19:31:14.062+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Notify disconnected event to listeners
+2026-07-13T19:31:14.065+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] DisConnected,reset listen context
+2026-07-13T19:31:14.067+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] DisConnected,reset  fuzzy watch consistence status
+2026-07-13T19:31:14.069+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] com.alibaba.nacos.common.remote.client   : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Notify connected event to listeners.
+2026-07-13T19:31:14.071+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Connected,notify listen context...
+2026-07-13T19:31:14.079+08:00  INFO 22608 --- [couponkill-user-service] [remote.worker.0] c.a.n.client.config.impl.ClientWorker    : [5fb43448-6e86-4fa8-b24f-63946da47b77_config-0] Connected,notify fuzzy listen context...
+2026-07-13T19:31:24.541+08:00  WARN 22608 --- [couponkill-user-service] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=20h18m43s886ms48µs500ns).
+2026-07-13T19:31:32.787+08:00  WARN 22608 --- [couponkill-user-service] [l-2:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Thread starvation or clock leap detected (housekeeper delta=20h18m51s664ms85µs400ns).
+2026-07-13T19:31:33.876+08:00  WARN 22608 --- [couponkill-user-service] [l-3:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=20h18m51s664ms174µs300ns).
+2026-07-13T21:56:24.848+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-388] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:24.938+08:00 ERROR 22608 --- [couponkill-user-service] [cat-handler-388] c.a.s.c.e.GlobalExceptionHandler         : unexpected error
+
+org.springframework.web.servlet.resource.NoResourceFoundException: No static resource  for request '/'.
+	at org.springframework.web.servlet.resource.ResourceHttpRequestHandler.handleRequest(ResourceHttpRequestHandler.java:527) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter.handle(HttpRequestHandlerAdapter.java:50) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T21:56:45.245+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-389] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:45.280+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-389] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T21:56:45.326+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-389] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T21:56:45.394+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-389] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T21:56:45.613+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-390] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:45.616+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-390] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T21:56:45.617+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-390] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T21:56:45.626+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-390] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T21:56:45.713+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-391] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:45.715+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-391] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T21:56:45.717+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-391] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T21:56:45.722+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-391] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T21:56:56.465+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-393] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:56.468+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-393] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T21:56:56.470+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-393] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T21:56:56.478+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-393] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T21:56:56.553+08:00  WARN 22608 --- [couponkill-user-service] [cat-handler-393] c.a.s.c.e.GlobalExceptionHandler         : business error
+
+com.aliyun.seckill.common.exception.BusinessException: 密码错误
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl.login(UserServiceImpl.java:137) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl$$SpringCGLIB$$0.login(<generated>) ~[!/:na]
+	at com.aliyun.seckill.couponkilluserservice.controller.UserController.login(UserController.java:33) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T21:56:56.706+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-394] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:56:56.716+08:00 ERROR 22608 --- [couponkill-user-service] [cat-handler-394] c.a.s.c.e.GlobalExceptionHandler         : unexpected error
+
+org.springframework.web.bind.MissingServletRequestParameterException: Required request parameter 'username' for method parameter type String is not present
+	at org.springframework.web.method.annotation.RequestParamMethodArgumentResolver.handleMissingValueInternal(RequestParamMethodArgumentResolver.java:219) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.annotation.RequestParamMethodArgumentResolver.handleMissingValue(RequestParamMethodArgumentResolver.java:195) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:123) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T21:57:17.937+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-396] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:57:17.939+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-396] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T21:57:17.941+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-396] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T21:57:17.949+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-396] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T21:57:18.003+08:00  WARN 22608 --- [couponkill-user-service] [cat-handler-396] c.a.s.c.e.GlobalExceptionHandler         : business error
+
+com.aliyun.seckill.common.exception.BusinessException: 密码错误
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl.login(UserServiceImpl.java:137) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl$$SpringCGLIB$$0.login(<generated>) ~[!/:na]
+	at com.aliyun.seckill.couponkilluserservice.controller.UserController.login(UserController.java:33) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T21:57:18.097+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-397] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T21:57:18.100+08:00 ERROR 22608 --- [couponkill-user-service] [cat-handler-397] c.a.s.c.e.GlobalExceptionHandler         : unexpected error
+
+org.springframework.web.bind.MissingServletRequestParameterException: Required request parameter 'username' for method parameter type String is not present
+	at org.springframework.web.method.annotation.RequestParamMethodArgumentResolver.handleMissingValueInternal(RequestParamMethodArgumentResolver.java:219) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.annotation.RequestParamMethodArgumentResolver.handleMissingValue(RequestParamMethodArgumentResolver.java:195) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:123) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T22:00:12.973+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-399] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:00:12.975+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-399] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T22:00:12.977+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-399] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T22:00:12.986+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-399] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T22:00:13.058+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-400] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:00:13.061+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-400] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T22:00:13.063+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-400] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T22:00:13.067+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-400] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T22:00:13.119+08:00  WARN 22608 --- [couponkill-user-service] [cat-handler-400] c.a.s.c.e.GlobalExceptionHandler         : business error
+
+com.aliyun.seckill.common.exception.BusinessException: 密码错误
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl.login(UserServiceImpl.java:137) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+	at com.aliyun.seckill.couponkilluserservice.service.Impl.UserServiceImpl$$SpringCGLIB$$0.login(<generated>) ~[!/:na]
+	at com.aliyun.seckill.couponkilluserservice.controller.UserController.login(UserController.java:33) ~[!/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar!/:na]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.lambda$doFilterInternal$0(UserContextFilter.java:43) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.runWithoutScope(ScopedValueContainer.java:112) ~[na:na]
+	at java.base/jdk.internal.vm.ScopedValueContainer.run(ScopedValueContainer.java:98) ~[na:na]
+	at java.base/java.lang.ScopedValue$Carrier.run(ScopedValue.java:466) ~[na:na]
+	at com.aliyun.seckill.common.filter.UserContextFilter.doFilterInternal(UserContextFilter.java:41) ~[couponkill-common-1.0-SNAPSHOT.jar!/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar!/:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar!/:na]
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:460) ~[na:na]
+
+2026-07-13T22:00:22.983+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-402] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:00:22.985+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-402] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T22:00:22.986+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-402] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T22:00:22.992+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-402] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T22:00:23.092+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-403] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:00:23.094+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-403] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T22:00:23.096+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-403] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T22:00:23.100+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-403] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-13T22:00:23.280+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-404] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:00:23.283+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-404] c.a.s.c.mapper.UserMapper.selectById     : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE id = ?
+2026-07-13T22:00:23.290+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-404] c.a.s.c.mapper.UserMapper.selectById     : ==> Parameters: 10000(Long)
+2026-07-13T22:00:23.371+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-404] c.a.s.c.mapper.UserMapper.selectById     : <==      Total: 1
+2026-07-13T22:03:10.734+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-406] c.a.s.c.i.UserContextInterceptor         : Processing request with UserContextInterceptor
+2026-07-13T22:03:10.737+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-406] c.a.s.c.m.UserMapper.selectByUsername    : ==>  Preparing: SELECT id, username, password, phone, email, status, create_time, update_time, last_active_time FROM "user" WHERE username = ?
+2026-07-13T22:03:10.738+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-406] c.a.s.c.m.UserMapper.selectByUsername    : ==> Parameters: demo(String)
+2026-07-13T22:03:10.747+08:00 DEBUG 22608 --- [couponkill-user-service] [cat-handler-406] c.a.s.c.m.UserMapper.selectByUsername    : <==      Total: 1
+2026-07-14T11:05:46.904+08:00  WARN 22608 --- [couponkill-user-service] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10h53m21s608ms428µs700ns).
+2026-07-14T11:05:47.985+08:00  INFO 22608 --- [couponkill-user-service] [or-127.0.0.1-63] com.alibaba.nacos.common.remote.client   : [345282e8-998d-4bd1-828b-ba548827d9a3] Receive server push request, request = ClientDetectionRequest, requestId = 61
+2026-07-14T11:05:47.985+08:00  INFO 22608 --- [couponkill-user-service] [or-127.0.0.1-63] com.alibaba.nacos.common.remote.client   : [345282e8-998d-4bd1-828b-ba548827d9a3] Ack server push request, request = ClientDetectionRequest, requestId = 61
+2026-07-14T11:06:07.890+08:00  WARN 22608 --- [couponkill-user-service] [l-2:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Thread starvation or clock leap detected (housekeeper delta=10h53m33s640ms200µs500ns).
+2026-07-14T11:06:08.155+08:00  WARN 22608 --- [couponkill-user-service] [l-3:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=10h53m33s640ms269µs500ns).

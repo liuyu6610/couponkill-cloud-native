@@ -377,3 +377,18 @@ props:
 2026-07-12T22:59:51.856+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-40] c.a.s.c.controller.CouponController      : 仅扣 DB 秒杀库存: id=1001
 2026-07-12T22:59:51.874+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-40] c.a.s.c.service.Impl.CouponServiceImpl   : 成功扣减优惠券分片 4 的库存, updateRedis=false
 2026-07-12T22:59:51.879+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-41] c.a.s.c.controller.CouponController      : 根据ID查询优惠券: id=1001
+2026-07-13T19:31:13.748+08:00  INFO 58640 --- [couponkill-coupon-service] [or-127.0.0.1-41] com.alibaba.nacos.common.remote.client   : [82dec30f-6455-43b9-ba49-5401c27507e0_config-0] Receive server push request, request = ClientDetectionRequest, requestId = 52
+2026-07-13T19:31:13.748+08:00  INFO 58640 --- [couponkill-coupon-service] [or-127.0.0.1-50] com.alibaba.nacos.common.remote.client   : [c4ed46ed-7cf6-41c5-bbb7-66ac9135ae9b_config-0] Receive server push request, request = ClientDetectionRequest, requestId = 51
+2026-07-13T19:31:13.782+08:00  INFO 58640 --- [couponkill-coupon-service] [or-127.0.0.1-41] com.alibaba.nacos.common.remote.client   : [82dec30f-6455-43b9-ba49-5401c27507e0_config-0] Ack server push request, request = ClientDetectionRequest, requestId = 52
+2026-07-13T19:31:13.846+08:00  INFO 58640 --- [couponkill-coupon-service] [or-127.0.0.1-50] com.alibaba.nacos.common.remote.client   : [c4ed46ed-7cf6-41c5-bbb7-66ac9135ae9b_config-0] Ack server push request, request = ClientDetectionRequest, requestId = 51
+2026-07-13T19:31:15.098+08:00  WARN 58640 --- [couponkill-coupon-service] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=20h18m27s202ms909µs400ns).
+2026-07-13T19:31:38.286+08:00  WARN 58640 --- [couponkill-coupon-service] [l-2:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Thread starvation or clock leap detected (housekeeper delta=20h18m50s19ms389µs600ns).
+2026-07-13T19:31:39.434+08:00  WARN 58640 --- [couponkill-coupon-service] [l-3:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=20h18m50s18ms995µs900ns).
+2026-07-13T22:03:13.710+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-43] c.a.s.c.controller.CouponController      : 查询可用优惠券列表
+2026-07-13T22:03:28.403+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-45] c.a.s.c.controller.CouponController      : 查询可用优惠券列表
+2026-07-13T22:03:30.191+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-46] c.a.s.c.controller.CouponController      : 查询可用优惠券列表
+2026-07-13T22:39:03.929+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-48] c.a.s.c.controller.CouponController      : 查询可用优惠券列表
+2026-07-13T22:40:37.071+08:00  INFO 58640 --- [couponkill-coupon-service] [mcat-handler-50] c.a.s.c.controller.CouponController      : 查询可用优惠券列表
+2026-07-14T11:05:47.333+08:00  WARN 58640 --- [couponkill-coupon-service] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10h53m31s576ms243µs300ns).
+2026-07-14T11:06:12.581+08:00  WARN 58640 --- [couponkill-coupon-service] [l-2:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Thread starvation or clock leap detected (housekeeper delta=10h53m33s640ms252µs600ns).
+2026-07-14T11:06:13.666+08:00  WARN 58640 --- [couponkill-coupon-service] [l-3:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Thread starvation or clock leap detected (housekeeper delta=10h53m33s640ms952µs800ns).

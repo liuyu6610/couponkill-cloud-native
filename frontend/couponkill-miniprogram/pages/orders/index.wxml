@@ -1,0 +1,19 @@
+<view class="page">
+  <view wx:if="{{isLoading && orders.length===0}}" class="hint">加载中...</view>
+  <block wx:for="{{orders}}" wx:key="id">
+    <view class="card" data-id="{{item.id}}" bindtap="goToOrderDetail">
+      <view class="row">
+        <text class="id">订单 {{item.id}}</text>
+        <text class="status">{{item.statusText}}</text>
+      </view>
+      <view class="meta">券ID {{item.couponId}} · 用户 {{item.userId}}</view>
+      <button
+        wx:if="{{item.status==1}}"
+        size="mini"
+        catchtap="cancelOrder"
+        data-id="{{item.id}}"
+      >取消</button>
+    </view>
+  </block>
+  <view wx:if="{{!isLoading && orders.length===0}}" class="hint">暂无订单</view>
+</view>
