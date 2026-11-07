@@ -1,0 +1,162 @@
+# sample/ops_v1_seckill.yaml
+# 示例 CR：中间件与应用侧均为 PostgreSQL（非 MySQL）。
+apiVersion: ops.couponkill.io/v1
+kind: Seckill
+metadata:
+  name: couponkill-demo
+  namespace: default
+spec:
+  services:
+    goService:
+      enabled: true
+      image: "go:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8090
+          targetPort: 8090
+          protocol: TCP
+      env:
+        - name: REDIS_ADDR
+          value: "redis:6379"
+        # 与 charts/couponkill deploy-go 对齐：POSTGRES_DSN（libpq 风格）
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: couponkill-app-secrets
+              key: postgres-password
+
+    couponService:
+      enabled: true
+      image: "coupon:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "250m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8081
+          targetPort: 8081
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/coupon_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: couponkill-app-secrets
+              key: postgres-password
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+
+    orderService:
+      enabled: true
+      image: "order:latest"
+      replicas: 2
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "250m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8082
+          targetPort: 8082
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/order_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: couponkill-app-secrets
+              key: postgres-password
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+
+    userService:
+      enabled: true
+      image: "user:latest"
+      replicas: 1
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+      ports:
+        - name: http
+          port: 8083
+          targetPort: 8083
+          protocol: TCP
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/user_db_0?sslmode=disable"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: couponkill-app-secrets
+              key: postgres-password
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
+
+    gatewayService:
+      enabled: true
+      image: "gateway:latest"
+      replicas: 1
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+          protocol: TCP
+
+  scaling:
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    keda:
+      enabled: true
+      kafkaScaler:
+        bootstrapServers: "broker:9092"
+        consumerGroup: "go-dispatcher"
+        topic: "seckill_order_create"
+        lagThreshold: "100"
+
+  monitoring:
+    enabled: true
+    prometheusEnabled: true
+    grafanaEnabled: true
