@@ -1,0 +1,22 @@
+# connector 访问的外部电商平台开放接口（HTTPS）。
+# 默认的出站策略是 ALLOW_ANY，不加 ServiceEntry 也能通；加上它是为了让这些外部调用出现在网格指标/日志里，
+# 并且在把 outboundTrafficPolicy 收紧为 REGISTRY_ONLY 之后仍然可用。
+# 主机名要与 connector 各平台适配器实际使用的 base URL 保持一致（见 internal/connector 的 README）。
+# 托管的 PostgreSQL / Redis / Kafka 若要纳入网格出站控制，也在这里仿照添加对应主机与端口（TCP）。
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-platform-apis
+  namespace: couponkill
+spec:
+  hosts:
+    - api.jd.com
+    - gw-api.pinduoduo.com
+    - eco.taobao.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS
+  exportTo: ["."]

@@ -1,0 +1,160 @@
+{{- /*
+NetworkPolicy：default-deny（入站 + 出站），再按需放行。
+  * 同命名空间内互通（服务之间、服务到 PostgreSQL / Redis / Kafka）；
+  * 集群 DNS；
+  * 只有 gateway 接受入口控制器命名空间的流量——业务服务不对外，也没有别的入口；
+  * monitoring.enabled=true 时放行 Prometheus 抓取 /metrics；
+  * istio.enabled=true 时放行 sidecar 到控制面（istio-system）；
+  * connector 访问外部电商平台（HTTPS）。
+外部 PostgreSQL / Redis / Kafka（*.enabled=false）用 networkPolicy.extraEgress 放行。
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $np := .Values.networkPolicy }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+{{- if $np.ingressNamespaces }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.services.gateway.name }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        {{- range $np.ingressNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . }}
+        {{- end }}
+      ports:
+        - {protocol: TCP, port: {{ int .Values.services.gateway.port }}}
+{{- end }}
+{{- if and .Values.monitoring.enabled $np.monitoringNamespace }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: couponkill
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.monitoringNamespace }}
+      ports:
+        {{- range $svcKey := splitList " " (include "couponkill.serviceKeys" .) }}
+        - {protocol: TCP, port: {{ int (index $.Values.services $svcKey).port }}}
+        {{- end }}
+{{- end }}
+{{- if .Values.istio.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-istio-control-plane
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+{{- end }}
+{{- if $np.connectorEgress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-connector-egress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.services.connector.name }}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        {{- range $np.connectorEgress.ports }}
+        - {protocol: TCP, port: {{ int . }}}
+        {{- end }}
+{{- end }}
+{{- if $np.extraIngress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-configured-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+  ingress:
+    {{- toYaml $np.extraIngress | nindent 4 }}
+{{- end }}
+{{- if $np.extraEgress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-configured-egress
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    {{- toYaml $np.extraEgress | nindent 4 }}
+{{- end }}
+{{- end }}

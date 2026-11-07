@@ -1,0 +1,163 @@
+{{- /*
+可选依赖：集群内单节点 Kafka（KRaft，无 ZooKeeper，kafka.enabled=true）。
+单节点：broker 与 controller 同进程，复制因子必须是 1。需要多节点/高可用请使用托管 Kafka
+（kafka.enabled=false + kafka.brokers）。
+*/ -}}
+{{- if .Values.kafka.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $k := .Values.kafka }}
+{{- $name := $k.name }}
+---
+# StatefulSet 的 governing Service：给 Pod 稳定 DNS（controller quorum 与 advertised listener 用）
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-headless
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $name) | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: plaintext
+      port: {{ int $k.port }}
+      targetPort: plaintext
+    - name: controller
+      port: 9093
+      targetPort: controller
+---
+# 应用的 bootstrap 地址：{{ $name }}:{{ int $k.port }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $name) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: plaintext
+      port: {{ int $k.port }}
+      targetPort: plaintext
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $name) | nindent 4 }}
+spec:
+  serviceName: {{ $name }}-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "couponkill.infraLabels" (list $ $name) | nindent 8 }}
+      annotations:
+        # 数据库 / 缓存 / 消息队列留在网格之外：TCP 协议不需要 L7 能力，也避免 sidecar 影响 Kafka 的 advertised listener；
+        # 访问控制由 NetworkPolicy 负责（k8s-istio 的 STRICT mTLS 只作用于带 sidecar 的 Pod）
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: {{ include "couponkill.infraServiceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      # apache/kafka 镜像以 uid 1000（appuser）运行
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kafka
+          image: "{{ $k.image.repository }}:{{ $k.image.tag }}"
+          imagePullPolicy: {{ $k.image.pullPolicy | default "IfNotPresent" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: plaintext
+              containerPort: 9092
+            - name: controller
+              containerPort: 9093
+          env:
+            - name: CLUSTER_ID
+              value: {{ $k.clusterId | quote }}
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "1@{{ $name }}-0.{{ $name }}-headless.{{ $ns }}.svc.cluster.local:9093"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://{{ $name }}-0.{{ $name }}-headless.{{ $ns }}.svc.cluster.local:{{ int $k.port }}"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "PLAINTEXT"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: {{ int $k.replicationFactor | quote }}
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: {{ int $k.replicationFactor | quote }}
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
+            - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+              value: "0"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: {{ $k.autoCreateTopics | toString | quote }}
+          startupProbe:
+            tcpSocket:
+              port: plaintext
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: plaintext
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: plaintext
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml $k.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/kafka/data
+      {{- if not $k.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if $k.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $k.persistence.storageClass }}
+        storageClassName: {{ $k.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $k.persistence.size | quote }}
+  {{- end }}
+{{- end }}

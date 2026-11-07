@@ -1,0 +1,218 @@
+{{- /*
+五个 Go 服务：ServiceAccount、ConfigMap、Deployment、Service、HPA、PDB，以及可选的金丝雀 Deployment。
+五个服务结构完全相同，只有端口、资源与注入的配置组（couponkill.caps）不同，所以用一个循环渲染。
+*/ -}}
+{{- include "couponkill.validate" . -}}
+{{- $ns := include "couponkill.ns" . -}}
+{{- $kedaOrder := .Values.keda.enabled -}}
+{{- range $key := splitList " " (include "couponkill.serviceKeys" .) }}
+{{- $svc := index $.Values.services $key }}
+{{- $caps := splitList " " (include "couponkill.caps" $key) }}
+{{- $managed := or $svc.autoscaling.enabled (and (eq $key "order") $kedaOrder) }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key "stable") | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $svc.name }}-config
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key "stable") | nindent 4 }}
+data:
+  {{- include "couponkill.configData" (list $ $key) | nindent 2 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key "stable") | nindent 4 }}
+    couponkill.io/scrape: "true"
+spec:
+  type: {{ ($svc.service | default dict).type | default "ClusterIP" }}
+  # 稳定版与金丝雀版（若有）都带 app 标签，Service 只按 app 选择
+  selector:
+    app: {{ $svc.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+{{- range $variant := list "stable" "canary" }}
+{{- $canary := dict }}
+{{- if eq $variant "canary" }}{{ $canary = (index $.Values.canary $key | default dict) }}{{ end }}
+{{- if or (eq $variant "stable") $canary.enabled }}
+{{- $tagArgs := list $ $key }}
+{{- if eq $variant "canary" }}{{ $tagArgs = list $ $key ($canary.tag | default "canary") }}{{ end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ if eq $variant "canary" }}{{ $svc.name }}-canary{{ else }}{{ $svc.name }}{{ end }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key $variant) | nindent 4 }}
+spec:
+  {{- if eq $variant "canary" }}
+  replicas: {{ int ($canary.replicas | default 1) }}
+  {{- else if not $managed }}
+  replicas: {{ int $svc.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+      version: {{ $variant }}
+  template:
+    metadata:
+      labels:
+        {{- include "couponkill.labels" (list $ $key $variant) | nindent 8 }}
+      annotations:
+        # ConfigMap 变化时滚动重启（Secret 不在其内：轮换 Secret 后请 kubectl rollout restart）
+        checksum/config: {{ include "couponkill.configData" (list $ $key) | sha256sum }}
+        {{- if and $.Values.monitoring.enabled $.Values.monitoring.annotations.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $svc.port | quote }}
+        prometheus.io/path: /metrics
+        {{- end }}
+    spec:
+      serviceAccountName: {{ $svc.name }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ int $.Values.terminationGracePeriodSeconds }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- with $svc.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $svc.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $svc.affinity }}
+      affinity:
+        {{- toYaml $svc.affinity | nindent 8 }}
+      {{- else if $.Values.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: {{ $svc.name }}
+      {{- end }}
+      {{- with $svc.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: app
+          image: {{ include "couponkill.image" $tagArgs | quote }}
+          imagePullPolicy: {{ include "couponkill.pullPolicy" $tagArgs }}
+          {{- with $.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ int $svc.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ $svc.name }}-config
+          env:
+            {{- include "couponkill.serviceSecretEnv" (list $ $key) | trim | nindent 12 }}
+            {{- with $svc.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: {{ int $.Values.probes.startup.periodSeconds }}
+            failureThreshold: {{ int $.Values.probes.startup.failureThreshold }}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: {{ int $.Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ int $.Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ int $.Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: {{ int $.Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ int $.Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ int $.Values.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          # 根文件系统只读，给 Go 运行时/第三方库留一个可写临时目录
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+{{- end }}
+{{- end }}
+{{- if and $svc.autoscaling.enabled (not (and (eq $key "order") $kedaOrder)) }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key "stable") | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $svc.name }}
+  minReplicas: {{ int $svc.autoscaling.minReplicas }}
+  maxReplicas: {{ int $svc.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ int $svc.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
+{{- if $.Values.pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list $ $key "stable") | nindent 4 }}
+spec:
+  maxUnavailable: {{ $.Values.pdb.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+{{- end }}
+{{- end }}

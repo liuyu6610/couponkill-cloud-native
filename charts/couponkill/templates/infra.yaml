@@ -1,0 +1,15 @@
+{{- /*
+基础设施 / 初始化 Job 共用的 ServiceAccount（不挂 API Token）。
+k8s-istio 的授权策略按它的 principal 放行，所以不借用业务服务的身份。
+*/ -}}
+{{- if or .Values.postgres.enabled .Values.redis.enabled .Values.kafka.enabled .Values.kafka.topicInit.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "couponkill.infraServiceAccountName" . }}
+  namespace: {{ include "couponkill.ns" . }}
+  labels:
+    app.kubernetes.io/part-of: couponkill
+automountServiceAccountToken: false
+{{- end }}

@@ -1,0 +1,51 @@
+# =============================================================================
+# 金丝雀 + KEDA 覆盖（可独立使用，也可叠加在 values-prod.yaml 之后）
+#
+#   # 稳定版保持 STABLE_TAG，金丝雀版换成新构建
+#   helm upgrade --install couponkill charts/couponkill -n couponkill \
+#     -f charts/couponkill/values-prod.yaml -f charts/couponkill/values.canary-keda.yaml \
+#     --set image.tag=<STABLE_TAG> --set canary.coupon.tag=<新构建号> --set canary.order.tag=<新构建号>
+#
+# 做法：给 coupon / order 额外起一个 version=canary 的 Deployment，与稳定版挂在同一个 Service 下
+# （默认按副本比例分流）；Istio 开启后再由 <svc>-canary-vs 按下面的权重精确切分（stable = 100 - weightCanary）。
+# 金丝雀 Pod 与稳定版共用同一份 ConfigMap / Secret 与同一个数据库，所以新版本必须向后兼容现有 schema
+# 与 Kafka 消息格式。金丝雀验证通过后：把 image.tag 改成新构建号，并去掉本文件即可全量。
+#
+# 前置条件：集群已装 Istio 与 KEDA。
+# =============================================================================
+
+canary:
+  coupon:
+    enabled: true
+    # 金丝雀镜像标签（空 = canary）；流水线用 --set canary.coupon.tag=<构建号> 指定
+    tag: ""
+    replicas: 1
+    # 网格内金丝雀流量百分比
+    weightCanary: 10
+  order:
+    enabled: true
+    tag: ""
+    replicas: 1
+    weightCanary: 5
+
+# KEDA 按 seckill_order_create 的消费积压扩缩 order（消费组 seckill-order-create-group）。
+# maxReplicaCount 不得超过主题分区数（kafka.topics.seckillOrderCreate.partitions，默认 16）。
+keda:
+  enabled: true
+  pollingInterval: 15
+  cooldownPeriod: 120
+  order:
+    minReplicaCount: 2
+    maxReplicaCount: 16
+    lagThreshold: "100"
+
+istio:
+  enabled: true
+  gateway:
+    host: couponkill.example.com
+    port: 80
+
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true

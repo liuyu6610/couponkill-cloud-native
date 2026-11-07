@@ -1,0 +1,13 @@
+# Sidecar：限制每个代理需要知道的服务范围，减少 xDS 配置体积与推送开销。
+# couponkill 命名空间里的服务只需要访问同命名空间的服务（含 PostgreSQL / Redis / Kafka）和 istio-system。
+# 入站不需要配置：Service 端口随 Pod 容器端口自动生成监听。
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: couponkill
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"

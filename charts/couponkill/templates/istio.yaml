@@ -1,0 +1,141 @@
+{{- /*
+Istio（istio.enabled=true，需集群已装 Istio；命名空间自行打 istio-injection=enabled 标签）。
+
+安全约束：外部流量只能进入 gateway 服务（JWT 校验、身份头签名、/internal 拦截都在它里面）。
+  * 入口 VirtualService 只放行 istio.virtualService.exposePrefixes（默认 /api/ 与 /healthz），其余一律 404，
+    所以 /metrics、/readyz、/internal 不会从入口出去；
+  * user / coupon / order / connector 没有任何入口路由，只有网格内部流量；
+    即便有人绕过网关直连，它们也只信带有效 X-Gateway-Sig 的身份头（见设计 §5）；
+  * 每个服务一条 DestinationRule（一个 host 只能有一条）：mTLS + 连接池 + 熔断 + stable/canary 子集；
+  * 金丝雀 VirtualService 只作用于网格内部（不绑定入口 Gateway）。
+授权策略与 PeerAuthentication 在仓库 k8s-istio/。
+*/ -}}
+{{- if .Values.istio.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $dr := .Values.istio.destinationRule }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Values.istio.gateway.name }}
+  namespace: {{ $ns }}
+spec:
+  selector:
+    {{- toYaml .Values.istio.gateway.selector | nindent 4 }}
+  servers:
+    - port:
+        number: {{ int .Values.istio.gateway.port }}
+        name: http
+        protocol: HTTP
+      hosts:
+        - {{ .Values.istio.gateway.host | quote }}
+      {{- if .Values.istio.gateway.tls.credentialName }}
+      # 配置了证书后，明文端口只做跳转
+      tls:
+        httpsRedirect: true
+      {{- end }}
+    {{- if .Values.istio.gateway.tls.credentialName }}
+    - port:
+        number: {{ int .Values.istio.gateway.tls.port }}
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        # 证书 Secret 必须与入口网关 Pod 在同一命名空间（通常是 istio-system）
+        credentialName: {{ .Values.istio.gateway.tls.credentialName | quote }}
+      hosts:
+        - {{ .Values.istio.gateway.host | quote }}
+    {{- end }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: couponkill-vs
+  namespace: {{ $ns }}
+spec:
+  hosts:
+    - {{ .Values.istio.gateway.host | quote }}
+  gateways:
+    - {{ .Values.istio.gateway.name }}
+  http:
+    - name: gateway-route
+      match:
+        {{- range .Values.istio.virtualService.exposePrefixes }}
+        - uri:
+            {{- if eq (trimSuffix "/" .) "/healthz" }}
+            exact: {{ . | quote }}
+            {{- else }}
+            prefix: {{ . | quote }}
+            {{- end }}
+        {{- end }}
+      route:
+        - destination:
+            host: {{ .Values.services.gateway.name }}.{{ $ns }}.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: {{ int .Values.istio.virtualService.retries.attempts }}
+        perTryTimeout: {{ .Values.istio.virtualService.retries.perTryTimeout }}
+        retryOn: {{ .Values.istio.virtualService.retries.retryOn | quote }}
+      timeout: {{ .Values.istio.virtualService.timeout }}
+    - name: everything-else-404
+      directResponse:
+        status: 404
+{{- range $key := splitList " " (include "couponkill.serviceKeys" .) }}
+{{- $svc := index $.Values.services $key }}
+---
+# 每个 host 只能有一条 DestinationRule：连接池 / 熔断 / mTLS 与 stable、canary 子集合并在这里
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ $svc.name }}-dr
+  namespace: {{ $ns }}
+spec:
+  host: {{ $svc.name }}.{{ $ns }}.svc.cluster.local
+  subsets:
+    - name: stable
+      labels: {version: stable}
+    - name: canary
+      labels: {version: canary}
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ int $dr.connectionPool.tcp.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ int $dr.connectionPool.http.http1MaxPendingRequests }}
+        maxRequestsPerConnection: {{ int $dr.connectionPool.http.maxRequestsPerConnection }}
+    outlierDetection:
+      consecutive5xxErrors: {{ int $dr.outlierDetection.consecutiveErrors }}
+      interval: {{ $dr.outlierDetection.interval }}
+      baseEjectionTime: {{ $dr.outlierDetection.baseEjectionTime }}
+      maxEjectionPercent: {{ int $dr.outlierDetection.maxEjectionPercent }}
+    tls:
+      mode: ISTIO_MUTUAL
+    loadBalancer:
+      simple: LEAST_REQUEST
+{{- end }}
+{{- /* 金丝雀：stable 权重 = 100 - canary 权重，合计恒为 100；canary 子集需要 version=canary 的 Pod（services.yaml 渲染）。 */}}
+{{- range $key := list "coupon" "order" }}
+{{- $canary := index $.Values.canary $key | default dict }}
+{{- if $canary.enabled }}
+{{- $cw := int ($canary.weightCanary | default 0) }}
+{{- $host := (index $.Values.services $key).name }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $host }}-canary-vs
+  namespace: {{ $ns }}
+spec:
+  hosts:
+    - {{ $host }}.{{ $ns }}.svc.cluster.local
+  http:
+    - name: {{ $key }}-canary-route
+      route:
+        - destination: {host: {{ $host }}.{{ $ns }}.svc.cluster.local, subset: stable, port: {number: 80}}
+          weight: {{ sub 100 $cw }}
+        - destination: {host: {{ $host }}.{{ $ns }}.svc.cluster.local, subset: canary, port: {number: 80}}
+          weight: {{ $cw }}
+{{- end }}
+{{- end }}
+{{- end }}

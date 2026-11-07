@@ -1,0 +1,119 @@
+{{- /*
+可选依赖：集群内单节点 Redis 7（redis.enabled=true）。
+  * 秒杀库存计数器（ck:stock:*）只存在于 Redis，所以默认 AOF + 持久卷；
+  * maxmemory-policy 固定 noeviction：库存键、占位标记被淘汰会直接造成超卖/漏卖；
+  * redis.auth.enabled=true 时用 Secret 里的口令做 requirepass（REDISCLI_AUTH 让探针免带参数）。
+*/ -}}
+{{- if .Values.redis.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $r := .Values.redis }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $r.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $r.name) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $r.name }}
+  ports:
+    - name: redis
+      port: {{ int $r.port }}
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $r.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $r.name) | nindent 4 }}
+spec:
+  serviceName: {{ $r.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $r.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "couponkill.infraLabels" (list $ $r.name) | nindent 8 }}
+      annotations:
+        # 数据库 / 缓存 / 消息队列留在网格之外：TCP 协议不需要 L7 能力，也避免 sidecar 影响 Kafka 的 advertised listener；
+        # 访问控制由 NetworkPolicy 负责（k8s-istio 的 STRICT mTLS 只作用于带 sidecar 的 Pod）
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: {{ include "couponkill.infraServiceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: "{{ $r.image.repository }}:{{ $r.image.tag }}"
+          imagePullPolicy: {{ $r.image.pullPolicy | default "IfNotPresent" }}
+          command: ["redis-server"]
+          args:
+            - --appendonly
+            - {{ ternary "yes" "no" $r.persistence.enabled | quote }}
+            - --maxmemory-policy
+            - noeviction
+            {{- if $r.auth.enabled }}
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: redis
+              containerPort: 6379
+          {{- if $r.auth.enabled }}
+          env:
+            {{- include "couponkill.secretEnv" (list . "REDIS_PASSWORD" "redisPassword") | nindent 12 }}
+            {{- include "couponkill.secretEnv" (list . "REDISCLI_AUTH" "redisPassword") | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml $r.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      {{- if not $r.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if $r.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $r.persistence.storageClass }}
+        storageClassName: {{ $r.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $r.persistence.size | quote }}
+  {{- end }}
+{{- end }}

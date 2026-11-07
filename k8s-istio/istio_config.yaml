@@ -1,0 +1,10 @@
+# couponkill 命名空间并启用 Istio sidecar 自动注入。
+# Helm 的 --create-namespace 会先建好命名空间，这里只是补标签，所以用 kubectl label 更直接：
+#   kubectl label namespace couponkill istio-injection=enabled --overwrite
+# 打标签之后已经运行的 Pod 需要滚动重启才会注入 sidecar：kubectl -n couponkill rollout restart deploy
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: couponkill
+  labels:
+    istio-injection: enabled

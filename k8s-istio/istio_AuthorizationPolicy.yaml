@@ -1,0 +1,157 @@
+# 授权策略：五个业务服务各自的 ServiceAccount（= Deployment 名，见 charts/couponkill）只被允许调用该调用的东西。
+#
+# 调用关系（设计文档 §5、§10）：
+#   入口网关 → gateway                      （外部流量的唯一入口）
+#   gateway   → user / coupon / order / connector   （反向代理；永远不会去碰 /internal/**）
+#   order     → coupon   /internal/v1/stock/deduct|release、/internal/v1/coupons/{id}
+#   coupon    → order    /internal/v1/orders/grant
+#   connector → coupon   /internal/v1/stock/sync
+#   （user 的 /internal/v1/users/{id} 目前没有任何调用方——internalapi.UserClient 尚未被使用——所以不对任何服务开放；
+#    将来有服务要用它时，在 user-service-policy 里为该服务账户加一条仅限 /internal/v1/users/* 的规则。）
+#
+# 这是在「X-Gateway-Sig 验签 + X-Internal-Token」之上的第三层：即使有人绕过网关、或拿到了内部令牌，
+# 网格层面也只有上面这些来源能到达这些路径。
+#
+# 修改说明：
+#   * 一个工作负载上只要存在 ALLOW 策略，没有命中任何规则的请求一律被拒（RBAC: access denied）；
+#   * 新增调用关系时同时改这里；Pod 用的 ServiceAccount 与 chart 的 services.<svc>.name 一致；
+#   * 前缀 cluster.local 是默认的信任域，换了信任域要同步替换。
+---
+# 入口：只有 Istio 入口网关能访问 gateway 服务
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-gateway
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+---
+# user：只有 gateway 调用它（内部接口 /internal/v1/users/* 暂无调用方，见文件头说明）
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: user-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-user-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-gateway"]
+---
+# coupon：gateway；order 扣减/归还库存与读券；connector 同步库存
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: coupon-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-coupon-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-gateway"]
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-order-service"]
+      to:
+        - operation:
+            paths: ["/internal/v1/stock/*", "/internal/v1/coupons/*"]
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-connector-service"]
+      to:
+        - operation:
+            paths: ["/internal/v1/stock/sync"]
+---
+# order：gateway；coupon 发放（管理员 grant）
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: order-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-order-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-gateway"]
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-coupon-service"]
+      to:
+        - operation:
+            paths: ["/internal/v1/orders/grant"]
+---
+# connector：只有 gateway 调用它（它自己是调用方，没有人通过内部接口调它）
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: connector-service-policy
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app: couponkill-connector-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-gateway"]
+---
+# 纵深防御：gateway 的身份永远不应该访问 /internal/**（网关本身对它返回 404），
+# 万一网关被攻破或路由表出错，网格层面也拒绝。DENY 优先于 ALLOW。
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-internal-from-gateway
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: couponkill
+  action: DENY
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/couponkill/sa/couponkill-gateway"]
+      to:
+        - operation:
+            paths: ["/internal/*"]
+---
+# Prometheus 抓取 /metrics：按来源命名空间放行（不依赖具体的 ServiceAccount 名）。
+# 监控栈不在 monitoring 命名空间时改 namespaces；没有 Prometheus 时可以删掉这条。
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: couponkill
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: couponkill
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces: ["monitoring"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/metrics"]

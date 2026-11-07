@@ -1,0 +1,16 @@
+# couponkill 命名空间的遥测：只记录失败请求（>=400）的访问日志，指标交给 Prometheus。
+# 应用自己的业务指标在各服务的 /metrics（chart 的 monitoring.* 负责抓取），这里只管网格层面的日志。
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: couponkill-telemetry
+  namespace: couponkill
+spec:
+  accessLogging:
+    - providers:
+        - name: envoy
+      filter:
+        expression: response.code >= 400
+  metrics:
+    - providers:
+        - name: prometheus

@@ -1,0 +1,28 @@
+CouponKill 已部署到命名空间 {{ include "couponkill.ns" . }}（config.env={{ .Values.config.env }}）。
+
+服务（Service 80 端口 → 容器 http 端口）：
+{{- range $key := splitList " " (include "couponkill.serviceKeys" .) }}
+{{- $svc := index $.Values.services $key }}
+  {{ $svc.name }}  容器端口 {{ $svc.port }}
+{{- end }}
+
+本机访问网关：
+  kubectl -n {{ include "couponkill.ns" . }} port-forward svc/{{ .Values.services.gateway.name }} 8088:80
+  curl -s http://127.0.0.1:8088/healthz
+
+凭证：
+  Secret 名称 = {{ include "couponkill.appSecretName" . }}（secrets.create={{ .Values.secrets.create }}）
+{{- if .Values.secrets.create }}
+  当前由 chart 生成（仅限开发/演示）。生产请改用预先创建的 Secret：
+{{- end }}
+  kubectl -n {{ include "couponkill.ns" . }} create secret generic {{ include "couponkill.appSecretName" . }} \
+    --from-literal={{ include "couponkill.secretKey" (list . "jwtSecret") }}="$(openssl rand -hex 32)" \
+    --from-literal={{ include "couponkill.secretKey" (list . "internalToken") }}="$(openssl rand -hex 24)" \
+    --from-literal={{ include "couponkill.secretKey" (list . "gatewaySignKey") }}="$(openssl rand -hex 32)" \
+    --from-literal={{ include "couponkill.secretKey" (list . "postgresPassword") }}="$(openssl rand -hex 16)" \
+    --from-literal={{ include "couponkill.secretKey" (list . "redisPassword") }}="$(openssl rand -hex 16)"
+  轮换 Secret 后需要 kubectl rollout restart 才会生效（Secret 内容不参与滚动重启的 checksum）。
+{{- if and .Values.kafka.topicInit.enabled }}
+
+Kafka 主题（{{ .Values.kafka.topics.seckillOrderCreate.name }}、{{ .Values.kafka.topics.deadLetter.name }}）由 post-install/post-upgrade Job 创建。
+{{- end }}

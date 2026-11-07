@@ -1,0 +1,33 @@
+{{- /*
+监控（monitoring.enabled=true）：所有服务在自己的端口上暴露 /metrics（Prometheus 格式，仅集群内）。
+  * Pod 注解 prometheus.io/*：由 services.yaml 渲染（monitoring.annotations.enabled）；
+  * ServiceMonitor（需要 prometheus-operator 的 CRD）：一个对象覆盖五个服务——
+    按 app.kubernetes.io/part-of=couponkill 且 couponkill.io/scrape=true 的 Service 选择，端口名 http。
+*/ -}}
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: couponkill
+  namespace: {{ .Values.monitoring.serviceMonitor.namespace | default $ns }}
+  labels:
+    app.kubernetes.io/part-of: couponkill
+    {{- with .Values.monitoring.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $ns }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: couponkill
+      couponkill.io/scrape: "true"
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+{{- end }}

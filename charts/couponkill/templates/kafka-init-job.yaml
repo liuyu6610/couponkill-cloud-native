@@ -1,0 +1,100 @@
+{{- /*
+Kafka 主题初始化（post-install / post-upgrade Hook）：只建两个主题——
+  seckill_order_create      秒杀入队（分区数 = order 消费者并行度上限，可配置）
+  seckill_order_create_dlt  死信（kafkax 消费重试耗尽后写入）
+已存在的主题只增加分区（Kafka 不允许减少）。其余主题由业务需要时再加，不再预建 Java 时代的
+seckill_order_result / order_created / seckill_compensation。
+
+脚本里的 $(...) 不是 K8s 变量：K8s 只展开已定义的环境变量名，其余原样保留。
+*/ -}}
+{{- if .Values.kafka.topicInit.enabled }}
+{{- $k := .Values.kafka }}
+{{- $name := printf "%s-topic-init" $k.name }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "couponkill.ns" . }}
+  labels:
+    {{- include "couponkill.infraLabels" (list . $name) | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "couponkill.infraLabels" (list . $name) | nindent 8 }}
+      annotations:
+        # Job 不需要网格代理；否则 sidecar 不退出，Job 永远不会 Complete
+        sidecar.istio.io/inject: "false"
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "couponkill.infraServiceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kafka-topics
+          image: "{{ $k.topicInit.image.repository }}:{{ $k.topicInit.image.tag }}"
+          imagePullPolicy: {{ $k.topicInit.image.pullPolicy | default "IfNotPresent" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: KAFKA_BROKER
+              value: {{ include "couponkill.kafkaBrokers" . | quote }}
+            # 形如 <主题>:<分区数>，逗号分隔
+            - name: KAFKA_TOPICS
+              value: {{ printf "%s:%d,%s:%d" $k.topics.seckillOrderCreate.name (int $k.topics.seckillOrderCreate.partitions) $k.topics.deadLetter.name (int $k.topics.deadLetter.partitions) | quote }}
+            - name: KAFKA_REPLICATION_FACTOR
+              value: {{ int $k.replicationFactor | quote }}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -u
+              log() { echo "[kafka-init] $*"; }
+              KT="${KAFKA_TOPICS_BIN:-/opt/kafka/bin/kafka-topics.sh}"
+              if [ ! -x "$KT" ]; then log "找不到 kafka-topics 可执行文件（$KT），请检查 kafka.topicInit.image"; exit 1; fi
+
+              i=0
+              until "$KT" --bootstrap-server "$KAFKA_BROKER" --list >/dev/null 2>&1; do
+                i=$((i + 1))
+                if [ "$i" -ge "${KAFKA_WAIT_TRIES:-150}" ]; then log "Kafka $KAFKA_BROKER 未就绪，退出由 Job 重试"; exit 1; fi
+                log "等待 Kafka 就绪：$KAFKA_BROKER"
+                sleep "${KAFKA_WAIT_SLEEP:-2}"
+              done
+
+              failed=0
+              IFS=',' read -ra TOPICS <<< "$KAFKA_TOPICS"
+              for spec in "${TOPICS[@]}"; do
+                spec=$(echo "$spec" | tr -d '[:space:]')
+                [ -z "$spec" ] && continue
+                topic="${spec%%:*}"
+                partitions="${spec##*:}"
+                if "$KT" --bootstrap-server "$KAFKA_BROKER" --create --if-not-exists \
+                    --topic "$topic" --partitions "$partitions" --replication-factor "$KAFKA_REPLICATION_FACTOR"; then
+                  # 已存在的主题：把分区数调到期望值（只能增加；相等或更少时 broker 拒绝，忽略）
+                  "$KT" --bootstrap-server "$KAFKA_BROKER" --alter --topic "$topic" --partitions "$partitions" >/dev/null 2>&1 \
+                    || log "$topic 分区数保持不变（期望 $partitions）"
+                  log "OK $topic partitions=$partitions rf=$KAFKA_REPLICATION_FACTOR"
+                else
+                  log "创建失败 $topic"
+                  failed=$((failed + 1))
+                fi
+              done
+              "$KT" --bootstrap-server "$KAFKA_BROKER" --list
+              if [ "$failed" -gt 0 ]; then log "$failed 个主题创建失败，退出由 Job 重试"; exit 1; fi
+              log "Kafka 主题初始化完成"
+{{- end }}

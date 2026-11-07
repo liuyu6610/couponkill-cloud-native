@@ -1,0 +1,209 @@
+# =============================================================================
+# CouponKill 本地栈：PostgreSQL 16 + Redis 7 + Kafka（KRaft）；没有 Nacos / ZooKeeper。
+#
+# 只起基础设施（默认，配合 scripts/dev-up.ps1 或 `go run ./cmd/<svc>` 在宿主机跑服务）：
+#   docker compose up -d
+#
+# 整套栈（5 个 Go 服务也进容器，镜像由 build/Dockerfile 构建）：
+#   docker compose --profile app up -d --build
+#
+# 端口（宿主机）：
+#   PostgreSQL 5433（避免与本机 5432 冲突）  Redis 6379  Kafka 9092
+#   gateway 8088  user 8081  coupon 8080  order 8082  connector 8085
+#
+# 配置：全部是 CK_* 环境变量，来自 .env（复制 .env.example，.env 已被 gitignore）；
+#   没有 .env 时用下面写明的开发默认值。服务启动时自己迁移自己的 schema，没有 init SQL。
+# 这里的开发默认密钥只用于本机，CK_ENV=prod 的服务会拒绝它们。
+# =============================================================================
+name: couponkill
+
+x-service-env: &service-env
+  CK_ENV: ${CK_ENV:-dev}
+  CK_LOG_LEVEL: ${CK_LOG_LEVEL:-info}
+  # 容器内用服务名互相访问；宿主机跑服务时用 .env.example 里的 127.0.0.1 地址
+  CK_PG_DSN: ${CK_COMPOSE_PG_DSN:-postgres://couponkill:couponkill@postgres:5432/couponkill?sslmode=disable}
+  CK_REDIS_ADDR: redis:6379
+  CK_REDIS_PASSWORD: ${CK_REDIS_PASSWORD:-}
+  CK_KAFKA_BROKERS: kafka:29092
+  CK_JWT_SECRET: ${CK_JWT_SECRET:-dev-only-jwt-secret-do-not-use-in-prod-0123456789}
+  CK_JWT_ISSUER: ${CK_JWT_ISSUER:-couponkill}
+  CK_JWT_AUDIENCE: ${CK_JWT_AUDIENCE:-couponkill-api}
+  CK_JWT_TTL: ${CK_JWT_TTL:-24h}
+  CK_INTERNAL_TOKEN: ${CK_INTERNAL_TOKEN:-dev-only-internal-token-do-not-use-in-prod}
+  CK_GATEWAY_SIGN_KEY: ${CK_GATEWAY_SIGN_KEY:-dev-only-gateway-sign-key-do-not-use-in-prod-0123456789}
+  CK_USER_URL: http://user:8081
+  CK_COUPON_URL: http://coupon:8080
+  CK_ORDER_URL: http://order:8082
+  CK_CONNECTOR_URL: http://connector:8085
+  CK_SEED_DEMO: ${CK_SEED_DEMO:-true}
+
+x-app-common: &app-common
+  restart: on-failure
+  # 基础设施就绪后再启动；服务自身的 /readyz 由编排层探测（distroless 镜像里没有 shell，无 HEALTHCHECK）
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    kafka-init:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: couponkill-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-couponkill}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-couponkill}
+      POSTGRES_DB: ${POSTGRES_DB:-couponkill}
+    ports:
+      - "5433:5432"
+    volumes:
+      - couponkill-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: couponkill-redis
+    # 库存计数器 ck:stock:* 只在 Redis 里：开 AOF，且绝不淘汰键
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - couponkill-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: couponkill-kafka
+    environment:
+      # KRaft 单节点（无 ZooKeeper）；双 listener：容器互联（kafka:29092）+ 宿主机（localhost:9092）
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:29092,PLAINTEXT_HOST://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      # 主题由 kafka-init 预建（分区数可控），不靠自动创建
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    ports:
+      - "9092:9092"
+    volumes:
+      - couponkill-kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  # 主题初始化：只建两个主题（与 charts/couponkill 的 kafka-topic-init Job 一致）。
+  #   seckill_order_create      秒杀入队，分区数 = order 消费者并行度上限（KAFKA_ORDER_PARTITIONS，默认 16）
+  #   seckill_order_create_dlt  死信，消费重试耗尽后写入
+  kafka-init:
+    image: apache/kafka:3.8.0
+    container_name: couponkill-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      ORDER_PARTITIONS: ${KAFKA_ORDER_PARTITIONS:-16}
+      DLT_PARTITIONS: ${KAFKA_DLT_PARTITIONS:-4}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -eu
+        KT=/opt/kafka/bin/kafka-topics.sh
+        create() {
+          "$$KT" --bootstrap-server kafka:29092 --create --if-not-exists --topic "$$1" --partitions "$$2" --replication-factor 1
+          # 已存在的主题：把分区数调到期望值（只能增加，被拒绝则保持不变）
+          "$$KT" --bootstrap-server kafka:29092 --alter --topic "$$1" --partitions "$$2" >/dev/null 2>&1 || true
+        }
+        create seckill_order_create "$$ORDER_PARTITIONS"
+        create seckill_order_create_dlt "$$DLT_PARTITIONS"
+        echo "kafka topics ready"
+        "$$KT" --bootstrap-server kafka:29092 --list
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # 五个 Go 服务（profile: app）。构建上下文是仓库根目录，Dockerfile 为 build/Dockerfile。
+  # ---------------------------------------------------------------------------
+  gateway:
+    <<: *app-common
+    profiles: ["app"]
+    image: couponkill-gateway:dev
+    build: {context: ., dockerfile: build/Dockerfile, args: {SERVICE: gateway, PORT: "8088"}}
+    container_name: couponkill-gateway
+    environment:
+      <<: *service-env
+      CK_HTTP_PORT: "8088"
+    ports:
+      - "8088:8088"
+
+  user:
+    <<: *app-common
+    profiles: ["app"]
+    image: couponkill-user:dev
+    build: {context: ., dockerfile: build/Dockerfile, args: {SERVICE: user, PORT: "8081"}}
+    container_name: couponkill-user
+    environment:
+      <<: *service-env
+      CK_HTTP_PORT: "8081"
+    ports:
+      - "8081:8081"
+
+  coupon:
+    <<: *app-common
+    profiles: ["app"]
+    image: couponkill-coupon:dev
+    build: {context: ., dockerfile: build/Dockerfile, args: {SERVICE: coupon, PORT: "8080"}}
+    container_name: couponkill-coupon
+    environment:
+      <<: *service-env
+      CK_HTTP_PORT: "8080"
+    ports:
+      - "8080:8080"
+
+  order:
+    <<: *app-common
+    profiles: ["app"]
+    image: couponkill-order:dev
+    build: {context: ., dockerfile: build/Dockerfile, args: {SERVICE: order, PORT: "8082"}}
+    container_name: couponkill-order
+    environment:
+      <<: *service-env
+      CK_HTTP_PORT: "8082"
+    ports:
+      - "8082:8082"
+
+  connector:
+    <<: *app-common
+    profiles: ["app"]
+    image: couponkill-connector:dev
+    build: {context: ., dockerfile: build/Dockerfile, args: {SERVICE: connector, PORT: "8085"}}
+    container_name: couponkill-connector
+    environment:
+      <<: *service-env
+      CK_HTTP_PORT: "8085"
+    ports:
+      - "8085:8085"
+
+volumes:
+  couponkill-pgdata:
+  couponkill-redisdata:
+  couponkill-kafkadata:

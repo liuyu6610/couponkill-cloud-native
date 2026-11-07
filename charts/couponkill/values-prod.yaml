@@ -1,0 +1,111 @@
+﻿# =============================================================================
+# 生产覆盖（叠加在 values.yaml 之上）
+#
+#   helm upgrade --install couponkill charts/couponkill -n couponkill --create-namespace \
+#     -f charts/couponkill/values-prod.yaml --set image.tag=<构建号>
+#
+# 部署前必须先创建 Secret（chart 不为生产生成密钥，secrets.create=true 与 config.env=prod 会渲染失败）：
+#   kubectl -n couponkill create secret generic couponkill-app-secrets \
+#     --from-literal=jwt-secret=... --from-literal=internal-token=... --from-literal=gateway-sign-key=... \
+#     --from-literal=postgres-password=... --from-literal=redis-password=...
+# 详见 charts/couponkill/README.md。
+#
+# 本文件假定的集群前置条件（缺哪个就把对应开关改回 false）：
+#   Istio（istio.enabled）、KEDA（keda.enabled）、prometheus-operator（monitoring.*）、默认 StorageClass。
+# =============================================================================
+
+config:
+  env: prod
+  logLevel: info
+  seedDemo: false
+
+secrets:
+  create: false
+  existingSecret: couponkill-app-secrets
+
+# 镜像标签必须由流水线指定（--set image.tag=<构建号>）：config.env=prod 且 tag 为 latest 时渲染失败。
+
+services:
+  gateway:
+    replicas: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+    resources:
+      requests: {cpu: 250m, memory: 128Mi}
+      limits: {cpu: "2", memory: 384Mi}
+    config:
+      # 前端站点的 Origin（逗号分隔，不能是 *）
+      CK_GATEWAY_CORS_ORIGINS: "https://couponkill.example.com"
+      # 放在 Istio 入口之后：信任入口网关所在网段的 X-Forwarded-For，限流才能按真实客户端 IP 计数。
+      # 请改成集群 Pod CIDR / 入口 Pod 网段。
+      CK_GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8"
+  user:
+    replicas: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+  coupon:
+    replicas: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+    resources:
+      requests: {cpu: 250m, memory: 256Mi}
+      limits: {cpu: "2", memory: 512Mi}
+  order:
+    # KEDA 接管 order 副本数（keda.enabled），不再使用 CPU HPA
+    replicas: 2
+    config:
+      # 每个副本同时处理 4 个分区（主题 16 分区，4 个副本即可吃满）
+      CK_ORDER_CONSUME_CONCURRENCY: "4"
+    resources:
+      requests: {cpu: 500m, memory: 256Mi}
+      limits: {cpu: "2", memory: 768Mi}
+  connector:
+    replicas: 2
+
+# 集群内依赖：默认仍然自带（持久卷已开启）。若使用托管实例，把对应 enabled 改为 false 并填写 host / brokers，
+# 同时用 networkPolicy.extraEgress 放行到这些地址的出站流量。
+postgres:
+  persistence:
+    size: 50Gi
+  resources:
+    requests: {cpu: "1", memory: 2Gi}
+    limits: {cpu: "2", memory: 4Gi}
+redis:
+  persistence:
+    size: 5Gi
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+kafka:
+  persistence:
+    size: 50Gi
+  resources:
+    requests: {cpu: "1", memory: 2Gi}
+    limits: {cpu: "2", memory: 4Gi}
+
+networkPolicy:
+  enabled: true
+
+istio:
+  enabled: true
+  gateway:
+    host: couponkill.example.com
+
+keda:
+  enabled: true
+  order:
+    minReplicaCount: 2
+    maxReplicaCount: 16
+    lagThreshold: "100"
+
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 15s

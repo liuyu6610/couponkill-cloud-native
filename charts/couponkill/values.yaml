@@ -1,0 +1,473 @@
+# =============================================================================
+# CouponKill Chart 默认值（开发 / 演示：自带 PostgreSQL、Redis、Kafka，Secret 由 chart 随机生成）
+#
+# 生产请叠加 values-prod.yaml，并预先创建 Secret（见 charts/couponkill/README.md）：
+#   helm upgrade --install couponkill charts/couponkill -n couponkill --create-namespace -f charts/couponkill/values-prod.yaml
+#
+# 约定：
+#   * 服务配置只有环境变量：非机密进 ConfigMap（couponkill-<svc>-config），机密进 Secret（secretKeyRef）。
+#   * 没有 Nacos / Sentinel / ShardingSphere / db-init：各服务启动时自己迁移自己的 schema。
+#   * 所有 Istio / KEDA / 监控 / Ingress 都由 *.enabled 开关控制，默认关闭。
+# =============================================================================
+
+# 目标命名空间。空 = helm 的 --namespace（.Release.Namespace），推荐留空。
+namespace: ""
+
+# ---------------------------------------------------------------------------
+# 镜像：<registry>/<repositoryPrefix><svc>:<tag>，例如 …/couponkill-order:123
+# 与 build/Dockerfile、Makefile、Jenkinsfile 的命名一致。
+# ---------------------------------------------------------------------------
+image:
+  registry: "crpi-n5rumpjwbqinoz4c.cn-hangzhou.personal.cr.aliyuncs.com/thetestspacefordocker"
+  repositoryPrefix: "couponkill-"
+  # 全部服务的默认标签；单个服务可用 services.<svc>.image.tag 覆盖。
+  tag: latest
+  # 空 = tag 为 latest 时 Always，否则 IfNotPresent。
+  pullPolicy: ""
+  # 私有仓库拉取凭证（Secret 名称列表）。
+  pullSecrets: []
+
+# ---------------------------------------------------------------------------
+# 公共配置（注入每个服务的 ConfigMap；对应设计文档 §3）
+# ---------------------------------------------------------------------------
+config:
+  # CK_ENV：dev | prod。prod 下服务拒绝使用开发默认密钥，也拒绝 seedDemo。
+  env: dev
+  # CK_LOG_LEVEL：debug | info | warn | error。
+  logLevel: info
+  # CK_SEED_DEMO（user、coupon 服务）：写入演示用户/券。仅限开发，env=prod 时渲染直接失败。
+  seedDemo: false
+  jwt:
+    # CK_JWT_ISSUER / CK_JWT_AUDIENCE / CK_JWT_TTL（gateway、user）
+    issuer: couponkill
+    audience: couponkill-api
+    ttl: 24h
+
+# ---------------------------------------------------------------------------
+# Secret：JWT 密钥、内部令牌、网关签名密钥、数据库口令、Redis 口令、连接器平台凭证。
+#   create=true  仅供本地/开发：chart 生成 Secret，缺省值用 randAlphaNum 随机生成，
+#                升级时通过 lookup 保留已有取值（口令变了会和已初始化的 PG 数据卷对不上）。
+#   create=false 生产：自行创建 Secret（或 External Secrets 同名对象），名称 = existingSecret 或 name。
+#   env=prod 与 create=true 不能同时使用。
+# ---------------------------------------------------------------------------
+secrets:
+  create: true
+  existingSecret: ""
+  name: couponkill-app-secrets
+  # Secret 里各取值的键名（保持默认即可；改了要同步自己创建的 Secret）。
+  keys:
+    jwtSecret: jwt-secret              # → CK_JWT_SECRET（≥32 字节）
+    internalToken: internal-token      # → CK_INTERNAL_TOKEN（≥16 字节）
+    gatewaySignKey: gateway-sign-key   # → CK_GATEWAY_SIGN_KEY（≥32 字节）
+    postgresPassword: postgres-password  # → 数据库口令（拼进 CK_PG_DSN；自带 PG 的 POSTGRES_PASSWORD）
+    pgDsn: pg-dsn                      # postgres.dsnFromSecret=true 时整条 CK_PG_DSN
+    redisPassword: redis-password      # → CK_REDIS_PASSWORD（redis.auth.enabled=true 时）
+  # 仅 create=true 时使用；留空 = 随机生成。切勿把真实值提交进 Git。
+  values:
+    jwtSecret: ""
+    internalToken: ""
+    gatewaySignKey: ""
+    postgresPassword: ""
+    redisPassword: ""
+    # 连接器平台凭证：键 = services.connector.secretEnv 里的 key，值 = 明文（空值被忽略）。
+    connector: {}
+
+# ---------------------------------------------------------------------------
+# 业务服务。端口与设计 D3 一致；Service 统一对外暴露 80 → 容器 http 端口。
+# 每个服务可设置：
+#   replicas / resources / autoscaling（HPA，按 CPU）/ image.{repository,tag}
+#   config      该服务私有的 CK_* 环境变量（空字符串被忽略 = 用服务内置默认值），数值请加引号
+#   extraEnv    原样追加到容器 env（例如 GOMEMLIMIT）
+#   nodeSelector / tolerations / affinity / topologySpreadConstraints
+# ---------------------------------------------------------------------------
+services:
+  gateway:
+    name: couponkill-gateway
+    port: 8088
+    replicas: 1
+    image: {}
+    service:
+      type: ClusterIP
+    resources:
+      requests: {cpu: 100m, memory: 64Mi}
+      limits: {cpu: "1", memory: 256Mi}
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+    config:
+      # 逗号分隔的允许源（scheme://host[:port]，不能是 *）。空 = 服务默认（本地前端开发地址）。
+      CK_GATEWAY_CORS_ORIGINS: ""
+      # Redis 会话查询失败时放行（true，可用性优先）还是 503（false，安全优先）。
+      CK_GATEWAY_REVOCATION_FAIL_OPEN: "true"
+      # 信任 X-Forwarded-For 的上游代理 CIDR，逗号分隔。放在 Ingress/Istio 之后时必须填入，
+      # 否则限流把所有请求当成同一个 IP；空 = 不信任任何代理。
+      CK_GATEWAY_TRUSTED_PROXIES: ""
+      # 限流（令牌桶）：每 IP / 每用户 / 秒杀每用户，每秒补充数。空 = 服务默认。
+      CK_GATEWAY_IP_RPS: ""
+      CK_GATEWAY_USER_RPS: ""
+      CK_GATEWAY_SECKILL_RPS: ""
+    extraEnv: []
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+
+  user:
+    name: couponkill-user-service
+    port: 8081
+    replicas: 1
+    image: {}
+    resources:
+      # 登录/注册的 bcrypt 吃 CPU，limit 给足
+      requests: {cpu: 100m, memory: 64Mi}
+      limits: {cpu: "1", memory: 256Mi}
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+    config: {}
+    extraEnv: []
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+
+  coupon:
+    name: couponkill-coupon-service
+    port: 8080
+    replicas: 1
+    image: {}
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: "1", memory: 384Mi}
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+    config:
+      # 库存分桶数（设计 §7），默认 8。改小会让历史桶不再被扣减，上线后不要随意调整。
+      CK_COUPON_STOCK_BUCKETS: ""
+    extraEnv: []
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+
+  order:
+    name: couponkill-order-service
+    port: 8082
+    replicas: 1
+    image: {}
+    resources:
+      requests: {cpu: 250m, memory: 128Mi}
+      limits: {cpu: "2", memory: 512Mi}
+    # 与 keda.enabled 互斥：KEDA 接管 order 副本数时不渲染 HPA。
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 16
+      targetCPUUtilizationPercentage: 70
+    config:
+      # 秒杀冷却时间（Go duration，默认 0s = 关闭）。
+      CK_ORDER_SECKILL_COOLDOWN: ""
+      # 建单消费者同时处理的分区数（默认 1）。每个副本的并发 × 副本数 ≈ 同时消费的分区数，上限是主题分区数。
+      CK_ORDER_CONSUME_CONCURRENCY: ""
+    extraEnv: []
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+
+  connector:
+    name: couponkill-connector-service
+    port: 8085
+    replicas: 1
+    image: {}
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 500m, memory: 256Mi}
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+    config: {}
+    # 电商平台凭证（internal/connector/config.go；缺凭证的平台自动 DISABLED，所以都是 optional）。
+    # key 是 Secret 里的键名；secrets.create=true 时取值来自 secrets.values.connector。
+    secretEnv:
+      - {env: CK_CONNECTOR_JD_APP_KEY, key: connector-jd-app-key}
+      - {env: CK_CONNECTOR_JD_APP_SECRET, key: connector-jd-app-secret}
+      - {env: CK_CONNECTOR_JD_ACCESS_TOKEN, key: connector-jd-access-token}
+      - {env: CK_CONNECTOR_TB_APP_KEY, key: connector-tb-app-key}
+      - {env: CK_CONNECTOR_TB_APP_SECRET, key: connector-tb-app-secret}
+      - {env: CK_CONNECTOR_TB_SESSION, key: connector-tb-session}
+      - {env: CK_CONNECTOR_PDD_APP_KEY, key: connector-pdd-app-key}
+      - {env: CK_CONNECTOR_PDD_APP_SECRET, key: connector-pdd-app-secret}
+      - {env: CK_CONNECTOR_PDD_ACCESS_TOKEN, key: connector-pdd-access-token}
+    extraEnv: []
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    topologySpreadConstraints: []
+
+# 容器探针（所有服务共用）：存活 /healthz 不查依赖，就绪 /readyz 查本服务依赖。
+# startupProbe 给启动期迁移留出时间：failureThreshold × periodSeconds 秒内通过即可。
+probes:
+  startup: {failureThreshold: 30, periodSeconds: 2}
+  liveness: {periodSeconds: 10, timeoutSeconds: 2, failureThreshold: 3}
+  readiness: {periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 2}
+
+# 优雅停机：应用默认 25s 关闭超时（platform/app ShutdownTimeout），留 10s 余量。
+terminationGracePeriodSeconds: 35
+
+# Pod 安全上下文（distroless nonroot 的 uid/gid = 65532）与容器安全上下文。
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# 同一服务的副本尽量分散到不同节点（软反亲和）。
+podAntiAffinity:
+  enabled: true
+
+# PodDisruptionBudget：maxUnavailable=1 允许单副本也能被驱逐（minAvailable=1 会卡住节点维护）。
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+# ---------------------------------------------------------------------------
+# 依赖：集群内 PostgreSQL 16 / Redis 7 / Kafka（KRaft，单节点）。
+# 生产建议改用托管实例：enabled=false 并填写 host / brokers。
+# ---------------------------------------------------------------------------
+postgres:
+  enabled: true
+  name: postgres
+  image: {repository: postgres, tag: "16", pullPolicy: IfNotPresent}
+  # enabled=false 时必填（外部实例地址）。
+  host: ""
+  port: 5432
+  database: couponkill
+  username: couponkill
+  sslmode: disable
+  # true：CK_PG_DSN 整条取自 Secret 键 pg-dsn（密码含特殊字符、或需要额外连接参数时使用）。
+  # false：由 username/host/port/database/sslmode + Secret 里的口令拼出，口令须是 URL 安全字符。
+  dsnFromSecret: false
+  maxConnections: 200
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+
+redis:
+  enabled: true
+  name: redis
+  image: {repository: redis, tag: "7", pullPolicy: IfNotPresent}
+  # enabled=false 时必填（外部实例地址）。
+  host: ""
+  port: 6379
+  db: 0
+  # 注入 CK_REDIS_PASSWORD，自带 Redis 同时用它做 requirepass。
+  auth:
+    enabled: true
+  # 秒杀库存计数器 ck:stock:* 只存在于 Redis：重启丢数据 = 全部秒杀券回到「未预热」，
+  # 所以默认开启 AOF + 持久卷；maxmemory-policy 固定 noeviction，库存键绝不能被淘汰。
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: ""
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+
+kafka:
+  enabled: true
+  name: kafka
+  image: {repository: apache/kafka, tag: "3.8.0", pullPolicy: IfNotPresent}
+  # enabled=false 时必填：逗号分隔的外部 broker 地址。
+  brokers: ""
+  port: 9092
+  replicationFactor: 1
+  # 固定 KRaft 集群 ID（22 位 base64）。单节点持久化数据重启后靠它保持同一集群。
+  clusterId: "MkU3OEVBNTcwNTJENDM2Qk"
+  # 主题由 topicInit 预建（分区数可控），所以默认关闭自动创建，避免被悄悄建成 1 分区。
+  autoCreateTopics: false
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+  # 主题名与消费组是 internal/contracts/events 里的常量，改它们等于改协议，不要改。
+  consumerGroup: seckill-order-create-group
+  topics:
+    seckillOrderCreate:
+      name: seckill_order_create
+      # 并行度上限：order 消费者副本数超过分区数没有意义（KEDA maxReplicaCount 也不得超过它）。
+      partitions: 16
+    deadLetter:
+      name: seckill_order_create_dlt
+      partitions: 4
+  # post-install / post-upgrade Hook：创建上面两个主题（已存在则只增加分区）。
+  topicInit:
+    enabled: true
+    image: {repository: apache/kafka, tag: "3.8.0", pullPolicy: IfNotPresent}
+
+# 基础设施 / 初始化 Job 共用的 ServiceAccount（k8s-istio 的授权策略按它放行）。
+serviceAccountInfra:
+  name: couponkill-infra
+
+# ---------------------------------------------------------------------------
+# 对外入口（可选）。使用 Istio 时请用 istio.enabled，二者择一。
+# 无论哪种方式，只暴露 gateway：JWT 校验、身份头签名、/internal 拦截都在网关。
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: ""
+  host: couponkill.example.com
+  annotations: {}
+  tls:
+    secretName: ""
+
+# ---------------------------------------------------------------------------
+# NetworkPolicy：default-deny + 同命名空间 + DNS；只有 gateway 接受来自入口控制器命名空间的流量。
+# 外部 PostgreSQL / Redis / Kafka（*.enabled=false）需要通过 extraEgress 放行。
+# ---------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  # 允许访问 gateway 的命名空间（kubernetes.io/metadata.name）。
+  ingressNamespaces: ["istio-system", "ingress-nginx"]
+  # 抓取 /metrics 的 Prometheus 所在命名空间（monitoring.enabled=true 时放行）。
+  monitoringNamespace: monitoring
+  # connector 访问外部电商平台（HTTPS 443）。
+  connectorEgress:
+    enabled: true
+    ports: [443]
+  extraIngress: []
+  extraEgress: []
+
+# ---------------------------------------------------------------------------
+# Istio（需要集群已装 Istio）：只通过入口 Gateway 暴露 gateway 服务，
+# 其余服务只有网格内部流量；DestinationRule 为 mTLS + 连接池 + 熔断。
+# 命名空间需自行打标签：kubectl label ns couponkill istio-injection=enabled
+# 授权策略与 PeerAuthentication 见仓库 k8s-istio/。
+# ---------------------------------------------------------------------------
+istio:
+  enabled: false
+  gateway:
+    name: couponkill-gateway
+    host: couponkill.example.com
+    port: 80
+    # 入口选择器（默认 Istio 自带的 ingressgateway）
+    selector: {istio: ingressgateway}
+    # HTTPS：credentialName 非空时增加 443 服务器（SIMPLE TLS），80 端口只做 301 跳转。
+    # 证书 Secret（kubernetes.io/tls）必须创建在入口网关 Pod 所在的命名空间。
+    tls:
+      credentialName: ""
+      port: 443
+  virtualService:
+    # 入口只放行这些前缀（/api/ 业务接口、/healthz 供外部 LB 探活）；其余一律 404，
+    # 所以 /metrics、/readyz、/internal 都不会从入口出去。
+    exposePrefixes: ["/api/", "/healthz"]
+    timeout: 15s
+    # 只重试「请求没到后端」的失败，避免 POST（下单、秒杀）被重放。
+    retries:
+      attempts: 2
+      perTryTimeout: 5s
+      retryOn: "connect-failure,refused-stream"
+  destinationRule:
+    connectionPool:
+      tcp: {maxConnections: 100}
+      http: {http1MaxPendingRequests: 50, maxRequestsPerConnection: 10}
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 10
+
+# 金丝雀：给 coupon / order 额外起一个 version=canary 的 Deployment（同一 Service 下），
+# 副本比例即默认流量比例；istio.enabled=true 时再用 VirtualService 精确按权重切分。
+# 金丝雀 Pod 与稳定版共用同一份 ConfigMap / Secret（所以必须向后兼容同一份数据库 schema）。
+canary:
+  coupon:
+    enabled: false
+    # 金丝雀镜像标签；空 = canary
+    tag: ""
+    replicas: 1
+    # 网格内的流量权重（0-100），stable = 100 - weightCanary
+    weightCanary: 10
+  order:
+    enabled: false
+    tag: ""
+    replicas: 1
+    weightCanary: 5
+
+# ---------------------------------------------------------------------------
+# KEDA（需要集群已装 KEDA）：按 seckill_order_create 的消费积压扩缩 order。
+# consumerGroup / topic 取自 kafka.consumerGroup / kafka.topics.seckillOrderCreate。
+# 开启后 order 不再渲染 HPA，Deployment 也不写 replicas（避免与 KEDA 争夺副本数）。
+# ---------------------------------------------------------------------------
+keda:
+  enabled: false
+  # 空 = 自带 Kafka 的 <name>:<port> 或 kafka.brokers
+  bootstrapServers: ""
+  pollingInterval: 15
+  cooldownPeriod: 120
+  order:
+    minReplicaCount: 2
+    # 不得超过 kafka.topics.seckillOrderCreate.partitions（渲染时校验）
+    maxReplicaCount: 16
+    lagThreshold: "100"
+
+# ---------------------------------------------------------------------------
+# 监控：所有服务暴露 /metrics（Prometheus 格式，仅集群内）。
+# ---------------------------------------------------------------------------
+monitoring:
+  enabled: false
+  # Pod 注解 prometheus.io/scrape|port|path（没有 Prometheus Operator 时用）
+  annotations:
+    enabled: true
+  # ServiceMonitor（需要 prometheus-operator 的 CRD）
+  serviceMonitor:
+    enabled: true
+    # 空 = 与应用同命名空间
+    namespace: ""
+    interval: 15s
+    scrapeTimeout: 10s
+    # 例如 kube-prometheus-stack 的 release 标签
+    labels: {release: prometheus}
+
+# ---------------------------------------------------------------------------
+# Operator（可选，不替代 Helm；需要先构建 couponkill-operator 镜像）。
+# ---------------------------------------------------------------------------
+operator:
+  enabled: false
+  name: couponkill-operator
+  port: 8084
+  replicas: 1
+  image: {}
+  # 同时安装 Seckill CRD
+  installCRD: true
+  goOpts: {}
+  resources:
+    requests: {cpu: 10m, memory: 64Mi}
+    limits: {cpu: 500m, memory: 128Mi}
+
+# 渲染一个示例 Seckill 资源（需 operator.enabled=true）。
+examples:
+  seckill: false

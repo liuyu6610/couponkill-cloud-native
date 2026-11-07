@@ -1,0 +1,32 @@
+{{- /*
+KEDA（keda.enabled=true，需集群已装 KEDA）：按 seckill_order_create 的消费积压扩缩 order 服务。
+consumerGroup / topic 必须是真实消费者的值——kafkax 的消费组 seckill-order-create-group、主题下划线命名——
+否则 KEDA 读不到 lag，扩缩形同虚设。maxReplicaCount 不得超过主题分区数（couponkill.validate 校验）。
+KEDA 接管后 order 的 Deployment 不写 replicas、也不渲染 HPA（services.yaml）。
+*/ -}}
+{{- if .Values.keda.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $order := .Values.services.order }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: so-{{ $order.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.labels" (list . "order" "stable") | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ $order.name }}
+  pollingInterval: {{ int .Values.keda.pollingInterval }}
+  cooldownPeriod: {{ int .Values.keda.cooldownPeriod }}
+  minReplicaCount: {{ int .Values.keda.order.minReplicaCount }}
+  maxReplicaCount: {{ int .Values.keda.order.maxReplicaCount }}
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: {{ .Values.keda.bootstrapServers | default (include "couponkill.kafkaBrokers" .) | quote }}
+        consumerGroup: {{ .Values.kafka.consumerGroup | quote }}
+        topic: {{ .Values.kafka.topics.seckillOrderCreate.name | quote }}
+        lagThreshold: {{ .Values.keda.order.lagThreshold | quote }}
+{{- end }}

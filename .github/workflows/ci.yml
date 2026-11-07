@@ -1,0 +1,157 @@
+# CI 真源说明见 docs/CICD-SOURCE-OF-TRUTH.md
+# 本 workflow 仅做 PR/推送校验，不推镜像、不部署集群（CD 以根目录 Jenkinsfile 为准）。
+name: CouponKill CI
+
+on:
+  push:
+    branches: [develop, main, "rewrite/**"]
+  pull_request:
+    branches: [develop, main, "rewrite/**"]
+
+# 同一分支/PR 上的新提交取消旧的运行
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # 五个 Go 服务（cmd/ + internal/）：格式、依赖、vet、带竞态检测的测试。
+  # 需要真实 PostgreSQL 的测试在 services 里的 postgres 上跑；CK_REQUIRE_PG=true 让「连不上 PG」
+  # 变成失败而不是静默跳过——CI 不允许因为跳过而变绿（设计 §11）。
+  go-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      CK_TEST_PG_DSN: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      CK_REQUIRE_PG: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+          cache-dependency-path: go.sum
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l cmd internal 2>/dev/null || true)"
+          if [ -n "$unformatted" ]; then echo "以下文件未 gofmt:"; echo "$unformatted"; exit 1; fi
+      - name: go.mod 与 go.sum 已整理
+        run: go mod tidy -diff
+      - name: Vet
+        run: go vet ./cmd/... ./internal/...
+      - name: Test (race)
+        run: go test -race -count=1 ./cmd/... ./internal/...
+
+  # Operator 是独立 Go 模块；控制器单测不依赖 envtest 资产，完整 envtest 用根 Makefile 的 make operator-test
+  operator-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+          cache-dependency-path: couponkill-operator/go.sum
+      - name: Vet and test operator
+        working-directory: couponkill-operator
+        run: go vet ./... && go test -count=1 ./...
+
+  # Vite 7 要求 Node 20.19+ / 22.12+；lint、单测、类型检查 + 构建都要过（入口包体积由 Vite 告警兜底）
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/couponkill-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/couponkill-frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  # Helm chart 校验：helm lint + helm template 渲染断言（默认 / prod / canary-keda / istio 等 values 组合），
+  # 不连集群、不部署。
+  helm-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+      - name: helm lint
+        run: |
+          helm lint charts/couponkill
+          helm lint charts/couponkill -f charts/couponkill/values-prod.yaml --set-string image.tag=ci
+          helm lint charts/couponkill -f charts/couponkill/values.canary-keda.yaml
+          helm lint charts/couponkill --set istio.enabled=true --set monitoring.enabled=true
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+          cache-dependency-path: charts/couponkill/tests/render/go.sum
+      # 断言：探针、安全上下文、每个服务的 CK_* 环境变量与 Secret 键、KEDA 消费组、Istio 只暴露 gateway……
+      - name: helm template assertions
+        working-directory: charts/couponkill/tests/render
+        run: go vet ./... && go test -count=1 ./...
+
+  # 构建五个服务镜像（以及 Operator 镜像），不推送：只为尽早发现 Dockerfile / 构建上下文的破坏。
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: gateway, file: build/Dockerfile, args: "SERVICE=gateway\nPORT=8088"}
+          - {name: user, file: build/Dockerfile, args: "SERVICE=user\nPORT=8081"}
+          - {name: coupon, file: build/Dockerfile, args: "SERVICE=coupon\nPORT=8080"}
+          - {name: order, file: build/Dockerfile, args: "SERVICE=order\nPORT=8082"}
+          - {name: connector, file: build/Dockerfile, args: "SERVICE=connector\nPORT=8085"}
+          - {name: operator, file: couponkill-operator/Dockerfile, args: ""}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build couponkill-${{ matrix.name }} (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          build-args: |
+            ${{ matrix.args }}
+            VCS_REF=${{ github.sha }}
+          push: false
+          tags: couponkill-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

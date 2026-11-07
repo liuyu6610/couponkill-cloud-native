@@ -1,0 +1,118 @@
+{{- /*
+可选依赖：集群内单节点 PostgreSQL 16（postgres.enabled=true）。
+数据库 / 用户 / 口令由官方镜像的 POSTGRES_* 环境变量初始化；服务启动时自己建 schema 和表。
+生产建议使用托管实例（postgres.enabled=false + postgres.host）。
+*/ -}}
+{{- if .Values.postgres.enabled }}
+{{- $ns := include "couponkill.ns" . }}
+{{- $pg := .Values.postgres }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $pg.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $pg.name) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $pg.name }}
+  ports:
+    - name: postgres
+      port: {{ int $pg.port }}
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $pg.name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "couponkill.infraLabels" (list $ $pg.name) | nindent 4 }}
+spec:
+  serviceName: {{ $pg.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $pg.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "couponkill.infraLabels" (list $ $pg.name) | nindent 8 }}
+      annotations:
+        # 数据库 / 缓存 / 消息队列留在网格之外：TCP 协议不需要 L7 能力，也避免 sidecar 影响 Kafka 的 advertised listener；
+        # 访问控制由 NetworkPolicy 负责（k8s-istio 的 STRICT mTLS 只作用于带 sidecar 的 Pod）
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: {{ include "couponkill.infraServiceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      # 官方镜像以 uid 999 运行；fsGroup 让持久卷可写
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: "{{ $pg.image.repository }}:{{ $pg.image.tag }}"
+          imagePullPolicy: {{ $pg.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - -c
+            - max_connections={{ int $pg.maxConnections }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: {{ $pg.username | quote }}
+            - name: POSTGRES_DB
+              value: {{ $pg.database | quote }}
+            {{- include "couponkill.secretEnv" (list . "POSTGRES_PASSWORD" "postgresPassword") | nindent 12 }}
+            # 数据放在挂载点的子目录，避免 lost+found 让 initdb 拒绝非空目录
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            {{- toYaml $pg.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      {{- if not $pg.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if $pg.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $pg.persistence.storageClass }}
+        storageClassName: {{ $pg.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $pg.persistence.size | quote }}
+  {{- end }}
+{{- end }}

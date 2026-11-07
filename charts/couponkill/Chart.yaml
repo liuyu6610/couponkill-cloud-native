@@ -1,0 +1,21 @@
+# CouponKill 应用 Chart：gateway / user / coupon / order / connector 五个 Go 服务
+# 配置全部来自环境变量（ConfigMap + Secret），没有 Nacos / Sentinel / ShardingSphere；
+# 数据库结构由各服务启动时自己迁移，因此没有 db-init Job。
+apiVersion: v2
+name: couponkill
+version: 2.0.0
+appVersion: "2.0.0"
+kubeVersion: ">=1.27.0-0"
+description: CouponKill 秒杀系统（Go 微服务：gateway、user、coupon、order、connector）
+type: application
+keywords:
+  - seckill
+  - coupon
+  - microservice
+  - cloud-native
+home: https://github.com/liuyu6610/couponkill-cloud-native
+sources:
+  - https://github.com/liuyu6610/couponkill-cloud-native
+maintainers:
+  - name: CouponKill Team
+    email: team@couponkill.io

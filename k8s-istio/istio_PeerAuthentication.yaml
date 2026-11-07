@@ -1,0 +1,12 @@
+# couponkill 命名空间内的工作负载之间一律双向 TLS。
+# PostgreSQL / Redis / Kafka 在 chart 里声明了 sidecar.istio.io/inject=false，不带 sidecar，不受 STRICT 影响；
+# 业务服务访问它们时 Istio 自动退回明文（它们的访问控制靠 chart 的 NetworkPolicy）。
+# 探针：kubelet 探针由 sidecar 改写到 pilot-agent 端口，STRICT 下不受影响。
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: couponkill
+spec:
+  mtls:
+    mode: STRICT

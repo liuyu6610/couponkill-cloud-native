@@ -1,0 +1,3 @@
+# helm dependency / package 产物
+charts/*.tgz
+*.tgz

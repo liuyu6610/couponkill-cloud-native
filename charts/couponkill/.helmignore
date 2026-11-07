@@ -1,0 +1,12 @@
+# helm package / install 时忽略的文件
+.DS_Store
+.git/
+.gitignore
+*.swp
+*.bak
+*.tmp
+*.orig
+.idea/
+.vscode/
+# chart 自测（helm template 断言，独立 Go 模块），不进 chart 包
+tests/
