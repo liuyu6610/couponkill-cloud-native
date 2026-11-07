@@ -1,0 +1,13 @@
+.page { padding: 24rpx; }
+.card {
+  background: #fff;
+  border: 1rpx solid #eee;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+.row { display: flex; justify-content: space-between; }
+.id { font-weight: 600; }
+.status { color: #ff4757; }
+.meta { color: #666; font-size: 24rpx; margin: 12rpx 0; }
+.hint { color: #999; padding: 24rpx 0; }

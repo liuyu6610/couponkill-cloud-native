@@ -1,0 +1,42 @@
+/*
+ * 全局基础样式。
+ * 原文件是 Vite 模板残留：body { display:flex; place-items:center } 会把 #root 变成收缩宽度的 flex 子项，
+ * 页面整体居中缩窄；深色模式白字、全局 button 背景/内边距也会污染非 antd 元素。
+ * 本应用只有浅色设计（antd 主题见 theme/index.ts），这里只保留与之一致的最小基线。
+ */
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: rgba(0, 0, 0, 0.88);
+  background-color: #f5f5f5;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* 键盘用户可见焦点；鼠标点击不出现外框 */
+:focus-visible {
+  outline: 2px solid #fa541c;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
