@@ -1,0 +1,72 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Secrets / local credentials (never commit) ###
+.env
+.env.*
+!.env.example
+!.env.development
+!.env.production
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+**/secrets/*.yaml
+**/secrets/*.yml
+!**/secrets/.gitkeep
+
+### IntelliJ local tokens / datasources ###
+.idea/ApifoxUploaderProjectSetting.xml
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/dataSources/
+
+# Go 构建产物
+/bin/
+*.exe
+
+### Go 重写：根目录 build/ 放 Dockerfile，需要纳入版本控制 ###
+!/build/
+
+### 本地开发进程日志 / pid（scripts/dev-up.ps1）###
+/.dev/
+
+# Claude Code 的会话与 worktree 目录
+/.claude/

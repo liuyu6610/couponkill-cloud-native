@@ -1,0 +1,16 @@
+# 白名单：构建上下文只放进编译所需的东西，避免把 .git、前端 node_modules、Java 目录等送进 daemon，
+# 也避免无关文件变化让 COPY 层失效。
+*
+
+# 五个 Go 服务（build/Dockerfile）
+!go.mod
+!go.sum
+!cmd
+!internal
+
+# Operator 镜像（couponkill-operator/Dockerfile 也以仓库根为上下文）
+!couponkill-operator
+
+# 测试文件与本地产物不参与镜像构建
+**/*_test.go
+**/testdata

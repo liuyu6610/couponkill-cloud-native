@@ -1,0 +1,11 @@
+# 在 Windows（core.autocrlf=true）工作区里，下面这些文件会被放进容器/集群里执行，
+# 行尾里混进 CR 会让 shell 脚本、Dockerfile 的 RUN、Helm 渲染出的内联脚本直接失败，所以固定为 LF。
+Dockerfile text eol=lf
+**/Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.sh text eol=lf
+Makefile text eol=lf
+charts/** text eol=lf
+docker-compose*.yml text eol=lf
+.github/** text eol=lf
+k8s-istio/** text eol=lf
