@@ -4,9 +4,9 @@ name: CouponKill CI
 
 on:
   push:
-    branches: [develop, main, "rewrite/**"]
+    branches: [master]
   pull_request:
-    branches: [develop, main, "rewrite/**"]
+    branches: [master]
 
 # 同一分支/PR 上的新提交取消旧的运行
 concurrency:
